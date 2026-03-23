@@ -224,18 +224,18 @@
         } else {
             // === TRYB STANDARDOWY (SUMMARY.JS) ===
             contentXml += `<text:h text:style-name="H1" text:outline-level="1">Raport</text:h>
-            <text:h text:style-name="H2" text:outline-level="2">${window.utils.xmlEscape(state.product || 'Kontrola Dostępności')}</text:h>
+            <text:h text:style-name="H2" text:outline-level="2">${window.utils.xmlEscape(state.product || 'Ocena Dostępności')}</text:h>
             <text:p text:style-name="P1">Data: ${new Date().toLocaleString()}</text:p>`;
 
             if (state.auditor) {
-                contentXml += `<text:p text:style-name="P1">Osoba kontrolująca: ${window.utils.xmlEscape(state.auditor)}</text:p>`;
+                contentXml += `<text:p text:style-name="P1">Osoba dokonująca oceny: ${window.utils.xmlEscape(state.auditor)}</text:p>`;
             }
             if (state.productDesc) {
                 contentXml += `<text:p text:style-name="P1">Opis: ${window.utils.xmlEscape(state.productDesc)}</text:p>`;
             }
 
-            contentXml += `<text:h text:style-name="H2" text:outline-level="2">Kontrola ${stats.verdictLabel.toLowerCase()}</text:h>
-            <text:h text:style-name="H3" text:outline-level="3">Komentarz osoby kontrolującej:</text:h>`;
+            contentXml += `<text:h text:style-name="H2" text:outline-level="2">Ocena ${stats.verdictLabel.toLowerCase()}</text:h>
+            <text:h text:style-name="H3" text:outline-level="3">Komentarz osoby dokonującej oceny:</text:h>`;
             
              // Obsługa structuredSummary w trybie standard (wsteczna kompatybilność z poprzednią poprawką)
             if (state.structuredSummary) {
@@ -344,13 +344,13 @@
 
         const productName = (state.product && state.product !== 'Nieokreślony' && state.product !== 'Profil nieokreślony') ? state.product : '';
         const meshTitle = productName 
-            ? `Raport z kontroli zgodności ${productName} - podsumowanie`
-            : `Raport z kontroli zgodności - podsumowanie`;
+            ? `Raport z oceny zgodności ${productName} - podsumowanie`
+            : `Raport z oceny zgodności - podsumowanie`;
 
         const metaXml = `<?xml version="1.0" encoding="UTF-8"?>
 <office:document-meta xmlns:office="urn:oasis:names:tc:opendocument:xmlns:office:1.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:meta="urn:oasis:names:tc:opendocument:xmlns:meta:1.0" office:version="1.2">
     <office:meta>
-        <meta:generator>Narzędzie KZ-PAD</meta:generator>
+        <meta:generator>Narzędzie OZ-PAD</meta:generator>
         <dc:language>pl-PL</dc:language>
         <meta:creation-date>${new Date().toISOString()}</meta:creation-date>
         <dc:title>${window.utils.xmlEscape(meshTitle)}</dc:title>

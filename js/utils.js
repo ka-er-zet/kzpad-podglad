@@ -1,4 +1,4 @@
-// Funkcje pomocnicze dla Narzędzia Kontrolnego EAA
+// Funkcje pomocnicze dla Narzędzia Oceny PAD
 
 const STORAGE_KEY = 'eaa_audit_state';
 
@@ -593,8 +593,8 @@ function generateEARL(state) {
     const assertor = {
         "@id": "_:assertor",
         "@type": ["earl:Software", "earl:Assertor"],
-        "dct:title": "Narzędzie Kontrolne EAA",
-        "dct:description": "Narzędzie do kontroli zgodności z PAD wg EN 301 549",
+        "dct:title": "Narzędzie Oceny Zgodności z PAD",
+        "dct:description": "Narzędzie do oceny zgodności z Polskim Aktem o Dostępności (PAD) opracowane przez Fundację Widzialni",
         "dct:hasVersion": "1.0.0"
     };
 
@@ -612,7 +612,7 @@ function generateEARL(state) {
             "@id": "_:compoundAssertor",
             "@type": "earl:Assertor",
             "earl:mainAssertor": { "@id": "_:humanAssertor" },
-            "dct:description": "Kontrola przeprowadzona przez człowieka przy użyciu narzędzia"
+            "dct:description": "Ocena przeprowadzona przez człowieka przy użyciu narzędzia"
         };
     }
 
@@ -741,7 +741,7 @@ function parseEARL(earlData) {
 }
 
 /**
- * Oblicza statystyki kontroli i werdykt na podstawie stanu.
+ * Oblicza statystyki oceny i werdykt na podstawie stanu.
  * @param {Object} state Stan aplikacji.
  * @returns {Object} Obiekt statystyk { total, passed, failed, na, nt, toVerify, verdict, verdictLabel }
  */
@@ -1003,7 +1003,7 @@ function getFilename(product, ext, prefix = 'raport_eaa_') {
 }
 
 /**
- * Zapisuje stan i pobiera plik JSON z kontrolą (format EARL).
+ * Zapisuje stan i pobiera plik JSON z oceną (format EARL).
  * @param {Object} state Stan aplikacji
  * @param {boolean} isDraft Czy jest to wersja robocza (dodaje prefiks 'draft_')
  */

@@ -1400,7 +1400,7 @@ img,
 }
 
 /* Stylizacja Radio jako czytelnych kart - Wzorzec Label-Container */
-/* --- Raport / Podsumowanie Kontroli --- */
+/* --- Raport / Podsumowanie Oceny --- */
 .summary-result-card {
     border-left: 8px solid var(--secondary-border-color);
     padding: 2rem;

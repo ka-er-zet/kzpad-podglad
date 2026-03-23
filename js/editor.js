@@ -1,5 +1,5 @@
 /**
- * KZ-PAD JSON Editor Logic
+ * OZ-PAD JSON Editor Logic
  * Handles loading, editing, and exporting JSON database files.
  */
 
@@ -2179,8 +2179,8 @@ function renderSummaryForm(id, data) {
             <h4 id="h4-metadata">Metadane (Etykiety danych dodatkowych)</h4>
                 ${Object.entries(data.meta || {}).map(([mKey, mVal]) => {
         const friendlyMeta = {
-            date_label: 'Etykieta: Data kontroli',
-            scope_label: 'Etykieta: Zakres kontroli',
+            date_label: 'Etykieta: Data oceny',
+            scope_label: 'Etykieta: Zakres oceny',
             scope_value: 'Wartość: Zakres (np. Pełny)'
         };
         return `

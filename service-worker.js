@@ -1,4 +1,4 @@
-const CACHE_NAME = 'kz-pad-v1';
+const CACHE_NAME = 'OZ-PAD-v1';
 const ASSETS_TO_CACHE = [
     './',
     './index.html',

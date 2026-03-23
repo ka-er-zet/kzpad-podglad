@@ -1,12 +1,12 @@
 {
-  "name": "KZ-PAD - Kontrola zgodności z PAD",
-  "short_name": "KZ-PAD",
+  "name": "OZ-PAD - Ocena zgodności z PAD",
+  "short_name": "OZ-PAD",
   "start_url": "/kzpad/index.html",
   "display": "standalone",
   "background_color": "#11191f",
   "theme_color": "#11191f",
   "orientation": "any",
-  "description": "Narzędzie do generowania arkuszy kontrolnych zgodności z ustawą (EAA) i normą EN 301 549.",
+  "description": "Narzędzie do generowania arkuszy oceny zgodności z ustawą (EAA) i normą EN 301 549.",
   "icons": [
     {
       "src": "icon-192.png",

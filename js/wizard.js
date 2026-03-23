@@ -319,7 +319,7 @@ function setupHero() {
                 
                 // Aktualizuj tytuł strony
                 if (typeof Browser !== 'undefined' && Browser.updateTitle) {
-                    Browser.updateTitle('Nowy arkusz kontroli');
+                    Browser.updateTitle('Nowy arkusz oceny');
                 }
             }, 100);
         });
@@ -419,7 +419,7 @@ const Browser = {
     },
 
     updateTitle(pageDetail) {
-        const baseTitle = 'Kontrola zgodności z Polskim Aktem Dostępności';
+        const baseTitle = 'Ocena zgodności z Polskim Aktem Dostępności';
         if (pageDetail) {
             document.title = `${pageDetail} — ${baseTitle}`;
         } else {
@@ -1195,7 +1195,7 @@ function generateDescriptiveSummary(isInitial = false) {
         let emptyHtml = `
             <article class="summary-result-card">
                 <header class="summary-header initial">
-                    <h2>Podsumowanie kontroli</h2>
+                    <h2>Podsumowanie oceny</h2>
                     <button id="btn-generate-summary" class="primary" onclick="generateDescriptiveSummary()">
                         <i data-lucide="file-text" aria-hidden="true"></i> Generuj podsumowanie
                     </button>
@@ -1218,20 +1218,20 @@ function generateDescriptiveSummary(isInitial = false) {
     const inapplicableOnlyTemplate = templateKey === 'all_inapplicable' || templateKey === 'all_inapplicable_partial';
     const summaryState = (templateKey === 'no_assessment' || inapplicableOnlyTemplate) ? 'warning' : (summaryData.failedCount > 0 ? 'fail' : 'pass');
 
-    // Dodaj informację o kontroli częściowej do statusu
+    // Dodaj informację o ocenie częściowej do statusu
     let displayStatus = config.status;
     if (templateKey !== 'no_assessment') {
         if (untestedCount > 0) {
-            displayStatus += ' (kontrola częściowa)';
+            displayStatus += ' (ocena częściowa)';
         } else {
-            displayStatus += ' (kontrola pełna)';
+            displayStatus += ' (ocena pełna)';
         }
     }
 
     let html = `
         <article class="summary-result-card" data-state="${summaryState}">
             <header class="summary-header">
-                <h2>Podsumowanie kontroli</h2>
+                <h2>Podsumowanie oceny</h2>
                 <button id="btn-generate-summary" class="primary" onclick="generateDescriptiveSummary()">
                     <i data-lucide="refresh-cw" aria-hidden="true"></i> Aktualizuj podsumowanie
                 </button>
@@ -1243,7 +1243,7 @@ function generateDescriptiveSummary(isInitial = false) {
                 </h3>
                 
                 <div class="summary-meta">
-                    <div><strong>Data kontroli:</strong> ${currentDate}</div>
+                    <div><strong>Data oceny:</strong> ${currentDate}</div>
                 </div>
 
                 ${incompleteAssessments.length > 0 ? `
@@ -1391,7 +1391,7 @@ function generateDescriptiveSummary(isInitial = false) {
                     <i data-lucide="file-text" aria-hidden="true"></i> Pobierz podsumowanie w formacie ODT
                 </button>
                 <button class="outline" onclick="downloadWizardAssessment()">
-                    <i data-lucide="save" aria-hidden="true"></i> Zapisz stan kontroli w formacie JSON
+                    <i data-lucide="save" aria-hidden="true"></i> Zapisz stan oceny w formacie JSON
                 </button>
             </footer>
         `;
@@ -1405,7 +1405,7 @@ function generateDescriptiveSummary(isInitial = false) {
     // Announce to screen readers
     const announcement = document.getElementById('generation-announcement');
     if (announcement) {
-        announcement.textContent = `Wygenerowano podsumowanie kontroli. Status: ${displayStatus}`;
+        announcement.textContent = `Wygenerowano podsumowanie oceny. Status: ${displayStatus}`;
         // Clear announcement after a moment so it can be re-announced
         setTimeout(() => { if (announcement.textContent.includes('podsumowanie')) announcement.textContent = ""; }, 1000);
     }
@@ -1560,8 +1560,8 @@ async function downloadSummaryODT() {
     if (templateKey !== 'no_assessment') {
         const config = summaryTemplates.compliance_summaries[templateKey];
         displayStatus = config.status;
-        if (summaryData.untestedCount > 0) displayStatus += ' (kontrola częściowa)';
-        else displayStatus += ' (kontrola pełna)';
+        if (summaryData.untestedCount > 0) displayStatus += ' (ocena częściowa)';
+        else displayStatus += ' (ocena pełna)';
     }
 
     // Metadane
@@ -1571,19 +1571,19 @@ async function downloadSummaryODT() {
     const customSections = [];
 
     // 1. Tytuł
-    customSections.push({ type: 'title', level: 1, text: 'PODSUMOWANIE KONTROLI ZGODNOŚCI Z PAD' });
+    customSections.push({ type: 'title', level: 1, text: 'PODSUMOWANIE OCENY ZGODNOŚCI Z PAD' });
     customSections.push({ type: 'title', level: 2, text: `STATUS: ${displayStatus.toUpperCase()}` });
 
     // 2. Metadane (Key-Value)
-    customSections.push({ type: 'KV', key: 'Data kontroli:', value: new Date().toLocaleDateString('pl-PL') });
+    customSections.push({ type: 'KV', key: 'Data oceny:', value: new Date().toLocaleDateString('pl-PL') });
     customSections.push({ type: 'KV', key: 'Profil/Kategoria:', value: selectedProductProfile || '(nie podano)' });
     
     // Obsługa wyświetlania nazwy produktu (jeśli "Nieokreślony" to traktujemy jako brak)
     const displayProductName = (productName && productName !== 'Nieokreślony') ? productName : '(nie podano)';
-    customSections.push({ type: 'KV', key: 'Przedmiot kontroli:', value: displayProductName });
+    customSections.push({ type: 'KV', key: 'Przedmiot oceny:', value: displayProductName });
     
     customSections.push({ type: 'KV', key: 'Opis:', value: productDesc || '(nie podano)' });
-    customSections.push({ type: 'KV', key: 'Osoba kontrolująca:', value: auditor || '(nie podano)' });
+    customSections.push({ type: 'KV', key: 'Osoba dokonująca oceny:', value: auditor || '(nie podano)' });
     customSections.push({ type: 'separator' });
 
     // Uwaga o brakujących ocenach
@@ -1708,12 +1708,12 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     const requirementRows = document.querySelectorAll('.requirement-row');
     if (requirementRows.length === 0) {
         console.warn('Brak wymagań do eksportu do Excel.');
-        showToast('Nie można wyeksportować: brak wygenerowanego arkusza kontroli.', 'warning');
+        showToast('Nie można wyeksportować: brak wygenerowanego arkusza oceny.', 'warning');
         
         // Komunikat dla screen readerów
         let liveRegion = document.getElementById('status-message');
         if (liveRegion) {
-            liveRegion.innerText = 'Nie można wyeksportować: brak wygenerowanego arkusza kontroli.';
+            liveRegion.innerText = 'Nie można wyeksportować: brak wygenerowanego arkusza oceny.';
         }
         
         return;
@@ -1748,17 +1748,17 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     // Ustaw metadane dokumentu (Dostępność)
     const fullProductName = getFullProductNameWizard();
     const meshTitle = (fullProductName && fullProductName !== 'Profil nieokreślony') 
-        ? `Raport z kontroli zgodności ${fullProductName} - podsumowanie`
-        : `Raport z kontroli zgodności - podsumowanie`;
+        ? `Raport z oceny zgodności ${fullProductName} - podsumowanie`
+        : `Raport z oceny zgodności - podsumowanie`;
 
-    workbook.creator = auditor || 'Narzędzie KZ-PAD';
-    workbook.lastModifiedBy = auditor || 'Narzędzie KZ-PAD';
+    workbook.creator = auditor || 'Narzędzie OZ-PAD';
+    workbook.lastModifiedBy = auditor || 'Narzędzie OZ-PAD';
     workbook.created = new Date();
     workbook.modified = new Date();
     workbook.properties.date1904 = true;
     workbook.title = meshTitle;
-    workbook.subject = 'Podsumowanie kontroli zgodności z Polskim Aktem Dostępności';
-    workbook.description = 'Dokument wygenerowany automatycznie przez Narzędzie KZ-PAD';
+    workbook.subject = 'Podsumowanie oceny zgodności z Polskim Aktem Dostępności';
+    workbook.description = 'Dokument wygenerowany automatycznie przez Narzędzie OZ-PAD';
 
     // 4. Pobierz dane za pomocą nowej funkcji pomocniczej
     const summaryData = getAssessmentSummaryData();
@@ -1773,8 +1773,8 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         const displayDate = new Date().toLocaleDateString('pl-PL');
         
         let displayStatus = config.status;
-        if (summaryData.untestedCount > 0) displayStatus += ' (kontrola częściowa)';
-        else displayStatus += ' (kontrola pełna)';
+        if (summaryData.untestedCount > 0) displayStatus += ' (ocena częściowa)';
+        else displayStatus += ' (ocena pełna)';
 
         const addSummaryTitle = (text, size = 14) => {
             const r = summarySheet.addRow([text]);
@@ -1799,20 +1799,20 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             }
         };
 
-        addSummaryTitle('PODSUMOWANIE KONTROLI ZGODNOŚCI Z PAD', 16);
+        addSummaryTitle('PODSUMOWANIE OCENY ZGODNOŚCI Z PAD', 16);
         summarySheet.addRow([]); // Odstęp przed statusem
         addSummaryTitle(`STATUS: ${displayStatus.toUpperCase()}`, 14);
         summarySheet.addRow([]); // Odstęp po statusie
         
         // Zmieniona kolejność metadanych
-        addSummaryText('Data kontroli:', displayDate);
+        addSummaryText('Data oceny:', displayDate);
         addSummaryText('Profil/Kategoria:', selectedProductProfile || '(nie podano)');
         
         const displayProductName = (productName && productName !== 'Nieokreślony') ? productName : '(nie podano)';
-        addSummaryText('Przedmiot kontroli:', displayProductName);
+        addSummaryText('Przedmiot oceny:', displayProductName);
         
         addSummaryText('Opis:', productDesc || '(nie podano)');
-        addSummaryText('Osoba kontrolująca:', auditor || '(nie podano)');
+        addSummaryText('Osoba oceniająca:', auditor || '(nie podano)');
         
         summarySheet.addRow([]); // Separator po metadanych
         
@@ -2005,7 +2005,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         ['Profil oceny:', selectedProductProfile],
         ['Nazwa produktu/usługi:', productName || '(nie podano)'],
         ['Opis/Wersja/URL:', productDesc || '(nie podano)'],
-        ['Osoba przeprowadzająca kontrolę:', auditor || '(nie podano)'],
+        ['Osoba dokonująca oceny:', auditor || '(nie podano)'],
         ['Data wypełnienia:', currentDate]
     ];
 
@@ -2215,7 +2215,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     // Feedback
     let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');
     if (liveRegion) {
-        liveRegion.innerText = 'Pobrano arkusz kontroli w formacie Excel' + (includeSummary ? ' z podsumowaniem.' : '.');
+        liveRegion.innerText = 'Pobrano arkusz oceny w formacie Excel' + (includeSummary ? ' z podsumowaniem.' : '.');
     }
 }
 
@@ -2227,12 +2227,12 @@ function downloadWizardAssessment() {
     const rows = document.querySelectorAll('.requirement-row');
     if (rows.length === 0) {
         console.warn('Brak wymagań do zapisania.');
-        showToast('Nie można zapisać: brak wygenerowanego arkusza kontroli.', 'warning');
+        showToast('Nie można zapisać: brak wygenerowanego arkusza oceny.', 'warning');
         
         // Komunikat dla screen readerów
         let liveRegion = document.getElementById('status-message');
         if (liveRegion) {
-            liveRegion.innerText = 'Nie można zapisać: brak wygenerowanego arkusza kontroli.';
+            liveRegion.innerText = 'Nie można zapisać: brak wygenerowanego arkusza oceny.';
         }
         
         return;
@@ -2277,7 +2277,7 @@ function downloadWizardAssessment() {
             "@id": "_:compoundAssertor",
             "@type": "earl:Assertor",
             "earl:mainAssertor": { "@id": "_:humanAssertor" },
-            "dct:description": "Kontrola przeprowadzona przez człowieka przy użyciu narzędzia"
+            "dct:description": "Ocena przeprowadzona przez człowieka przy użyciu narzędzia"
         };
 
         graph.push(humanAssertor);
@@ -2413,11 +2413,11 @@ function downloadWizardAssessment() {
         liveRegion.setAttribute('role', 'status');
         document.body.appendChild(liveRegion);
     }
-    liveRegion.innerText = 'Zapisano wersję roboczą kontroli w pliku JSON.';
+    liveRegion.innerText = 'Zapisano wersję roboczą oceny w pliku JSON.';
 }
 
 /**
- * Obsługuje wczytywanie pliku JSON ze stanem kontroli
+ * Obsługuje wczytywanie pliku JSON ze stanem oceny
  */
 async function handleWizardFileLoad(event) {
     const file = event.target.files[0];
@@ -2559,7 +2559,7 @@ async function handleWizardFileLoad(event) {
             // Powiadomienie
             let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');
             if (liveRegion) {
-                liveRegion.innerText = 'Wczytano stan kontroli z pliku JSON.';
+                liveRegion.innerText = 'Wczytano stan oceny z pliku JSON.';
             }
 
         } catch (err) {
@@ -2577,7 +2577,7 @@ async function handleWizardFileLoad(event) {
                 if (err.message.includes('%PDF')) {
                     userMsg = 'Nieprawidłowy format pliku. Proszę wybrać plik JSON zapisany przez aplikację, nie PDF.';
                 } else {
-                    userMsg = 'Plik nie jest prawidłowym plikiem JSON. Upewnij się, że został zapisany przez aplikację KZ-PAD.';
+                    userMsg = 'Plik nie jest prawidłowym plikiem JSON. Upewnij się, że został zapisany przez aplikację OZ-PAD.';
                 }
             } else if (err.message) {
                 userMsg = 'Błąd wczytywania: ' + err.message;
@@ -2940,7 +2940,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
 
     // Aktualizuj tytuł strony po odświeżeniu raportu
     if (typeof Browser !== 'undefined' && Browser.updateTitle) {
-        Browser.updateTitle(`Arkusz kontroli: ${productFullName}`);
+        Browser.updateTitle(`Arkusz oceny: ${productFullName}`);
     }
     if (resultsArea) resultsArea.setAttribute('data-product-name', productFullName);
     
@@ -3466,7 +3466,7 @@ window.showGlossary = (triggerEl = null) => {
     }
     title.textContent = 'Słownik pojęć';
     body.innerHTML = `
-        <p class="glossary-intro">W tym słowniku znajdziesz wyjaśnienia kluczowych pojęć używanych w aplikacji KZ-PAD.</p>
+        <p class="glossary-intro">W tym słowniku znajdziesz wyjaśnienia kluczowych pojęć używanych w aplikacji OZ-PAD.</p>
         ${glossaryHtml}
     `;
 
@@ -3610,7 +3610,7 @@ document.addEventListener('DOMContentLoaded', () => { indicateNewTabLinks(docume
 
 // Enhance clause-tag buttons: ensure screen reader label (visual labels are now inline)
 function enhanceClauseTagsWizard(container = document) {
-    // Labels are now generated inline in modern KZ-PAD version to satisfy WCAG 1.4.13
+    // Labels are now generated inline in modern OZ-PAD version to satisfy WCAG 1.4.13
     // and avoid flickering issues with multiple small tags.
     try {
         const els = (container && container.querySelectorAll) ? container.querySelectorAll('.clause-tag') : [];

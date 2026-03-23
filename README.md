@@ -1,4 +1,4 @@
-# KZ-PAD — Konfigurator Arkusza Kontroli
+# OZ-PAD — Konfigurator Arkusza Oceny
 
 <div align="center">
   <img src="img/EU1.svg" alt="EU1" height="50">
@@ -12,10 +12,10 @@
 **Wersja:** 1.2.0 (Luty 2026)  
 **Status:** Stabilna / Rozszerzona o Moduł Edycji Danych
 
-Aplikacja **KZ-PAD (Kontrola zgodności z Polskim Aktem o Dostępności)** służy do przygotowywania arkuszy oceny dostępności produktów i usług zgodnie z Ustawą z dnia 26 kwietnia 2024 r. (PAD), normą EN 301 549 i powiązanymi przepisami prawnymi.
+Aplikacja **OZ-PAD (Ocena zgodności z Polskim Aktem o Dostępności)** służy do przygotowywania arkuszy oceny dostępności produktów i usług zgodnie z Ustawą z dnia 26 kwietnia 2024 r. (PAD), normą EN 301 549 i powiązanymi przepisami prawnymi.
 
 System składa się z dwóch powiązanych modułów:
-1.  **Przeprowadzania kontroli (index.html)**: Interfejs operacyjny do przeprowadzania kontroli i generowania raportów.
+1.  **Przeprowadzania oceny (index.html)**: Interfejs operacyjny do przeprowadzania oceny i generowania raportów.
 2.  **Edycji danych (editor.html)**: Interfejs administracyjny do zarządzania bazą klauzul, mapowaniami produktów oraz słownikiem.
 
 ---
@@ -32,25 +32,25 @@ Uruchomienie pliku `index.html` bezpośrednio przez protokół `file://` nie poz
 
 ---
 
-## 📱 Moduł kontroli (index.html)
+## 📱 Moduł oceny (index.html)
 
 Interfejs przeznaczony dla osób przeprowadzających weryfikację dostępności.
 
 ### Proces operacyjny:
 
 #### 1. Inicjalizacja (Kreator)
-Wybór kategorii produktu powoduje wygenerowanie spersonalizowanego arkusza wymagań, ograniczając treść kontroli do punktów mających zastosowanie prawne dla danego urządzenia lub usługi.
+Wybór kategorii produktu powoduje wygenerowanie spersonalizowanego arkusza wymagań, ograniczając treść oceny do punktów mających zastosowanie prawne dla danego urządzenia lub usługi.
 
 #### 2. Rejestracja wyników (Formularz)
 System prezentuje wymagania prawne oraz powiązane z nimi szczegółowe instrukcje techniczne. Użytkownik przypisuje jeden z trzech stanów: `Spełnione`, `Niespełnione` lub `Nie dotyczy`.
 
 #### 3. Zapisywanie pracy
-W każdej chwili osoba kontrolująca może zapisać swoją pracę poprzez użycie ikony w górnym menu (po prawej stronie) albo użycie skrótu klawiszowego ctrl+s (na urządzeniach Apple cmd+s). Zostanie zapisany plik JSON, który można następnie wczytać używając odpowiedniej opcji z menu głównego aplikacji. 
+W każdej chwili osoba oceniająca może zapisać swoją pracę poprzez użycie ikony w górnym menu (po prawej stronie) albo użycie skrótu klawiszowego ctrl+s (na urządzeniach Apple cmd+s). Zostanie zapisany plik JSON, który można następnie wczytać używając odpowiedniej opcji z menu głównego aplikacji. 
 
 #### 4. Eksport danych
 Narzędzie pozwala na eksport dokumentacji:
 
-##### Po utworzeniu arkusza kontrolnego
+##### Po utworzeniu arkusza oceny
 Czysty arkusz można wyeksportować w formacie XLSX za pomocą ikony w menu górnym
 
 ##### Po wygenerowaniu wyniku audytu
@@ -78,11 +78,11 @@ Moduł przeznaczony do utrzymania spójności merytorycznej bazy danych bez koni
 #### 1. Zakładka Klauzule (Baza Wiedzy)
 Pozwala tworzyć i edytować wpisy dotyczące wymagań technicznych (**Klauzule C.**) i ustawowych (**Klauzule U.**).
 
-Moduł umożliwia wczytanie pliku z domeny, w której został uruchomiony (czyli pliku, na którym aktualnie pracuje moduł kontroli) lub innego pliku z lokalnego dysku. 
+Moduł umożliwia wczytanie pliku z domeny, w której został uruchomiony (czyli pliku, na którym aktualnie pracuje moduł oceny) lub innego pliku z lokalnego dysku. 
 
 Użytkownik ma możliwość filtrowania listy klauzul poprzez ich typ (techniczne/ustawowe) oraz poprzez wyszukiwarkę tekstową. 
 
-Klauzule mogą być przesuwane na liście przy pomocy strzałek lub poprzez ich "złapanie" karty i przeciągnięcie (drag and drop). Kolejność klauzul nie wpływa na ich kolejność w module kontroli. Po prostu pomaga w ich przeglądaniu. 
+Klauzule mogą być przesuwane na liście przy pomocy strzałek lub poprzez ich "złapanie" karty i przeciągnięcie (drag and drop). Kolejność klauzul nie wpływa na ich kolejność w module oceny. Po prostu pomaga w ich przeglądaniu. 
 
 Do dodawania nowych klauzul służą przyciski:
 - Dodaj klauzulę C (dodawania klauzuli technicznej)
@@ -94,11 +94,11 @@ Do dodawania nowych klauzul służą przyciski:
 
 Edycja/utworzenie każdej klauzuli, wpisu mapowania, wpisu podsumowania i wpisu słownika musi być zatwierdzona przyciskiem zapisywania zmian. 
 
-Aby używać nowych zapisów w module do kontroli, należy pobrać nowe pliki JSON (ikona w prawej części górnego menu). Pobrane pliki będą miały nazwy: clauses-modified, mapping-modified, glossary-modified i summaries-modified. Przed ich użyciem w aplikacji należy usunąć suffix "-modified" a następnie podmienić nimi pliki w folderze clauses_json. 
+Aby używać nowych zapisów w module oceny, należy pobrać nowe pliki JSON (ikona w prawej części górnego menu). Pobrane pliki będą miały nazwy: clauses-modified, mapping-modified, glossary-modified i summaries-modified. Przed ich użyciem w aplikacji należy usunąć suffix "-modified" a następnie podmienić nimi pliki w folderze clauses_json. 
 
 **Dobra praktyka**: przed podmianą plików dobrze jest zarchiwizować ich poprzednią wersję. 
 
-Po ponownym załadowaniu modułu kontroli, będzie on korzystał z nowych plików. 
+Po ponownym załadowaniu modułu oceny, będzie on korzystał z nowych plików. 
 
 ##### Wpis klauzuli technicznej
 
@@ -126,7 +126,7 @@ Składające się z dwóch powiązanych pól:
 
 ###### Informacje dodatkowe
 **Jak sprawdzić?**
-Opis pomagający osobie kontrolującej dokonać oceny zgodności z klauzulą
+Opis pomagający dokonać oceny zgodności z klauzulą
 
 **Dodatkowe uwagi / Wyjątki (Notes)**
 Miejsce na dopisanie dodatkowych uwag, wyjątków itp. 
@@ -147,7 +147,7 @@ Miejsce do opisania wymagań, które muszą być spełnione, by ocena zgodności
 Interpretacja przepisów prawa wyjaśniająca jakie mają one przeniesienie na rzeczywistość produktów i usług.
 
 **Jak sprawdzić?**
-Opis pomagający osobie kontrolującej dokonać oceny zgodności z klauzulą
+Opis pomagający dokonać oceny zgodności z klauzulą
 
 **Dodatkowe uwagi / Wyjątki (Notes)**
 Miejsce na dopisanie dodatkowych uwag, wyjątków itp. 
@@ -158,7 +158,7 @@ W tej zakładce można zdefiniować relacje pomiędzy elemantami systemu oraz za
 
 Po wczytaniu domyślnego pliku z mapowaniem, lub pliku z dysku można dodać nowy wpis lub edytować istniejące. 
 
-Podobnie, jak w sekcji Klauzul, można zmieniać kolejność wpisów. Tutaj jednak będzie ona miała wpływ na kolejność ich pojawiania się na arkuszu kontrolnym. 
+Podobnie, jak w sekcji Klauzul, można zmieniać kolejność wpisów. Tutaj jednak będzie ona miała wpływ na kolejność ich pojawiania się na arkuszu oceny. 
 
 Przycisk zarządzania produktami pozwala na edycję listy zdefiniowanych profilów produktów/usług. A przycisk **Dodaj nowe mapowanie** pozwala na utworzenie nowego wpisu z mapowaniem przepisu prawnego
 
@@ -181,22 +181,22 @@ Każdy wpis mapowania zawiera następujące informacje:
 
 **Wymaganie (treść)** - dosłowna treść przepisu z aktu prawnego. Np. Instrukcje, etykiety i ostrzeżenia dotyczące użytkowania produktu, które zostały zamieszczone w lub na produkcie są udostępniane za pomocą więcej niż jednego kanału sensorycznego
 
-**Powiązane produkty i klauzule techniczne** - lista zdefiniowanych produktów/usług. Aby powiązać je z danym przepisem wystarczy zaznaczyć pole wyboru **Dotyczy**. Dzięki temu dany przepis i jego klauzula prawna będą pojawiała się jako wymaganie na arkuszy kontroli tego przepisu. 
+**Powiązane produkty i klauzule techniczne** - lista zdefiniowanych produktów/usług. Aby powiązać je z danym przepisem wystarczy zaznaczyć pole wyboru **Dotyczy**. Dzięki temu dany przepis i jego klauzula prawna będą pojawiała się jako wymaganie na arkuszy oceny tego przepisu. 
 
 Pole **Kody techniczne C** pozwala na powiązanie z konkretnym pruktem/usługą klauzul technicznych z aneksu C normy EN 301 549. Można je dodawać ręcznie, albo poprzez listę wywoływaną przyciskiem **Wybierz kody**.
 
 #### 3. Zakładka Podsumowania
 
-Służy do definiowania opisów wykorzystywanych w generowaniu raportu z kontroli. 
+Służy do definiowania opisów wykorzystywanych w generowaniu raportu z oceny. 
 
 ##### Szablony
 
-Szablony podsumowań to predefiniowane struktury tekstowe, które automatycznie dopasowują się do wyników audytu. Są wybierane na podstawie analizy ocenionych kryteriów (spełnione/nie spełnione/nie dotyczy). Każdy szablon odpowiada innemu scenariuszowi wyników kontroli.
+Szablony podsumowań to predefiniowane struktury tekstowe, które automatycznie dopasowują się do wyników audytu. Są wybierane na podstawie analizy ocenionych kryteriów (spełnione/nie spełnione/nie dotyczy). Każdy szablon odpowiada innemu scenariuszowi wyników oceny.
 
 - **ZGODNY (Pełny zakres - wszystkie klauzule OK)**: Produkt/usługa spełnia wszystkie wymagania ustawowe w pełnym zakresie i wszystkie wymagania zostały sprawdzone.
 **NIEZGODNY (Pełny zakres - błędy w klauzulach)**: Produkt/usługa nie spełnia wymagań ustawowych, zidentyfikowano błędy wymagające naprawy. Wszystkie wymagania zostały sprawdzone.
-**ZGODNY W ZAKRESIE (Częściowy zakres - sprawdzone OK)**: W sprawdzonym zakresie nie ma uchybień, ale kontrola nie była pełna.
-**NIEZGODNY (Częściowy zakres - błędy w sprawdzonych)**: Nawet w częściowej kontroli wykryto niezgodności.
+**ZGODNY W ZAKRESIE (Częściowy zakres - sprawdzone OK)**: W sprawdzonym zakresie nie ma uchybień, ale ocena nie była pełna.
+**NIEZGODNY (Częściowy zakres - błędy w sprawdzonych)**: Podczas częściowej oceny wykryto niezgodności.
 **BŁĄD: BRAK OCEN (Nie wypełniono arkusza)**: Brak jakichkolwiek ocen kryteriów - błąd generowania podsumowania.
 **BRAK WYMAGAŃ (Wszystkie klauzule: Nie dotyczy)**: Wszystkie wymagania zostały ocenione jako "Nie dotyczy"
 **BRAK WYMAGAŃ (Częściowy zakres: Wszystkie "Nie dotyczy")**: W sprawdzonym zakresie brak zastosowania wymagań. Nie wszystkie wymagania zostały sprawdzone.
@@ -204,14 +204,14 @@ Szablony podsumowań to predefiniowane struktury tekstowe, które automatycznie 
 ##### Możliwe do edycji pola w szablonach
 Część pól jest właściwa dla danego typu szablonu.
 
-- **Tytuł dokumentu**: Tytuł podsumowania (np. "Podsumowanie kontroli dostępności"). Pojawia się na początku i w nazwie generowanego dokumentu.
-- **Opis / Treść główna**: Główny opis podsumowania. Zawiera tekst wyjaśniający wyniki audytu, z placeholderem {productName} (zastępowanym nazwą audytowanego produktu/usługi). To kluczowa część dokumentu, opisująca wnioski z kontroli.
+- **Tytuł dokumentu**: Tytuł podsumowania (np. "Podsumowanie oceny dostępności"). Pojawia się na początku i w nazwie generowanego dokumentu.
+- **Opis / Treść główna**: Główny opis podsumowania. Zawiera tekst wyjaśniający wyniki audytu, z placeholderem {productName} (zastępowanym nazwą audytowanego produktu/usługi). To kluczowa część dokumentu, opisująca wnioski z oceny.
 - **Etykiety sekcji (Teksty nagłówków list w raporcie)**: Etykiety sekcji w raporcie. Sekcje te opisują kategorie wyników w raporcie (np. lista niezgodności, spełnionych kryteriów itp.).
-- **Metadane (Etykiety danych dodatkowych)** (opcjonalne): Słownik z etykietami i wartościami domyślnymi (np. "Data zakończenia kontroli", "Zakres kontroli"). Używane do dodania informacji kontekstowych, takich jak data czy zakres kontroli.
+- **Metadane (Etykiety danych dodatkowych)** (opcjonalne): Słownik z etykietami i wartościami domyślnymi (np. "Data zakończenia oceny", "Zakres oceny"). Używane do dodania informacji kontekstowych, takich jak data czy zakres oceny.
 
 #### 4. Zakładka Słownik
 
-Pozwala na edycję/dodawanie definicji terminów technicznych i prawnych dostępnych w module kontroli pod ikoną pomocy.
+Pozwala na edycję/dodawanie definicji terminów technicznych i prawnych dostępnych w module oceny pod ikoną pomocy.
 
 ---
 
@@ -244,4 +244,4 @@ Pliki w katalogu `clauses_json/` definiują logikę systemu:
 
 ---
 
-© 2026 KZ-PAD Project. Rozwiązanie oparte na otwartoźródłowych technologiach webowych.
+© 2026 OZ-PAD Project. Rozwiązanie oparte na otwartoźródłowych technologiach webowych.
