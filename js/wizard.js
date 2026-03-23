@@ -3192,12 +3192,11 @@ document.getElementById('auditForm').onsubmit = (e) => {
                 </div>` : ''}
 
                 ${cHtml ? `
-                <section class="technical-area" aria-labelledby="technical-header-${safeArticleId}">
+                <section class="technical-area">
                     <details class="technical-details">
                         <summary class="technical-summary" aria-label="Szczegółowe testy techniczne (EN 301 549) dla ${expandLegal(item.article).replace(/\"/g, '&quot;')}">
-                            <h4 class="technical-title" id="technical-header-${safeArticleId}">
-                                Szczegółowe testy techniczne (EN 301 549)
-                                <span class="sr-only"> dla ${expandLegal(item.article)}</span>
+                            <h4 class="technical-title">
+                                Szczegółowe testy techniczne (EN 301 549) – ${expandLegal(item.article)}
                             </h4>
                         </summary>
                         <section class="technical-section">
