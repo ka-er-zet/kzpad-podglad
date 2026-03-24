@@ -42,7 +42,7 @@ Interfejs przeznaczony dla osób przeprowadzających weryfikację dostępności.
 Wybór kategorii produktu powoduje wygenerowanie spersonalizowanego arkusza wymagań, ograniczając treść oceny do punktów mających zastosowanie prawne dla danego urządzenia lub usługi.
 
 #### 2. Rejestracja wyników (Formularz)
-System prezentuje wymagania prawne oraz powiązane z nimi szczegółowe instrukcje techniczne. Użytkownik przypisuje jeden z trzech stanów: `Spełnione`, `Niespełnione` lub `Nie dotyczy`.
+System prezentuje wymagania prawne oraz powiązane z nimi szczegółowe instrukcje techniczne i testy jednostkowe służące ocenie zgodności produktu/usługi z PAD. Każdy test jednostkowy można ocenić w skali spełnione/nie spełnione/nie dotyczy oraz uzupełnić o komentarz osoby dokonującej oceny. Oceny z testó jednostkowych są też wykorzystywane do przeddstawienia rekomendacji co do oceny całościowej zgodności lub niezgodności produktu/usługi z danym przepisem.  Użytkownik może wybrać jedną z trzech ocen owej zgodności: `Spełnione`, `Niespełnione` lub `Nie dotyczy`.
 
 #### 3. Zapisywanie pracy
 W każdej chwili osoba oceniająca może zapisać swoją pracę poprzez użycie ikony w górnym menu (po prawej stronie) albo użycie skrótu klawiszowego ctrl+s (na urządzeniach Apple cmd+s). Zostanie zapisany plik JSON, który można następnie wczytać używając odpowiedniej opcji z menu głównego aplikacji. 

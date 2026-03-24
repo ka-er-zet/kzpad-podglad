@@ -197,7 +197,12 @@ def generate_export_markdown():
         md_lines.append("## Klauzule techniczne (C)")
         md_lines.append("")
         
-        for article_num in sorted(sections['C'].keys(), key=lambda x: (len(x.split('.')), x)):
+        # Sortowanie numeryczne: C.5 < C.10 < C.11
+        def article_sort_key(article_str):
+            parts = article_str.split('.')
+            return tuple(int(p) if p.isdigit() else 999 for p in parts)
+        
+        for article_num in sorted(sections['C'].keys(), key=article_sort_key):
             clauses_in_article = sections['C'][article_num]
             # Sortuj klauzule wewnątrz artykułu
             clauses_in_article.sort(key=lambda x: natural_sort_key(x[0]))
