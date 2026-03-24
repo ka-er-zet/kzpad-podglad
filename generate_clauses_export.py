@@ -9,6 +9,28 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
+def natural_sort_key(clause_id):
+    """Zwraca klucz sortowania dla numeracyjnego (naturalnego) sortowania klauzul."""
+    # Format: U.7.1.1.a, U.7.1.1.b-01, C.5.1.3.1, itd.
+    match = re.match(r'([UC])\.(.+)', clause_id)
+    if not match:
+        return (999, clause_id)
+    
+    clause_type = match.group(1)
+    rest = match.group(2)  # np. "7.1.1.a" lub "5.1.3.1"
+    
+    # Rozbijamy na części, konwertując liczby na int dla prawidłowego sortowania
+    parts = []
+    for segment in rest.split('.'):
+        # Część może być: "1", "a", "b-01", "01", itd.
+        if segment.isdigit():
+            parts.append((0, int(segment)))  # Liczby: (0, wartość)
+        else:
+            # Litery/znaki: (1, string) - pojawią się po liczbach
+            parts.append((1, segment))
+    
+    return (0 if clause_type == 'U' else 1, parts)
+
 def extract_article_info(clause_title):
     """Ekstrahuje numer artykułu i opisową część z tytułu klauzuli."""
     # Oczekiwany format: "U.7.1.1.a — Opisowa część (Art. 7 ...)"
@@ -95,6 +117,8 @@ def generate_export_markdown():
         
         for article_num in sorted(sections['U'].keys(), key=lambda x: int(x)):
             clauses_in_article = sections['U'][article_num]
+            # Sortuj klauzule wewnątrz artykułu
+            clauses_in_article.sort(key=lambda x: natural_sort_key(x[0]))
             
             # Nagłówek artykułu - szukaj z mapping, jeśli nie ma to zbuduj z pierwszej klauzuli
             article_label = None
@@ -175,6 +199,8 @@ def generate_export_markdown():
         
         for article_num in sorted(sections['C'].keys(), key=lambda x: (len(x.split('.')), x)):
             clauses_in_article = sections['C'][article_num]
+            # Sortuj klauzule wewnątrz artykułu
+            clauses_in_article.sort(key=lambda x: natural_sort_key(x[0]))
             
             # Nagłówek artykułu
             first_title = clauses_in_article[0][1].get('title', '')
