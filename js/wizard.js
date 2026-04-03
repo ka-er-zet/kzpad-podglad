@@ -1,4 +1,4 @@
-﻿let matrixData = [];
+let matrixData = [];
 let dictionaryData = {};
 let productDictionary = {};
 let summaryTemplates = {};
@@ -3194,9 +3194,9 @@ document.getElementById('auditForm').onsubmit = (e) => {
                 ${cHtml ? `
                 <section class="technical-area">
                     <details class="technical-details">
-                        <summary class="technical-summary" aria-label="Szczegółowe testy techniczne (EN 301 549) dla ${expandLegal(item.article).replace(/\"/g, '&quot;')}">
+                        <summary class="technical-summary">
                             <h4 class="technical-title">
-                                Szczegółowe testy techniczne (EN 301 549) – ${expandLegal(item.article)}
+                                Szczegółowe testy techniczne (EN 301 549) dla ${expandLegal(item.article)}
                             </h4>
                         </summary>
                         <section class="technical-section">
