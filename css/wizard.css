@@ -1005,24 +1005,34 @@ main {
     justify-content: center;
 }
 
-#clauseModal header #closeModal:hover,
-#clauseModal header #closeModal:focus {
+dialog header #closeModal:hover,
+dialog header #closeModal:focus {
     --background-color: var(--primary);
     --color: var(--primary-inverse);
 }
 
-#modalBody {
+.modal-article-div {
+    display: block;
+    width: 100%;
+    background-color: var(--card-background-color);
+    border-radius: var(--border-radius);
+    box-shadow: var(--card-box-shadow);
+    padding: var(--block-spacing-vertical) var(--block-spacing-horizontal);
+    margin: 0;
+}
+
+.modal-body {
     max-height: 50vh;
     overflow-y: auto;
 }
 
 @media (max-width: 640px) {
-    #clauseModal {
+    dialog {
         padding: 0;
         align-items: stretch;
     }
 
-    #clauseModal article {
+    dialog article {
         width: 100vw;
         max-width: 100vw;
         height: 100dvh;
@@ -1033,12 +1043,12 @@ main {
         flex-direction: column;
     }
 
-    #clauseModal header,
-    #clauseModal footer {
+    dialog header,
+    dialog footer {
         flex: 0 0 auto;
     }
 
-    #modalBody {
+    .modal-body {
         flex: 1 1 auto;
         max-height: none;
         overflow-y: auto;
@@ -1064,18 +1074,44 @@ main {
 
 /* Clause title shown inside modal body (moved from header) */
 .clause-body-title {
-    padding: 0 1.5rem 0.5rem 1.5rem;
-    border-bottom: 1px dashed var(--secondary-border-color);
-    margin-bottom: 0.75rem;
+    padding: 0 1.5rem 0.75rem 1.5rem;
+    border-bottom: none;
+    margin-bottom: 1rem;
+    font-weight: 700;
+}
+
+#clauseModalHeader {
+    margin-bottom: 0;
+}
+
+#clauseModalHeader .clause-modal-visual-title {
+    margin-bottom: 0;
 }
 
 .clause-body-title .clause-title {
     margin: 0;
-    font-size: 1.05rem;
+    font-size: 1.5rem;
     font-weight: 700;
-    line-height: 1.2;
+    line-height: 1.3;
     overflow-wrap: anywhere;
     word-break: break-word;
+}
+
+.clause-body-title .clause-title-id {
+    display: block;
+    font-size: 0.8em;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+}
+
+.clause-body-title .clause-title-text {
+    display: block;
+}
+
+.clause-body-title .clause-title:focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
 }
 
 @media (max-width: 640px) {
@@ -1084,8 +1120,44 @@ main {
     }
 }
 
+#clauseModal .clause-section {
+    margin: 0 1.5rem 1rem 1.5rem;
+    padding: 0 0 0.85rem 0;
+    border-bottom: 1px solid var(--card-border-color);
+}
+
+#clauseModal .clause-section:last-child {
+    margin-bottom: 0;
+    border-bottom: none;
+}
+
+#clauseModal .clause-section > summary {
+    margin: 0;
+    font-size: 0.95rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--color);
+}
+
+#clauseModal .clause-section > summary:focus-visible,
+#clauseModal .clause-section > summary:focus {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+#clauseModal .clause-section[open] > summary:not([role]):not(:focus),
+#clauseModal .clause-section[open] > summary:not([role]):not(:focus-visible) {
+    color: var(--color) !important;
+}
+
+#clauseModal .clause-section .section-content {
+    margin-top: 0.7rem;
+}
+
 /* Modal body heading adjustments: ensure h4 is not styled like a link and reduce spacing */
-#clauseModal #modalBody h4 {
+dialog .modal-body h4 {
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
     font-size: 0.95rem;
@@ -1096,7 +1168,7 @@ main {
     /* Removed emphasis color to avoid blue text */
 }
 
-#clauseModal #modalBody .browser-card-section-title {
+dialog .modal-body .browser-card-section-title {
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
     font-size: 0.95rem;
@@ -1108,20 +1180,20 @@ main {
 
 
 /* Normalize list and paragraph spacing inside modal body */
-#clauseModal #modalBody p,
-#clauseModal #modalBody li {
+dialog .modal-body p,
+dialog .modal-body li {
     margin: 0 0 0.4rem 0;
     line-height: 1.5;
 }
 
-#clauseModal #modalBody ul,
-#clauseModal #modalBody ol {
+dialog .modal-body ul,
+dialog .modal-body ol {
     margin: 0 0 1rem 1.25rem;
     padding: 0;
 }
 
 /* Glossary styles */
-#clauseModal #modalBody .glossary-intro {
+dialog .modal-body .glossary-intro {
     margin: 0 0 2.5rem 0 !important;
     display: block;
 }
@@ -1130,6 +1202,7 @@ main {
     margin-bottom: 1.2rem;
     padding-bottom: 0.8rem;
     border-bottom: 1px solid var(--card-border-color);
+    color: inherit;
 }
 
 .glossary-item:last-child {
@@ -1153,18 +1226,55 @@ main {
     color: var(--color);
 }
 
+.glossary-item > summary {
+    margin: 0;
+    line-height: 1.2;
+    font-size: 1.15rem;
+    font-weight: 600;
+    color: inherit;
+    cursor: pointer;
+    list-style-position: outside;
+}
+
+.glossary-item[open] > summary {
+    color: inherit;
+    font-weight: 600;
+    margin-bottom: 0.15rem;
+}
+
+.glossary-item[open] > summary:not([role]):not(:focus),
+.glossary-item[open] > summary:not([role]):not(:focus-visible) {
+    color: inherit !important;
+}
+
+.glossary-item > summary::marker {
+    color: currentColor;
+}
+
+.glossary-item > summary:focus-visible {
+    outline: 2px solid var(--focus-color);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
+}
+
+.glossary-item-content {
+    margin-top: 0.7rem;
+    line-height: 1.5;
+    color: inherit;
+}
+
 /* Increase spacing after sections slightly so 'after criteria' gap feels consistent */
-#clauseModal article section {
+dialog article section {
     margin-bottom: 1.5rem;
     padding: 0 1.5rem;
 }
 
-#clauseModal article section:first-of-type {
+dialog article section:first-of-type {
     margin-top: 1.25rem;
 }
 
 /* Modal footer close button styling */
-#clauseModal #closeModalBtn {
+dialog footer button.outline {
     --background-color: transparent;
     --border-color: var(--primary);
     --color: var(--primary);
@@ -1174,13 +1284,13 @@ main {
     padding: 0.5rem 2rem;
 }
 
-#clauseModal #closeModalBtn:hover,
-#clauseModal #closeModalBtn:focus {
+dialog footer button.outline:hover,
+dialog footer button.outline:focus {
     --background-color: var(--primary);
     --color: var(--primary-inverse);
 }
 
-#clauseModal .section-content {
+dialog .section-content {
     padding-left: 1.25rem;
     border-left: 2px solid var(--secondary-border-color);
     margin-top: 0.5rem;
@@ -1189,12 +1299,12 @@ main {
 }
 
 /* More breathing room specifically for checklist items in "How to check" */
-#clauseModal .how-to-check-section .checklist-item {
+dialog .how-to-check-section .checklist-item {
     margin-bottom: 0.75rem;
 }
 
 /* Specific spacing for criteria section to prevent border from sticking to last item */
-#clauseModal article section.criteria-section {
+dialog article section.criteria-section {
     padding-bottom: 0.5rem;
 }
 
@@ -1337,7 +1447,7 @@ dialog[open] article {
 /* Prevent horizontal overflow on small screens: make images and tables responsive
    and allow tables to scroll horizontally when necessary. Also ensure long words wrap. */
 img,
-#clauseModal img,
+dialog img,
 .summary-result-card img,
 .requirement-row img {
     max-width: 100%;
@@ -1348,7 +1458,7 @@ img,
 /* Tables can be wide (from normative content) — make them scroll inside their container */
 .requirement-row table,
 .summary-result-card table,
-#clauseModal table,
+dialog table,
 .technical-area table {
     display: block;
     width: 100%;
@@ -1362,7 +1472,7 @@ img,
 .summary-result-card,
 .summary-link-list,
 .browser-card-body,
-#modalBody {
+.modal-body {
     word-break: break-word;
     overflow-wrap: anywhere;
 }
@@ -2690,3 +2800,54 @@ p.hero-card-title {
 .ts-fail { color: var(--color-fail, #c0392b); }
 .ts-pass { color: var(--color-pass, #27ae60); }
 .ts-na   { color: var(--secondary-text-color); }
+
+/* Modal Article Emulation (to avoid 'document' landmark in NVDA) */
+.modal-article-div {
+    display: block;
+    margin-top: 0;
+    margin-bottom: var(--pico-block-spacing-vertical);
+    padding: var(--pico-block-spacing-vertical) var(--pico-block-spacing-horizontal);
+    background: var(--pico-card-background-color);
+    box-shadow: var(--pico-card-box-shadow);
+    border-radius: var(--pico-border-radius);
+    width: 100%;
+}
+
+@media (min-width: 576px) {
+    dialog .modal-article-div {
+        max-width: 510px;
+    }
+}
+@media (min-width: 768px) {
+    dialog .modal-article-div {
+        max-width: 700px;
+    }
+}
+@media (min-width: 992px) {
+    dialog .modal-article-div {
+        max-width: 910px;
+    }
+}
+@media (min-width: 1200px) {
+    dialog .modal-article-div {
+        max-width: 1110px;
+    }
+}
+
+/* --- NVDA ECHO FIX: Disable animations on modal dialogs ---
+   Pico.css applies a fade-in animation to dialog[open]. 
+   When this animation ends, Chrome updates the A11y tree, causing NVDA to re-read the dialog name. 
+   Removing these animations stops the NVDA echo effect. */
+dialog, dialog[open], dialog::backdrop {
+    animation: none !important;
+    transition: none !important;
+}
+
+/* Modal UI Adjustments */
+dialog article header {
+    margin-bottom: 0 !important;
+}
+
+dialog .modal-body {
+    padding-top: 1rem;
+}

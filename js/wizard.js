@@ -4,6 +4,8 @@ let productDictionary = {};
 let summaryTemplates = {};
 let glossaryData = {};
 let lastModalTrigger = null;
+let wizardSaveBound = false;
+let activeModalTrapCleanup = null;
 
 // Wizard-scoped utility accessor. Evaluated at load time.
 const W = window.utils || {};
@@ -2592,6 +2594,9 @@ async function handleWizardFileLoad(event) {
 }
 
 function setupWizardSave() {
+    if (wizardSaveBound) return;
+    wizardSaveBound = true;
+
     const saveBtn = document.getElementById('btn-save-wizard');
     const loadBtn = document.getElementById('btn-load-wizard');
     const spreadsheetBtn = document.getElementById('btn-download-spreadsheet');
@@ -2632,8 +2637,10 @@ function setupWizardSave() {
         });
     }
 
-    if (glossaryBtn) {
-        glossaryBtn.addEventListener('click', () => {
+     if (glossaryBtn) {
+        glossaryBtn.addEventListener('click', (e) => {
+            e.preventDefault();
+            e.stopPropagation();
             showGlossary(glossaryBtn);
         });
     }
@@ -3273,43 +3280,203 @@ document.getElementById('auditForm').onsubmit = (e) => {
     }, 50);
 };
 
-window.showClause = (id, triggerEl = null) => {
-    lastModalTrigger = triggerEl;
-    const data = dictionaryData[id.trim()];
-    const modal = document.getElementById('clauseModal');
-    const title = document.getElementById('modalTitle');
-    const body = document.getElementById('modalBody');
+// --- Modal Opening Lock ---
+let isModalOpening = false;
 
-    // Reset accessibility attributes for clause details
-    title.textContent = 'Szczegóły klauzuli';
+function getFocusableElements(modal) {
+    if (!modal) return [];
+    const selector = [
+        'a[href]',
+        'button:not([disabled])',
+        'input:not([disabled]):not([type="hidden"])',
+        'summary',
+        'select:not([disabled])',
+        'textarea:not([disabled])',
+        '[tabindex]:not([tabindex="-1"])'
+    ].join(',');
+
+    return Array.from(modal.querySelectorAll(selector)).filter(el => {
+        if (el.hasAttribute('hidden')) return false;
+        if (el.getAttribute('aria-hidden') === 'true') return false;
+        return el.getClientRects().length > 0;
+    });
+}
+
+function deactivateModalFocusTrap() {
+    if (activeModalTrapCleanup) {
+        activeModalTrapCleanup();
+        activeModalTrapCleanup = null;
+    }
+}
+
+function activateModalFocusTrap(modal) {
+    deactivateModalFocusTrap();
+    if (!modal) return;
+
+    const onKeyDown = (e) => {
+        if (e.key !== 'Tab' || !modal.open) return;
+
+        const focusable = getFocusableElements(modal);
+        if (focusable.length === 0) {
+            e.preventDefault();
+            if (modal.tabIndex < 0) modal.tabIndex = -1;
+            modal.focus();
+            return;
+        }
+
+        const first = focusable[0];
+        const last = focusable[focusable.length - 1];
+        const active = document.activeElement;
+
+        if (e.shiftKey) {
+            if (active === first || !modal.contains(active)) {
+                e.preventDefault();
+                last.focus();
+            }
+        } else if (active === last || !modal.contains(active)) {
+            e.preventDefault();
+            first.focus();
+        }
+    };
+
+    const onFocusIn = (e) => {
+        if (!modal.open) return;
+        if (modal.contains(e.target)) return;
+
+        const focusable = getFocusableElements(modal);
+        const target = focusable[0] || modal;
+        if (target === modal && modal.tabIndex < 0) modal.tabIndex = -1;
+        target.focus();
+    };
+
+    modal.addEventListener('keydown', onKeyDown);
+    document.addEventListener('focusin', onFocusIn);
+
+    activeModalTrapCleanup = () => {
+        modal.removeEventListener('keydown', onKeyDown);
+        document.removeEventListener('focusin', onFocusIn);
+    };
+}
+
+window.showGlossary = (triggerEl = null) => {
+    if (isModalOpening) return;
+
+    const modal = document.getElementById('glossaryModal');
+    if (!modal || modal.open) return;
+
+    isModalOpening = true;
+    setTimeout(() => { isModalOpening = false; }, 500);
+
+    const body = document.getElementById('glossaryBody');
+
+    const fullHtml = `
+        <div class="glossary-search-wrap">
+            <label for="glossarySearch" class="sr-only">Wyszukaj na liście:</label>
+            <input type="search" id="glossarySearch" placeholder="Szukaj pojęcia..." autocomplete="off" autofocus>
+        </div>
+        <p class="glossary-intro">W tym słowniku znajdziesz wyjaśnienia kluczowych pojęć używanych w aplikacji OZ-PAD.</p>
+        <div id="glossaryList" role="region" aria-label="Lista haseł słownika" aria-busy="true"></div>
+    `;
+    
+    body.innerHTML = fullHtml;
+
+    if (typeof lucide !== 'undefined' && lucide.createIcons) {
+        lucide.createIcons({ root: body });
+    }
+
+    lastModalTrigger = triggerEl;
+
+    if (!modal.open) {
+        document.documentElement.classList.add('modal-is-open');
+        modal.showModal();
+        activateModalFocusTrap(modal);
+    }
+    
+    const searchInput = body.querySelector('#glossarySearch');
+    const listContainer = body.querySelector('#glossaryList');
+
+    if (searchInput) {
+        // Wait for dialog layout, then move focus and scroll to the search field.
+        requestAnimationFrame(() => {
+            requestAnimationFrame(() => {
+                if (!modal.open) return;
+                searchInput.focus();
+                searchInput.scrollIntoView({ block: 'center', inline: 'nearest' });
+            });
+        });
+    }
+
+    const terms = Object.keys(glossaryData).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    const glossaryHtml = terms.map(term => {
+        let def = glossaryData[term];
+        if (W.fixOrphans) def = W.fixOrphans(def);
+        if (W.parseMarkdown) def = W.parseMarkdown(def);
+        return `
+            <details class="glossary-item">
+                <summary>${term}</summary>
+                <div class="glossary-item-content">${def}</div>
+            </details>
+        `;
+    }).join('');
+
+    // Render the heavy glossary list after modal open and focus handoff.
+    setTimeout(() => {
+        if (!modal.open || !listContainer) return;
+        listContainer.innerHTML = glossaryHtml;
+        listContainer.setAttribute('aria-busy', 'false');
+    }, 60);
+    
+    if (searchInput) {
+        // Filter glossary items as user types.
+        searchInput.addEventListener('input', () => {
+            const q = searchInput.value.toLowerCase().trim();
+            const items = listContainer.querySelectorAll('.glossary-item');
+            items.forEach(item => {
+                const termText = item.querySelector('summary')?.textContent?.toLowerCase() || '';
+                const defText = item.querySelector('.glossary-item-content')?.textContent?.toLowerCase() || '';
+                const index = `${termText} ${defText}`;
+                const visible = index.includes(q);
+                item.style.display = visible ? 'block' : 'none';
+                if (!visible) item.removeAttribute('open');
+            });
+        });
+
+        // Keyboard path to content: ArrowDown from search moves focus to first visible term.
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'ArrowDown' && listContainer) {
+                e.preventDefault();
+                const firstVisibleSummary = listContainer.querySelector('.glossary-item:not([style*="display: none"]) summary');
+                if (firstVisibleSummary) firstVisibleSummary.focus();
+            }
+        });
+    }
+};
+
+window.showClause = (id, triggerEl = null) => {
+    if (isModalOpening) return;
+    isModalOpening = true;
+    setTimeout(() => { isModalOpening = false; }, 500);
+
+    const modal = document.getElementById('clauseModal');
+    const body = document.getElementById('clauseBody');
+
+    lastModalTrigger = triggerEl;
+    const data = (window.dictionaryData && window.dictionaryData[id.trim()]) ? window.dictionaryData[id.trim()] : (typeof dictionaryData !== 'undefined' ? dictionaryData[id.trim()] : null);
 
     if (data) {
         const renderListBlocks = (arr) => {
             if (!arr || arr.length === 0) return '<p><i>Brak danych</i></p>';
-
-            // Convert test objects to markdown text BEFORE parsing (don't parse descriptions individually)
             const stringified = arr.map(item => {
                 if (item && typeof item === 'object' && item.type === 'test') {
                     let text = `**${item.title || ''}**`;
-                    if (item.description) {
-                        // Include raw description text - it will be parsed once below with full content
-                        text += `: ${item.description}`;
-                    }
+                    if (item.description) text += `: ${item.description}`;
                     return text;
                 }
                 return item;
             });
-
-            // Join items with newlines. This allows parseMarkdown to handle
-            // the entire array as continuous Markdown text, preserving list 
-            // continuity (so it creates one <ol> instead of many separate ones).
-            // We avoid stripNumbering here to preserve intentional "1. " or "11. " markers.
             let content = stringified.join('\n');
-            
             if (W.fixOrphans) content = W.fixOrphans(content);
             if (W.parseMarkdown) content = W.parseMarkdown(content);
-
-            // Ensure the result is wrapped in a tag if the parser didn't do it
             const trimmed = content.trim();
             if (trimmed && !trimmed.startsWith('<h') && !trimmed.startsWith('<ul') && !trimmed.startsWith('<ol') && !trimmed.startsWith('<p')) {
                 return `<p>${content}</p>`;
@@ -3326,87 +3493,111 @@ window.showClause = (id, triggerEl = null) => {
             }).join('');
         };
 
+        const renderClauseSection = (sectionTitle, content, extraClass = '') => {
+            const className = ['clause-section', extraClass].filter(Boolean).join(' ');
+            return `
+                <details class="${className}" aria-busy="true">
+                    <summary class="browser-card-section-title" tabindex="0">${sectionTitle}</summary>
+                    <div class="section-content">${content}</div>
+                </details>
+            `;
+        };
+
         const cleanTitle = stripNumbering(data.title.replace(/&nbsp;/g, ' '));
-        // modalTitle is now an sr-only h2 for landmark naming
+        const visualTitle = (W.fixOrphans || (s=>s))(cleanTitle);
+
+        const visualIdEl = document.getElementById('clauseModalVisualId');
+        const visualTextEl = document.getElementById('clauseModalVisualText');
+        if (visualIdEl) visualIdEl.textContent = data.id;
+        if (visualTextEl) visualTextEl.textContent = visualTitle;
+
+        modal.setAttribute('aria-label', `Szczegóły klauzuli ${data.id} ${visualTitle}`);
         
-        body.innerHTML = `
-            <div class="clause-body-title">
-                <div class="clause-id">${data.id}</div>
-                <h3 class="clause-title">${(W.fixOrphans || (s=>s))(cleanTitle)}</h3>
-            </div>
+        const closeBtn = document.getElementById('clauseCloseButton');
+        if (closeBtn) {
+            closeBtn.tabIndex = -1;
+            closeBtn.setAttribute('aria-hidden', 'true');
+            closeBtn.setAttribute('disabled', '');
+        }
 
-            <section>
-                <h4 class="browser-card-section-title">Warunki wstępne</h4>
-                <div class="section-content">
-                    ${renderListBlocks(data.preconditions)}
-                </div>
-            </section>
-
-            <section>
-                <h4 class="browser-card-section-title">${(id.trim().startsWith('U.') || id.trim().startsWith('A')) ? 'Jak to rozumieć?' : 'Procedura'}</h4>
-                <div class="section-content">
-                    ${renderListBlocks(data.procedure)}
-                </div>
-            </section>
-
-            <section class="criteria-section">
-                <h4 class="browser-card-section-title">Kryteria oceny (${data.evaluation})</h4>
-                <div class="section-content">
-                    ${renderCriteria(data.form)}
-                </div>
-            </section>
-
-            <section class="how-to-check-section">
-                <h4 class="browser-card-section-title">Jak to sprawdzić?</h4>
-                <div class="section-content">
-                    ${data.checklist && data.checklist.length > 0 ? data.checklist.map(item => {
-                        // Render test cards for items with type === 'test'
-                        if (item && typeof item === 'object' && item.type === 'test') {
-                            return renderTestCardMinimal(item);
-                        } else {
-                            // Render regular text items
-                            let rawText = String(item);
-                            let text = (W.fixOrphans || (s=>s))((W.stripNumbering || (s=>s))(rawText));
-                            if (W.parseMarkdown) text = W.parseMarkdown(text);
-                            return `<p class="checklist-item">${text}</p>`;
-                        }
-                    }).join('') : `<p><i>Brak danych</i></p>`}
-                </div>
-            </section>
-
-            ${data.notes && data.notes.length > 0 ? `
-            <section>
-                <h4 class="browser-card-section-title">Uwagi</h4>
-                <div class="section-content">
-                    ${renderListBlocks(data.notes)}
-                </div>
-            </section>` : ''}
+        const contentHtml = `
+            ${renderClauseSection('Warunki wstępne', renderListBlocks(data.preconditions))}
+            ${renderClauseSection((id.trim().startsWith('U.') || id.trim().startsWith('A')) ? 'Jak to rozumieć?' : 'Procedura', renderListBlocks(data.procedure))}
+            ${renderClauseSection(`Kryteria oceny (${data.evaluation})`, renderCriteria(data.form), 'criteria-section')}
+            ${renderClauseSection('Jak to sprawdzić?', data.checklist && data.checklist.length > 0 ? data.checklist.map(item => {
+                if (item && typeof item === 'object' && item.type === 'test') return renderTestCardMinimal(item);
+                let text = (W.fixOrphans || (s=>s))((W.stripNumbering || (s=>s))(String(item)));
+                if (W.parseMarkdown) text = W.parseMarkdown(text);
+                return `<p class="checklist-item">${text}</p>`;
+            }).join('') : `<p><i>Brak danych</i></p>`, 'how-to-check-section')}
+            ${data.notes && data.notes.length > 0 ? renderClauseSection('Uwagi', renderListBlocks(data.notes)) : ''}
         `;
-        // Add SR hint for links that open in a new tab inside the modal
-        indicateNewTabLinks(body);
+
+        body.setAttribute('aria-busy', 'true');
+        body.innerHTML = '<div id="clauseLoading" aria-live="polite" style="padding: 1rem; text-align: center;"><i>Wczytywanie...</i></div>';
+
+        setTimeout(() => {
+            if (!modal.open) return;
+            const loading = body.querySelector('#clauseLoading');
+            if (loading) loading.remove();
+
+            body.innerHTML = contentHtml;
+            body.removeAttribute('aria-busy');
+            body.querySelectorAll('.clause-section').forEach(s => s.setAttribute('aria-busy', 'false'));
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons({ root: body });
+            }
+            indicateNewTabLinks(body);
+
+            const firstSummary = body.querySelector('summary');
+            if (firstSummary) {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        if (!modal.open) return;
+                        firstSummary.focus();
+                        firstSummary.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+                        if (closeBtn) {
+                            closeBtn.removeAttribute('aria-hidden');
+                            closeBtn.removeAttribute('disabled');
+                            closeBtn.tabIndex = 0;
+                        }
+                    });
+                });
+            } else if (closeBtn) {
+                closeBtn.removeAttribute('aria-hidden');
+                closeBtn.removeAttribute('disabled');
+                closeBtn.tabIndex = 0;
+            }
+        }, 80);
     } else {
-        // modalTitle is now an sr-only h2
-        body.textContent = "Nie odnaleziono szczegółów dla klauzuli: " + id;
+        const visualIdEl = document.getElementById('clauseModalVisualId');
+        const visualTextEl = document.getElementById('clauseModalVisualText');
+        if (visualIdEl) visualIdEl.textContent = id;
+        if (visualTextEl) visualTextEl.textContent = 'Nie odnaleziono szczegółów klauzuli';
+        body.innerHTML = `<p>Nie odnaleziono szczegółów dla klauzuli: ${id}</p>`;
     }
-    
-    modal.removeAttribute('hidden');
-    document.documentElement.classList.add('modal-is-open');
-    modal.showModal();
-    // Reset scroll position to top
-    document.getElementById('modalBody').scrollTop = 0;
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
+
+    if (!modal.open) {
+        document.documentElement.classList.add('modal-is-open');
+        modal.showModal();
+        activateModalFocusTrap(modal);
     }
-    // We do NOT set focus manually on the title or close button to avoid double announcements.
-    // The browser's native dialog behavior will handle initial focus 
-    // (usually focusing the first interactive element, which is the close button).
+    body.scrollTop = 0;
 };
 
-const handleCloseModal = () => {
-    const modal = document.getElementById('clauseModal');
-    modal.close();
-    modal.setAttribute('hidden', '');
-    document.documentElement.classList.remove('modal-is-open');
+const handleCloseModal = (modalId) => {
+    const modal = document.getElementById(modalId || 'clauseModal');
+    deactivateModalFocusTrap();
+    if (modal) {
+        if (modal.id === 'clauseModal') {
+            const visualIdEl = document.getElementById('clauseModalVisualId');
+            const visualTextEl = document.getElementById('clauseModalVisualText');
+            if (visualIdEl) visualIdEl.textContent = '';
+            if (visualTextEl) visualTextEl.textContent = '';
+        }
+        modal.close();
+        document.documentElement.classList.remove('modal-is-open');
+    }
     if (lastModalTrigger) {
         lastModalTrigger.focus();
         lastModalTrigger = null;
@@ -3414,70 +3605,26 @@ const handleCloseModal = () => {
 };
 
 document.addEventListener('DOMContentLoaded', () => {
-    const closeModalBtn = document.getElementById('closeModalBtn');
-    if (closeModalBtn) {
-        closeModalBtn.onclick = handleCloseModal;
-    }
-
     const clauseModalEl = document.getElementById('clauseModal');
     if (clauseModalEl) {
-        clauseModalEl.onclick = (e) => {
-            if (e.target.nodeName === 'DIALOG') handleCloseModal();
-        };
-        clauseModalEl.oncancel = (e) => {
-            e.preventDefault();
-            handleCloseModal();
-        };
+        clauseModalEl.onclick = (e) => { if (e.target.nodeName === 'DIALOG') handleCloseModal('clauseModal'); };
+        clauseModalEl.oncancel = (e) => { e.preventDefault(); handleCloseModal('clauseModal'); };
     }
-
-    // Event delegation: test card radio → visual state classes
+    const glossaryModalEl = document.getElementById('glossaryModal');
+    if (glossaryModalEl) {
+        glossaryModalEl.onclick = (e) => { if (e.target.nodeName === 'DIALOG') handleCloseModal('glossaryModal'); };
+        glossaryModalEl.oncancel = (e) => { e.preventDefault(); handleCloseModal('glossaryModal'); };
+    }
     document.addEventListener('change', (e) => {
         const radio = e.target;
         if (!radio.matches('.checklist-test-item input[type="radio"]')) return;
         const card = radio.closest('.checklist-test-item');
-        if (!card) return;
-        card.classList.remove('is-pass', 'is-fail', 'is-na');
-        card.classList.add('is-' + radio.value);
+        if (card) {
+            card.classList.remove('is-pass', 'is-fail', 'is-na');
+            card.classList.add('is-' + radio.value);
+        }
     });
 });
-
-window.showGlossary = (triggerEl = null) => {
-    lastModalTrigger = triggerEl;
-    const modal = document.getElementById('clauseModal');
-    const title = document.getElementById('modalTitle');
-    const body = document.getElementById('modalBody');
-
-    const terms = Object.keys(glossaryData).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-    const glossaryHtml = terms.map(term => {
-        let def = glossaryData[term];
-        if (W.fixOrphans) def = W.fixOrphans(def);
-        if (W.parseMarkdown) def = W.parseMarkdown(def);
-        return `
-            <div class="glossary-item">
-                <h3>${term}</h3>
-                <p>${def}</p>
-            </div>
-        `;
-    }).join('');
-
-    if (modal.open) {
-        modal.close();
-    }
-    title.textContent = 'Słownik pojęć';
-    body.innerHTML = `
-        <p class="glossary-intro">W tym słowniku znajdziesz wyjaśnienia kluczowych pojęć używanych w aplikacji OZ-PAD.</p>
-        ${glossaryHtml}
-    `;
-
-    modal.removeAttribute('hidden');
-    document.documentElement.classList.add('modal-is-open');
-    modal.showModal();
-    // Reset scroll position to top
-    document.getElementById('modalBody').scrollTop = 0;
-    if (typeof lucide !== 'undefined' && lucide.createIcons) {
-        lucide.createIcons();
-    }
-};
 
 // --- Accessibility helpers for icon buttons (wizard-specific simplified version) ---
 function placeIconLabelWizard(buttonEl, labelEl) {
@@ -3651,6 +3798,9 @@ function enhanceClauseTagsWizard(container = document) {
 })();
 
 document.getElementById('clauseModal').onclose = () => {
+    document.documentElement.classList.remove('modal-is-open');
+};
+document.getElementById('glossaryModal').onclose = () => {
     document.documentElement.classList.remove('modal-is-open');
 };
 

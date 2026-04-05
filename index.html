@@ -19,6 +19,53 @@
     <script src="js/utils.js"></script>
     <script src="js/exporter.js"></script>
     <link rel="stylesheet" href="css/wizard.css">
+    <style>
+        /* Stylizacja przycisku zamknięcia (x) na wzór Edytora */
+        dialog article .close {
+            background-color: transparent !important;
+            border: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 2rem !important;
+            height: 2rem !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            box-shadow: none !important;
+            opacity: 0.5;
+            transition: opacity 0.2s, background-color 0.2s;
+            border-radius: 50% !important;
+            position: absolute;
+            top: 1rem;
+            right: 1.5rem;
+            z-index: 10;
+            cursor: pointer;
+            text-decoration: none;
+        }
+        dialog article .close:hover,
+        dialog article .close:focus {
+            opacity: 1;
+            background-color: rgba(0, 0, 0, 0.05) !important;
+        }
+        [data-theme="dark"] dialog article .close:hover,
+        [data-theme="dark"] dialog article .close:focus {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+        }
+        dialog article .close:focus-visible {
+            outline: 2px solid var(--primary) !important;
+            outline-offset: 1px !important;
+        }
+        /* Miejsce na iksa w nagłówku */
+        dialog article header h2 {
+            margin-right: 2.5rem;
+            margin-bottom: 0;
+        }
+        /* Kontenery wyszukiwarki */
+        .glossary-search-wrap {
+            margin-bottom: 1.5rem;
+            padding: 0 0.5rem;
+        }
+    </style>
 </head>
 <body>
     <!-- Toast Container (Global Notifications) -->
@@ -214,19 +261,37 @@
     </main>
 
     <!-- Modal for Clause Details -->
-        <dialog id="clauseModal" aria-labelledby="modalTitle" hidden>
-            <article>
-                <header>
-                    <h2 id="modalTitle">Szczegóły klauzuli</h2>
-                </header>
-                <div id="modalBody">
-                    <!-- Content injected here -->
+    <dialog id="clauseModal" aria-label="Szczegóły klauzuli">
+        <article>
+            <header id="clauseModalHeader">
+                <div class="clause-body-title clause-modal-visual-title" aria-hidden="true">
+                    <div id="clauseModalVisualId" class="clause-title-id"></div>
+                    <div id="clauseModalVisualText" class="clause-title-text"></div>
                 </div>
-                <footer>
-                    <button class="outline" id="closeModalBtn">Zamknij</button>
-                </footer>
-            </article>
-        </dialog>
+            </header>
+            <div id="clauseBody" class="modal-body" role="region" aria-label="Zawartość klauzuli" aria-busy="true">
+                <!-- Content injected here -->
+            </div>
+            <footer>
+                <button id="clauseCloseButton" type="button" onclick="handleCloseModal('clauseModal')">Zamknij</button>
+            </footer>
+        </article>
+    </dialog>
+
+    <!-- Modal for Glossary -->
+    <dialog id="glossaryModal" aria-label="Słownik pojęć">
+        <article>
+            <header>
+                <h2 id="glossaryTitle" style="outline: none;" aria-hidden="true">Słownik pojęć</h2>
+            </header>
+            <div id="glossaryBody" class="modal-body">
+                <!-- Content injected here -->
+            </div>
+            <footer>
+                <button onclick="handleCloseModal('glossaryModal')">Zamknij</button>
+            </footer>
+        </article>
+    </dialog>
 
     <!-- Footer -->
     <footer class="app-footer">
