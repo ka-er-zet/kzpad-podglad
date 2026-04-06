@@ -1355,7 +1355,7 @@ function generateDescriptiveSummary(isInitial = false) {
             inapplicable: filterByCat(inapplicable, 'accessibility_requirements'),
             untested: filterByCat(untested, 'accessibility_requirements')
         });
-        html += renderCategorySection('Obowiązki usługodawcy (Art. 23, 24, 26, 32, 33)', {
+        html += renderCategorySection('Obowiązki informacyjne (Art. 23, 24, 26, 32, 33)', {
             failures: filterByCat(failures, 'service_provider_obligations'),
             passed: filterByCat(passed, 'service_provider_obligations'),
             inapplicable: filterByCat(inapplicable, 'service_provider_obligations'),
