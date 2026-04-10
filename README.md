@@ -9,7 +9,7 @@
   <img src="img/uke.svg" alt="UKE" height="50"> -->
 </div>
 
-**Wersja:** 1.4.0 (Kwiecień 2026)  
+**Wersja:** 1.4.1 (Kwiecień 2026)  
 **Status:** Stabilna / Rozszerzona o Moduł Edycji Danych
 
 Aplikacja **OZ-PAD (Ocena zgodności z Polskim Aktem o Dostępności)** służy do przygotowywania arkuszy oceny dostępności produktów i usług zgodnie z Ustawą z dnia 26 kwietnia 2024 r. (PAD), normą EN 301 549 i powiązanymi przepisami prawnymi.

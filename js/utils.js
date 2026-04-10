@@ -69,7 +69,7 @@ function xmlEscape(str) {
 }
 
 // App version for cache-busting verification
-window.EAA_APP_VERSION = 'v15';
+window.EAA_APP_VERSION = 'v16';
 
 /**
  * Shows a prompt to refresh the page when a new version is available.
