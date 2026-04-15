@@ -3372,7 +3372,7 @@ window.showGlossary = (triggerEl = null) => {
     const fullHtml = `
         <div class="glossary-search-wrap">
             <label for="glossarySearch" class="sr-only">Wyszukaj na liście:</label>
-            <input type="search" id="glossarySearch" placeholder="Szukaj pojęcia..." autocomplete="off" autofocus>
+            <input type="search" id="glossarySearch" placeholder="Szukaj pojęcia..." autocomplete="off" autofocus aria-label="Wyszukaj pojęcie w słowniku">
         </div>
         <p class="glossary-intro">W tym słowniku znajdziesz wyjaśnienia kluczowych pojęć używanych w aplikacji OZ-PAD.</p>
         <div id="glossaryList" role="region" aria-label="Lista haseł słownika" aria-busy="true"></div>

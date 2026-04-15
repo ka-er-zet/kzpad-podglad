@@ -1819,8 +1819,9 @@ textarea {
     outline-offset: 2px;
 }
 
-/* Increase contrast for browser search placeholder */
-#browser-search::placeholder {
+/* Increase contrast for browser search and glossary search placeholders */
+#browser-search::placeholder,
+#glossarySearch::placeholder {
     color: var(--color);
 }
 
