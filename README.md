@@ -243,5 +243,10 @@ Pliki w katalogu `clauses_json/` definiują logikę systemu:
 | **Lucide** | `js/lucide.min.js` | ISC | System ikon wektorowych. |
 
 ---
+## 📦 Dokumenty przekazania
+
+- [PRZEKAZANIE.md](PRZEKAZANIE.md) — spis przekazywanych materiałów i oświadczenie OSS
+- [TECHNICAL_DOCS.md](TECHNICAL_DOCS.md) — dokumentacja techniczna (architektura, schematy JSON, Service Worker, eksport)
+- [OSS_COMPONENTS.md](OSS_COMPONENTS.md) — zestawienie komponentów open source z licencjami
 
 © 2026 OZ-PAD Project. Rozwiązanie oparte na otwartoźródłowych technologiach webowych.
