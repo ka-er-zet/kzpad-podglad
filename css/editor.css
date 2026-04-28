@@ -5,15 +5,15 @@
     --skip-bg: #06425A;
     --skip-color: #ffffff;
 
-    /* Default focus color (swapped in themes) - from wizard.css */
+    /* Domyślny kolor fokusu (zamieniany w motywach) — z wizard.css */
     --focus-color: hsl(38, 92%, 60%);
 
-    /* Primary buttons - from wizard.css */
+    /* Główne przyciski — z wizard.css */
     --btn-bg: #0A5B76;
     --btn-bg-hover: #07465B;
     --btn-foreground: #ffffff;
 
-    /* Search icon color (used to theme search input border) - from wizard.css */
+    /* Kolor ikony wyszukiwania (obramowanie pola wyszukiwania) — z wizard.css */
     --search-icon-color: rgb(65, 84, 98);
 }
 
@@ -23,7 +23,7 @@
     --background-color: #f3f3f3;
     --card-background-color: #ffffff;
     --card-sectionning-background-color: #ffffff;
-    /* Match wizard.css */
+    /* Dopasuj do wizard.css */
     --primary: #0A5B76;
     --skip-bg: #06425A;
 
@@ -38,7 +38,7 @@ body {
     background-color: var(--background-color);
 }
 
-/* Remove padding-inline-start for #items-list */
+/* Usuń padding-inline-start dla #items-list */
 #items-list {
     padding-inline-start: 0 !important;
 }
@@ -76,7 +76,7 @@ body {
     text-decoration: none;
 }
 
-/* Screen reader only utility */
+/* Narzędzie tylko dla czytnika ekranu */
 .sr-only {
     position: absolute;
     width: 1px;
@@ -89,13 +89,13 @@ body {
     border-width: 0;
 }
 
-/* --- GLOBAL FOCUS STYLE (SHARED WITH WIZARD) --- */
+/* --- GLOBALNY STYL FOKUSU (WSPÓŁDZIELONY Z WIZARDEM) --- */
 *:focus-visible {
     outline: 3px solid var(--focus-color) !important;
     outline-offset: 2px !important;
 }
 
-/* Ensure focus is visible on primary elements */
+/* Upewnij się, że fokus jest widoczny na głównych elementach */
 a:focus-visible,
 button:focus-visible,
 .icon-btn:focus-visible,
@@ -112,7 +112,7 @@ select:focus-visible {
     border-color: var(--primary) !important;
 }
 
-/* Improve contrast for form controls - matching wizard.css pattern */
+/* Poprawa kontrastu dla kontrolek formularza — wzorzec wizard.css */
 input[type="text"],
 input[type="search"],
 input[type="number"],
@@ -126,7 +126,7 @@ textarea {
     transition: border 0.2s, background-color 0.2s, color 0.2s, box-shadow 0.2s;
 }
 
-/* Specific styling for sidebar search - matching wizard.css pattern */
+/* Konkretna stylizacja wyszukiwania paska bocznego — wzorzec wizard.css */
 #sidebar-search {
     border-color: var(--search-icon-color) !important;
     margin-bottom: 1rem;
@@ -138,7 +138,7 @@ textarea {
     outline-offset: 2px;
 }
 
-/* Increase contrast for placeholders */
+/* Zwiększ kontrast dla placeholderów */
 input::placeholder,
 textarea::placeholder,
 #sidebar-search::placeholder {
@@ -146,7 +146,7 @@ textarea::placeholder,
     opacity: 1 !important;
 }
 
-/* Label styling based on wizard.css patterns */
+/* Stylizacja etykiet na podstawie wzorca wizard.css */
 label {
     display: block;
     margin-top: 1rem;
@@ -155,7 +155,7 @@ label {
     color: var(--color);
 }
 
-/* Primary Button Styling - from wizard.css */
+/* Stylizacja głównych przycisków — z wizard.css */
 button:not(.secondary):not(.outline):not(.hero-card):not(.icon-btn):not(.drag-handle),
 #generateBtn {
     background-color: var(--btn-bg);
@@ -171,7 +171,7 @@ button:not(.secondary):not(.outline):not(.hero-card):not(.icon-btn):not(.drag-ha
     border-color: var(--btn-bg-hover);
 }
 
-/* UI helper classes moved from inline styles */
+/* Klasy pomocnicze UI przeniesione z atrybutów inline */
 .product-mapping-row {
     margin-bottom: 1.25rem;
     border-bottom: 1px solid var(--muted-border-color);
@@ -349,9 +349,9 @@ button:not(.secondary):not(.outline):not(.hero-card):not(.icon-btn):not(.drag-ha
     padding: 0;
     border: none;
     width: 40px;
-    /* matched to wizard: 40px */
+    /* dopasowane do wizarda: 40px */
     height: 40px;
-    /* matched to wizard: 40px */
+    /* dopasowane do wizarda: 40px */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -360,7 +360,7 @@ button:not(.secondary):not(.outline):not(.hero-card):not(.icon-btn):not(.drag-ha
     color: var(--primary);
     margin: 0;
     border-radius: 6px;
-    /* matched to wizard: 6px */
+    /* dopasowane do wizarda: 6px */
 }
 
 .icon-btn:hover {
@@ -375,7 +375,7 @@ button:not(.secondary):not(.outline):not(.hero-card):not(.icon-btn):not(.drag-ha
     padding-bottom: 2rem;
 }
 
-/* compact loader cards */
+/* kompaktowe karty loadera */
 #file-input {
     display: none !important;
     width: 0;
@@ -459,7 +459,7 @@ button.small {
     }
 }
 
-/* topbar */
+/* pasek górny */
 .editor-topbar {
     display: flex;
     justify-content: space-between;
@@ -539,14 +539,14 @@ button.small {
     display: flex;
     align-items: center;
     gap: 0.75rem;
-    /* Increased gap for better clarity */
+    /* Zwiększony odstęp dla lepszej przejrzystości */
     justify-content: flex-start;
     width: 100%;
     background: var(--card-background-color);
     border: 1px solid var(--muted-border-color);
     text-align: left;
     transition: all 0.2s ease;
-    /* smoother transition like hero-card */
+    /* płynniejsze przejście jak hero-card */
     user-select: none;
     min-height: 3.5rem;
 }
@@ -554,13 +554,13 @@ button.small {
 .list-item:hover {
     border-color: var(--primary);
     transform: translateY(-2px);
-    /* subtle lift */
+    /* subtelne uniesienie */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .list-item:focus-within {
     transform: none;
-    /* keep stable when focused/being edited */
+    /* zachowaj stabilność przy fokusu/edycji */
 }
 
 .list-item:active {
@@ -590,7 +590,7 @@ button.small {
     margin: 0;
 }
 
-/* THE ONLY RULE for blue highlight: strictly when focused (yellow border) */
+/* JEDYNA REGUŁA dla niebieskiego podświetlenia: wyłącznie przy fokusu (żółte obramowanie) */
 .list-item:focus-within {
     background: var(--primary) !important;
     color: var(--primary-inverse) !important;
@@ -598,12 +598,12 @@ button.small {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
-/* Ensure sub-elements follow color change only on focus */
+/* Upewnij się, że pod-elementy zmieniają kolor tylko przy fokusu */
 .list-item:focus-within .drag-handle {
     color: var(--primary-inverse) !important;
 }
 
-/* Buttons inherit inverted colors when card is focused */
+/* Przyciski dziedziczą odwrócone kolory gdy karta jest sfokusowana */
 .list-item:focus-within button {
     color: var(--primary-inverse) !important;
     border-color: var(--primary-inverse) !important;
@@ -615,7 +615,7 @@ button.small {
     box-shadow: 0 0 4px var(--primary-inverse);
 }
 
-/* .active no longer has any background or color influence in the list */
+/* .active nie ma już żadnego wpływu na tło ani kolor w liście */
 .list-item.active {
     background: transparent;
 }
@@ -661,7 +661,7 @@ button.small {
     width: 2.75rem !important;
     height: 2.75rem !important;
     opacity: 1;
-    /* Consistent visibility across themes */
+    /* Spójna widoczność we wszystkich motywach */
     transition: opacity 0.2s, color 0.1s;
     background: transparent !important;
     border: none !important;
@@ -678,7 +678,7 @@ button.small {
     width: 1.5rem;
     height: 1.5rem;
     color: currentColor;
-    /* Force icon to follow parent color */
+    /* Wymuś, by ikona podążała za kolorem rodzica */
 }
 
 .list-controls {
@@ -695,13 +695,13 @@ button.small {
     justify-content: center;
     height: 2rem;
     padding: 0 0.75rem;
-    /* Hidden by default — revealed on card hover/focus */
+    /* Ukryte domyślnie — ujawniane przy hover/fokusu karty */
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.15s ease;
 }
 
-/* Reveal buttons on mouse hover OR when keyboard focus is anywhere in the card */
+/* Ujawnij przyciski przy hover myszą LUB gdy fokus klawiaturowy jest gdziekolwiek w karcie */
 .list-item:hover button,
 .list-item:focus-within button {
     opacity: 1;
@@ -762,7 +762,7 @@ button.small {
     flex: 0 0 auto;
 }
 
-/* Test object editor row: fields stacked vertically, delete button at top-right */
+/* Wiersz edytora obiektu testowego: pola ułożone pionowo, przycisk usunięcia w prawym górnym rogu */
 .array-item--test {
     display: grid;
     grid-template-columns: 1fr auto;
@@ -796,23 +796,23 @@ button.small {
     gap: 0.25rem;
 }
 
-/* Ensure form controls in array rows use remaining space and don't force buttons to 100% width */
+/* Upewnij się, że kontrolki formularza w wierszach tablicy zajmują dostępne miejsce i nie wymuszają 100% szerokości przycisków */
 .array-item input,
 .array-item textarea {
     margin-bottom: 0;
     flex: 1 1 auto;
-    /* take available space */
+    /* zajmij dostępne miejsce */
     min-width: 0;
-    /* allow shrinking inside flex container */
+    /* pozwól na zmniejszanie wewnątrz kontenera flex */
 }
 
 .array-item button {
     width: auto;
-    /* override Pico's default 100% width */
+    /* nadpisz domyślną szerokość 100% Pico */
     flex: 0 0 auto;
-    /* don't grow/shrink unexpectedly */
+    /* nie rozrastaj się/kurczy niespodziewanie */
     align-self: center;
-    /* vertically center the small delete button */
+    /* wycentruj pionowo mały przycisk usunięcia */
 }
 
 #form-container textarea {
@@ -874,7 +874,7 @@ code {
     margin-top: 2rem;
 }
 
-/* Category selection (hero cards) */
+/* Wybór kategorii (karty hero) */
 .hero-card {
     display: flex;
     flex-direction: column;
@@ -895,7 +895,7 @@ code {
     margin: 0 !important;
     text-decoration: none !important;
 
-    /* Reset button styles for card appearance - from wizard.css */
+    /* Resetuj style przycisku dla wyglądu karty — z wizard.css */
     font-size: inherit;
     font-weight: normal;
     line-height: inherit;
@@ -910,7 +910,7 @@ code {
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
     background-color: var(--card-sectionning-background-color);
     border-color: var(--primary) !important;
-    /* Ensure blue border is visible */
+    /* Upewnij się, że niebieskie obramowanie jest widoczne */
     text-decoration: none !important;
 }
 
@@ -938,7 +938,7 @@ code {
     color: var(--h5-color);
 }
 
-/* force row layout for editor hero cards (use flex to ensure row) */
+/* Wymuś układ wierszowy dla kart hero edytora (flex dla pewności) */
 .editor-hero-grid {
     display: flex;
     flex-wrap: wrap;
@@ -971,7 +971,7 @@ code {
     display: none !important;
 }
 
-/* Clause picker overlay */
+/* Nakładka wybieraka klauzul */
 .clause-picker-overlay {
     position: fixed;
     inset: 0;
@@ -1038,18 +1038,18 @@ code {
     margin-top: 1rem;
 }
 
-/* small lucide icon for inline product-delete */
+/* mała ikona lucide dla inline product-delete */
 .product-delete i {
     width: 14px;
     height: 14px;
 }
 
-/* Back button in forms */
+/* Przycisk Wstecz w formularzach */
 #form-container button:first-child {
     margin-bottom: 1rem;
 }
 
-/* Larger headings for editor sections */
+/* Większe nagłówki dla sekcji edytora */
 #loader-title,
 #editor-title {
     font-size: 1.75rem;
@@ -1063,7 +1063,7 @@ code {
     margin-top: 2rem;
 }
 
-/* Utility classes added to replace inline styles */
+/* Klasy narzędziowe dodane zamiast atrybutów inline */
 .m-0 {
     margin: 0;
 }
@@ -1189,7 +1189,7 @@ code {
     margin-bottom: 0.5rem !important;
 }
 
-/* Header-specific styling */
+/* Stylizacja specyficzna dla nagłówka */
 .table-header-compact {
     font-size: 0.8rem !important;
     font-weight: 600 !important;
@@ -1205,7 +1205,7 @@ code {
     align-items: start !important;
 }
 
-/* Ensure inputs/columns don't overflow */
+/* Upewnij się, że inputy/kolumny nie przepełniają */
 .grid-1-2-auto > .col-stack {
     min-width: 0 !important;
     display: flex !important;
@@ -1220,7 +1220,7 @@ code {
     margin-bottom: 0 !important;
 }
 
-/* Compact delete button in the third column */
+/* Kompaktowy przycisk usunięcia w trzeciej kolumnie */
 .grid-1-2-auto .btn-tight,
 #form-inputs-container .btn-tight {
     width: auto !important;
@@ -1364,7 +1364,7 @@ code {
     opacity: 0.8;
 }
 
-/* Toast Notification System */
+/* System powiadomień toast */
 #toast-container {
     position: fixed;
     top: 5rem;
@@ -1484,7 +1484,7 @@ code {
     }
 }
 
-/* Mobile responsive */
+/* Responsywność mobilna */
 @media (max-width: 640px) {
     #toast-container {
         left: 1rem;
@@ -1493,7 +1493,7 @@ code {
     }
 }
 
-/* Quick Filter Buttons */
+/* Przyciski szybkiego filtra */
 #quick-filters {
     display: flex;
     flex-wrap: wrap;
@@ -1532,21 +1532,21 @@ code {
     margin-bottom: 0.25rem;
 }
 
-/* Dark theme overrides for primary/emphasis - from wizard.css */
+/* Nadpisania ciemnego motywu dla primary/emphasis — z wizard.css */
 :root[data-theme="dark"],
 [data-theme="dark"] {
     --primary: #13C4FF;
     --primary-inverse: #000000;
 }
 
-/* Icon labels for navbar buttons - from wizard.css */
+/* Etykiety ikon przycisków paska nawigacji — z wizard.css */
 .icon-label {
     position: fixed;
-    /* keep label relative to viewport to avoid ancestor clipping */
+    /* utrzymuj etykietę względem viewport, by uniknąć przycinania przez przodka */
     top: 0;
-    /* positioned via JS */
+    /* pozycjonowane przez JS */
     left: 0;
-    /* positioned via JS */
+    /* pozycjonowane przez JS */
     background: var(--card-background-color);
     border: 1px solid var(--muted-color);
     color: var(--h5-color);
@@ -1558,7 +1558,7 @@ code {
     opacity: 0;
     visibility: hidden;
     pointer-events: auto;
-    /* allow hover on the label itself to avoid flicker */
+    /* pozwól na hover na etykiecie samej, by uniknąć migotania */
     cursor: default;
     z-index: 9999;
     transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
@@ -1566,14 +1566,14 @@ code {
     transform-origin: center top;
 }
 
-/* Visibility handled via JS to satisfy WCAG 1.4.13 (Dismissible, Hoverable, Persistent) */
+/* Widoczność sterowana przez JS zgodnie z WCAG 1.4.13 (Dismissible, Hoverable, Persistent) */
 .icon-label--visible {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) !important;
 }
 
-/* Dark mode: ensure high contrast for icon labels */
+/* Tryb ciemny: zapewnij wysoki kontrast dla etykiet ikon */
 [data-theme="dark"] .icon-label {
     color: hsl(0, 0%, 100%);
 }

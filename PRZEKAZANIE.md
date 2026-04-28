@@ -1,6 +1,5 @@
 # Protokół przekazania Utworu — OZ-PAD (Konfigurator Arkusza Oceny)
 
-**Data przekazania:** 27 kwietnia 2026 r.  
 **Wersja:** 1.4.1
 
 ---
@@ -21,18 +20,16 @@ Niniejszym Wykonawca przekazuje Zamawiającemu kompletny i aktualny kod źródł
 
 2) **wersja wdrożeniowa** — aplikacja nie wymaga procesu kompilacji; kod źródłowy jest jednocześnie kodem wdrożeniowym, gotowym do hostowania na serwerze HTTP/HTTPS lub CDN poprzez skopiowanie zawartości repozytorium;
 
-3) **dokumentacja techniczna** umożliwiająca samodzielne utrzymanie, rozwój i modyfikację Utworu — plik `TECHNICAL_DOCS.md` — obejmująca opis architektury, instrukcje uruchomienia i wdrożenia, schematy plików JSON bazy danych, opis działania Service Workera i strategii cachowania, opis modułu eksportu oraz opis skryptu pomocniczego `generate_clauses_export.py`. Opis funkcjonalny aplikacji zawarty jest w pliku `README.md`.
+3) **dokumentacja techniczna** umożliwiająca samodzielne utrzymanie, rozwój i modyfikację Utworu — plik `DOKUMENTACJA_TECHNICZNA.md` — obejmująca opis architektury, instrukcje uruchomienia i wdrożenia, schematy plików JSON bazy danych, opis działania Service Workera i strategii cachowania, opis modułu eksportu oraz opis skryptu pomocniczego `generate_clauses_export.py`. Opis funkcjonalny aplikacji zawarty jest w pliku `README.md`.
 
 ---
 
 ## 2. Oświadczenie dotyczące komponentów open source (OSS)
 
-W Utworze **OZ-PAD** zostały wykorzystane komponenty oprogramowania open source wymienione w załączonym pliku `OSS_COMPONENTS.md`. Zastosowane licencje:
+W Utworze **OZ-PAD** zostały wykorzystane komponenty oprogramowania open source wymienione w załączonym pliku `KOMPONENTY_OSS.md`. Zastosowane licencje:
 
 1) nie ograniczają praw Zamawiającego nabytych na podstawie Umowy,
 
 2) nie nakładają na Zamawiającego obowiązku ujawnienia kodu źródłowego Utworu ani jego części,
 
 3) umożliwiają korzystanie, modyfikowanie, rozwijanie oraz rozpowszechnianie Utworu zgodnie z Umową.
-
-Zestawienie komponentów OSS wraz ze wskazaniem ich licencji zawarte jest w pliku `OSS_COMPONENTS.md`, stanowiącym integralną część niniejszego przekazu.

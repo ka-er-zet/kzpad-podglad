@@ -1,5 +1,5 @@
-// exporter.js - Shared ODT export logic
-// Dependencies: JSZip, utils.js (for xmlEscape, getAuditStats, etc.)
+// exporter.js - Wspólna logika eksportu do ODT
+// Zależności: JSZip, utils.js (dla xmlEscape, getAuditStats itp.)
 
 (function(root) {
     function exportToODT(state, messagesObject, filenameOverride) {
@@ -10,7 +10,7 @@
 
         const stats = window.utils.getAuditStats(state);
         const zip = new JSZip();
-        // Fallback title
+        // Tytuł zastępczy
         const reportTitle = `Raport: ${state.product || 'EAA'}`;
 
         const stylesXml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -310,10 +310,10 @@
 
         contentXml += `</office:text></office:body></office:document-content>`;
 
-        // Reduce namespace footprint
+        // Zredukuj przestrzenie nazw
         contentXml = contentXml.replace(/xmlns:(?:svg|chart|dr3d|math|form|ooow|oooc|dom|xforms|xsd|xsi|rpt|of|xhtml|grddl)="[^"]+"\s*/g, '');
 
-        // Normalize
+        // Normalizacja
         contentXml = contentXml.replace(/\u00a0/g, '&#160;');
         
         try {
@@ -321,7 +321,7 @@
             const doc = parser.parseFromString(contentXml, 'application/xml');
             if (doc.getElementsByTagName('parsererror').length) {
                 console.error('Generated content.xml parse error', doc.getElementsByTagName('parsererror')[0].textContent);
-                // Use showToast if available, otherwise fall back to console
+                // Użyj showToast jeśli dostępne, w przeciwnym razie fallback do konsoli
                 if (typeof showToast === 'function') {
                     showToast('Wygenerowany dokument zawiera błędy XML. Szczegóły w konsoli.', 'error');
                 } else {
@@ -387,7 +387,7 @@
         });
     }
 
-    // Export function to global scope
+    // Eksportuj funkcję do globalnego zakresu
     root.exportToODT = exportToODT;
 
 })(window);

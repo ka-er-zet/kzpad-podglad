@@ -40,19 +40,19 @@ const ASSETS_TO_CACHE = [
     './img/8_3_4_3_3.png'
 ];
 
-// Install Event - Pre-cache critical assets
+// Zdarzenie instalacji — wstępne cachowanie zasobów
 self.addEventListener('install', (event) => {
     event.waitUntil(
         caches.open(CACHE_NAME)
             .then((cache) => {
                 console.log('[Service Worker] Caching all: app shell and content');
-                return cache.addAll(ASSETS_TO_CACHE);
+                return cache.addAll(ASSETS_TO_CACHE); // cachuj wszystkie zasoby
             })
             .then(() => self.skipWaiting())
     );
 });
 
-// Activate Event - Clean up old caches
+// Zdarzenie aktywacji — usuwanie starych cache'ów
 self.addEventListener('activate', (event) => {
     event.waitUntil(
         caches.keys().then((keyList) => {
@@ -64,11 +64,11 @@ self.addEventListener('activate', (event) => {
             }));
         })
     );
-    // Immediately take control of clients
+    // Natychmiast przejmij kontrolę nad wszystkimi klientami
     self.clients.claim();
 });
 
-// Listen for messages from the page (e.g., SKIP_WAITING to activate immediately)
+// Nasłuchiwanie komunikatów ze strony (np. SKIP_WAITING — natychmiastowa aktywacja)
 self.addEventListener('message', (event) => {
     if (!event.data) return;
     if (event.data.type === 'SKIP_WAITING') {
@@ -76,14 +76,14 @@ self.addEventListener('message', (event) => {
     }
 });
 
-// Fetch Event - Network First with Cache Fallback for JSON data, Cache First for assets
+// Zdarzenie fetch — strategia Network First z fallbackiem na cache dla JSON, Cache First dla pozostałych zasobów
 self.addEventListener('fetch', (event) => {
-    // Skip service worker for the editor tool - it should not be part of the PWA
+    // Edytor jest wyłączony z Service Workera — nie jest częścią PWA
     if (event.request.url.includes('editor.html') || event.request.url.includes('js/editor.js')) {
         return;
     }
 
-    // For navigation requests (loading index.html), use Network First to always get latest version if available
+    // Żądania nawigacji (index.html) — Network First, zawsze próba pobrania najnowszej wersji
     if (event.request.mode === 'navigate') {
         event.respondWith(
             fetch(event.request)
@@ -94,12 +94,12 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For JSON data (clauses, mapping, summaries) - Network First to always get latest
+    // Pliki JSON (clauses, mapping, summaries) — Network First, zawsze świeża wersja
     if (event.request.url.includes('.json')) {
         event.respondWith(
             fetch(event.request)
                 .then((response) => {
-                    // Cache the fresh response
+                    // Zaktualizuj cache świeżą odpowiedzią
                     if (response.ok) {
                         const responseClone = response.clone();
                         caches.open(CACHE_NAME).then((cache) => {
@@ -109,14 +109,14 @@ self.addEventListener('fetch', (event) => {
                     return response;
                 })
                 .catch(() => {
-                    // Fall back to cache if network fails
+                    // Brak sieci — serwuj z cache
                     return caches.match(event.request);
                 })
         );
         return;
     }
 
-    // For CSS and JS files - Network First
+    // Pliki CSS i JS — Network First
     if (event.request.url.includes('.css') || event.request.url.includes('.js')) {
         event.respondWith(
             fetch(event.request)
@@ -136,7 +136,7 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // For images and other assets - Cache First (they rarely change)
+    // Obrazy i pozostałe zasoby — Cache First (rzadko się zmieniają)
     event.respondWith(
         caches.match(event.request)
             .then((response) => {

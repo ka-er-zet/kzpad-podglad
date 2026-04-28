@@ -42,7 +42,7 @@ Interfejs przeznaczony dla osób przeprowadzających weryfikację dostępności.
 Wybór kategorii produktu powoduje wygenerowanie spersonalizowanego arkusza wymagań, ograniczając treść oceny do punktów mających zastosowanie prawne dla danego urządzenia lub usługi.
 
 #### 2. Rejestracja wyników (Formularz)
-System prezentuje wymagania prawne oraz powiązane z nimi szczegółowe instrukcje techniczne i testy jednostkowe służące ocenie zgodności produktu/usługi z PAD. Każdy test jednostkowy można ocenić w skali spełnione/nie spełnione/nie dotyczy oraz uzupełnić o komentarz osoby dokonującej oceny. Oceny z testó jednostkowych są też wykorzystywane do przeddstawienia rekomendacji co do oceny całościowej zgodności lub niezgodności produktu/usługi z danym przepisem.  Użytkownik może wybrać jedną z trzech ocen owej zgodności: `Spełnione`, `Niespełnione` lub `Nie dotyczy`.
+System prezentuje wymagania prawne oraz powiązane z nimi szczegółowe instrukcje techniczne i testy jednostkowe służące ocenie zgodności produktu/usługi z PAD. Każdy test jednostkowy można ocenić w skali spełnione/nie spełnione/nie dotyczy oraz uzupełnić o komentarz osoby dokonującej oceny. Oceny z testów jednostkowych są też wykorzystywane do przedstawienia rekomendacji co do oceny całościowej zgodności lub niezgodności produktu/usługi z danym przepisem.  Użytkownik może wybrać jedną z trzech ocen owej zgodności: `Spełnione`, `Niespełnione` lub `Nie dotyczy`.
 
 #### 3. Zapisywanie pracy
 W każdej chwili osoba oceniająca może zapisać swoją pracę poprzez użycie ikony w górnym menu (po prawej stronie) albo użycie skrótu klawiszowego ctrl+s (na urządzeniach Apple cmd+s). Zostanie zapisany plik JSON, który można następnie wczytać używając odpowiedniej opcji z menu głównego aplikacji. 
@@ -154,13 +154,13 @@ Miejsce na dopisanie dodatkowych uwag, wyjątków itp.
 
 #### 2. Zakładka Mapowanie (Konfiguracja relacji pomiędzy przepisami prawa, produktami/usługami i klauzulami technicznymi)
 
-W tej zakładce można zdefiniować relacje pomiędzy elemantami systemu oraz zarządzać profilami produktów/usług.
+W tej zakładce można zdefiniować relacje pomiędzy elementami systemu oraz zarządzać profilami produktów/usług.
 
 Po wczytaniu domyślnego pliku z mapowaniem, lub pliku z dysku można dodać nowy wpis lub edytować istniejące. 
 
 Podobnie, jak w sekcji Klauzul, można zmieniać kolejność wpisów. Tutaj jednak będzie ona miała wpływ na kolejność ich pojawiania się na arkuszu oceny. 
 
-Przycisk zarządzania produktami pozwala na edycję listy zdefiniowanych profilów produktów/usług. A przycisk **Dodaj nowe mapowanie** pozwala na utworzenie nowego wpisu z mapowaniem przepisu prawnego
+Przycisk zarządzania produktami pozwala na edycję listy zdefiniowanych profili produktów/usług. A przycisk **Dodaj nowe mapowanie** pozwala na utworzenie nowego wpisu z mapowaniem przepisu prawnego
 
 ##### Wpis produktu/usługi
 
@@ -173,7 +173,7 @@ Każdy wpis mapowania zawiera następujące informacje:
 
 **Dobra praktyka** - jest to ten sam format, co w wypadku klauzul prawnych (U.). Jedyna różnica to litera A zamiast U na początku identyfikatora. Dlatego warto zadbać o odpowiednie nadawanie id, by łatwiej wiązać ze sobą klauzule i zapisy prawne.
 
-**Identyfikator Klauzuli Ustawowej (U.*)** - pole pozwalające na wpisanie powiazanej z przepisem ustawy klauzuli prawnej. MOżna też wybrać ją z listy. Z danym przepisem ustawy może być powiązana jedna klauzula prawna.
+**Identyfikator Klauzuli Ustawowej (U.*)** - pole pozwalające na wpisanie powiązanej z przepisem ustawy klauzuli prawnej. MOżna też wybrać ją z listy. Z danym przepisem ustawy może być powiązana jedna klauzula prawna.
 
 **Artykuł** - Opis położenia przepisu w akcie prawnym, np. Art. 7 ust. 1 pkt 1 lit. a.
 
@@ -183,7 +183,7 @@ Każdy wpis mapowania zawiera następujące informacje:
 
 **Powiązane produkty i klauzule techniczne** - lista zdefiniowanych produktów/usług. Aby powiązać je z danym przepisem wystarczy zaznaczyć pole wyboru **Dotyczy**. Dzięki temu dany przepis i jego klauzula prawna będą pojawiała się jako wymaganie na arkuszy oceny tego przepisu. 
 
-Pole **Kody techniczne C** pozwala na powiązanie z konkretnym pruktem/usługą klauzul technicznych z aneksu C normy EN 301 549. Można je dodawać ręcznie, albo poprzez listę wywoływaną przyciskiem **Wybierz kody**.
+Pole **Kody techniczne C** pozwala na powiązanie z konkretnym produktem/usługą klauzul technicznych z aneksu C normy EN 301 549. Można je dodawać ręcznie, albo poprzez listę wywoływaną przyciskiem **Wybierz kody**.
 
 #### 3. Zakładka Podsumowania
 
@@ -246,7 +246,7 @@ Pliki w katalogu `clauses_json/` definiują logikę systemu:
 ## 📦 Dokumenty przekazania
 
 - [PRZEKAZANIE.md](PRZEKAZANIE.md) — spis przekazywanych materiałów i oświadczenie OSS
-- [TECHNICAL_DOCS.md](TECHNICAL_DOCS.md) — dokumentacja techniczna (architektura, schematy JSON, Service Worker, eksport)
-- [OSS_COMPONENTS.md](OSS_COMPONENTS.md) — zestawienie komponentów open source z licencjami
+- [DOKUMENTACJA_TECHNICZNA.md](DOKUMENTACJA_TECHNICZNA.md) — dokumentacja techniczna (architektura, schematy JSON, Service Worker, eksport)
+- [KOMPONENTY_OSS.md](KOMPONENTY_OSS.md) — zestawienie komponentów open source z licencjami
 
 © 2026 OZ-PAD Project. Rozwiązanie oparte na otwartoźródłowych technologiach webowych.

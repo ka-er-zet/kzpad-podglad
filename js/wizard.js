@@ -7,17 +7,17 @@ let lastModalTrigger = null;
 let wizardSaveBound = false;
 let activeModalTrapCleanup = null;
 
-// Wizard-scoped utility accessor. Evaluated at load time.
+// Lokalny akcesor pomocniczy Wizarda. Ewaluowany przy ładowaniu.
 const W = window.utils || {};
 
 /**
- * Toast notification system - displays non-blocking messages to users
- * @param {string} message - The message to display
- * @param {string} type - Type of toast: 'success', 'error', 'warning' (default: 'success')
- * @param {number} duration - How long to show the toast in ms (default: 5000)
+ * System powiadomień toast — wyświetla nieblokujące komunikaty dla użytkownika.
+ * @param {string} message - Treść komunikatu.
+ * @param {string} type - Typ toastu: 'success', 'error', 'warning' (domyślnie: 'success').
+ * @param {number} duration - Czas wyświetlania w ms (domyślnie: 5000).
  */
 function showToast(message, type = 'success', duration = 5000) {
-    // Wait for DOM to be ready if called too early
+    // Poczekaj na gotowość DOM, jeśli wywołano zbyt wcześnie
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', () => showToast(message, type, duration));
         return;
@@ -29,11 +29,11 @@ function showToast(message, type = 'success', duration = 5000) {
         return;
     }
 
-    // Check if this exact message is already being displayed
+    // Sprawdź, czy ten sam komunikat jest już wyświetlany
     const existingToasts = container.querySelectorAll('.toast-content');
     for (const t of existingToasts) {
         if (t.textContent === message) {
-            // Pulse the existing toast
+            // Pulsuj istniejący toast
             const parent = t.closest('.toast');
             parent.style.animation = 'none';
             parent.offsetHeight; /* trigger reflow */
@@ -46,20 +46,20 @@ function showToast(message, type = 'success', duration = 5000) {
     toast.className = `toast toast-${type}`;
     toast.setAttribute('role', 'none');
 
-    // 1. Create a hidden element ONLY for the automatic announcement (Live Region)
+    // 1. Ukryty element TYLKO dla automatycznego ogłoszenia (Live Region)
     const announcement = document.createElement('div');
     announcement.setAttribute('role', type === 'error' ? 'alert' : 'status');
     announcement.setAttribute('aria-live', type === 'error' ? 'assertive' : 'polite');
     announcement.className = 'sr-only';
     
-    // 2. Create the visual structure (Icon + Text)
+    // 2. Struktura wizualna (ikona + tekst)
     const visualContent = document.createElement('div');
     visualContent.style.display = 'flex';
     visualContent.style.alignItems = 'center';
     visualContent.style.flex = '1';
-    visualContent.setAttribute('aria-hidden', 'true'); // Hide from SR when focusing the button or container
+    visualContent.setAttribute('aria-hidden', 'true'); // Ukryj przed SR przy focusie na przycisku lub kontenerze
 
-    // Icon mapping
+    // Mapowanie ikon
     const icons = {
         success: 'check-circle',
         error: 'alert-circle',
@@ -67,13 +67,13 @@ function showToast(message, type = 'success', duration = 5000) {
     };
     const iconName = icons[type] || 'info';
 
-    // Create icon
+    // Utwórz ikonę
     const icon = document.createElement('i');
     icon.setAttribute('data-lucide', iconName);
     icon.className = 'toast-icon';
     icon.style.marginRight = '0.75rem';
 
-    // Create content span
+    // Utwórz span z treścią
     const textSpan = document.createElement('span');
     textSpan.className = 'toast-content';
     textSpan.textContent = message;
@@ -81,44 +81,44 @@ function showToast(message, type = 'success', duration = 5000) {
     visualContent.appendChild(icon);
     visualContent.appendChild(textSpan);
 
-    // 3. Create close button (this will be the only focusable/audible part during Tab navigation)
+    // 3. Utwórz przycisk zamknięcia (jedyna focusowalny/słyszalny element podczas nawigacji Tab)
     const closeBtn = document.createElement('button');
     closeBtn.className = 'toast-close';
     closeBtn.setAttribute('aria-label', `Zamknij powiadomienie: ${message}`); // Link context to button
     closeBtn.setAttribute('type', 'button');
     closeBtn.innerHTML = '<i data-lucide="x" style="width: 16px; height: 16px;" aria-hidden="true"></i>';
 
-    // Assemble toast
+    // Złóż toast
     toast.appendChild(announcement);
     toast.appendChild(visualContent);
     toast.appendChild(closeBtn);
     
     container.appendChild(toast);
 
-    // Trigger announcement
+    // Wyzwól ogłoszenie
     setTimeout(() => {
         announcement.textContent = message;
     }, 50);
 
-    // Initialize Lucide icons in the toast
+    // Zainicjuj ikony Lucide w toaście
     if (window.lucide) {
         window.lucide.createIcons();
     }
 
-    // Store previously focused element for restore after close
+    // Zapamiętaj poprzednio sfocusowany element, by przywrócić fokus po zamknięciu
     const previouslyFocused = document.activeElement;
 
-    // Close button handler
+    // Obsługa przycisku zamknięcia
     closeBtn.addEventListener('click', () => {
         toast.remove();
-        // Restore focus to the element that triggered the toast
+        // Przywróć fokus do elementu, który wywołał toast
         if (previouslyFocused && previouslyFocused !== document.body) {
             previouslyFocused.focus();
         }
     });
 
-    // Move focus to close button immediately after display
-    // Use setTimeout to ensure the element is in the DOM and visible
+    // Przenieś fokus na przycisk zamknięcia zaraz po wyświetleniu
+    // setTimeout zapewnia, że element jest w DOM i widoczny
     setTimeout(() => {
         closeBtn.focus();
     }, 50);
@@ -141,19 +141,18 @@ const chapterNames = {
 };
 
 /**
- * Strips technical numbering from clause titles (e.g. "9.2.1 Audio..." -> "Audio...")
+ * Usuwa numerację techniczną z początku tytułu klauzuli (np. "9.2.1 Audio..." -> "Audio...").
  */
 function stripNumbering(text) {
     if (!text) return '';
-    // Remove leading clause numbering.  The numbering may include a hyphen
-    // and additional digits (e.g. "C.5.3-1") or a lowercase letter suffix
-    // (e.g. "C.8.3.2.5.c"), so the regex must be permissive enough to eat
-    // the whole prefix.  After the prefix we trim any whitespace.
+    // Usuń wiodącą numerację klauzuli. Może zawierać myślnik i cyfry (np. "C.5.3-1")
+    // lub małoliterowy sufiks (np. "C.8.3.2.5.c"), więc regex musi być wystarczająco
+    // liberalny, by pochłonąć cały prefiks. Po prefiksie przycinamy białe znaki.
     return text.replace(/^((?:C|U)\.[A-Za-z0-9\.-]+|[\d\.]+|[A-Z]\d+[\.\)]?)\s*/, '');
 }
 
 /**
- * Fixes orphan characters in Polish text (e.g. "a ", "i ") by replacing space with &nbsp;
+ * Naprawia osierocone spójniki w tekście polskim (np. "a ", "i "), zastępując spację znakiem &nbsp;.
  */
 function fixOrphans(text) {
     if (!text) return '';
@@ -176,7 +175,7 @@ function getFullProductNameWizard() {
 
 async function init() {
     try {
-        // Force refresh of dictionary files on load to ensure latest data
+        // Wymuś odświeżenie plików słownikowych przy ładowaniu, by mieć najnowsze dane
         const ts = new Date().getTime();
         const [dictResp, mappingResp, summaryResp, glossaryResp] = await Promise.all([
             fetch(`clauses_json/clauses.json?t=${ts}`),
@@ -193,7 +192,7 @@ async function init() {
         matrixData = mapping.matrix;
         productDictionary = mapping.products;
 
-        // Store original index to preserve JSON order within the same article/category groups
+        // Zachowaj oryginalny indeks, by utrzymać kolejność JSON w obrębie grup artykułów/kategorii
         if (Array.isArray(matrixData)) {
             matrixData.forEach((item, index) => {
                 item._originalIndex = index;
@@ -203,10 +202,10 @@ async function init() {
                 const isArt19A = (a.article || "").includes("Art. 19");
                 const isArt19B = (b.article || "").includes("Art. 19");
                 
-                if (isArt19A && !isArt19B) return 1;  // A after B
-                if (!isArt19A && isArt19B) return -1; // A before B
+                if (isArt19A && !isArt19B) return 1;  // A za B
+                if (!isArt19A && isArt19B) return -1; // A przed B
                 
-                // First try to sort by category (using any article numbers found in them)
+                // Najpierw spróbuj posortować wg kategorii (numerów artykułów w nich zawartych)
                 const artA = (a.category || "").match(/Art\.?\s*(\d+)/);
                 const artB = (b.category || "").match(/Art\.?\s*(\d+)/);
                 
@@ -216,26 +215,25 @@ async function init() {
                     if (numA !== numB) return numA - numB;
                 }
                 
-                // If same category or no art in category, fallback to original JSON order
-                // to avoid issues with alphabetical sorting of words like "pierwsze" vs "drugie"
+                // Jeśli ta sama kategoria lub brak numeru art. w kategorii, wróć do oryginalnej kolejności JSON
+                // (unikamy problemów z sortowaniem słownym np. "pierwsze" vs "drugie")
                 return (a._originalIndex || 0) - (b._originalIndex || 0);
             });
         }
 
         populateRadioList();
-        // Button is always enabled to allow validation feedback
+        // Przycisk zawsze aktywny — walidacja odbywa się przy submicie
         document.getElementById('generateBtn').disabled = false;
         
-        // Set focus to H1 on load so the user starts at the top 
-        // and the first Tab lands on the first radio button
-        // document.querySelector('h1').focus(); // REMOVED: causes header skipping issues
+        // Fokus na H1 przy starcie — wyłączone: powodowało pomijanie nagłówka
+        // document.querySelector('h1').focus();
         
-        // Enhance icon buttons with visible labels and set ARIA state for theme toggles
+        // Wzbogać przyciski ikon o widoczne etykiety i ustaw stan ARIA przełączników motywu
         if (typeof updateThemeToggleButtonsWizard === 'function') updateThemeToggleButtonsWizard(document.documentElement.getAttribute('data-theme') || 'dark');
-        // Ensure Lucide renders icons that may have been added dynamically (close button, etc.)
+        // Upewnij się, że Lucide renderuje ikony dodane dynamicznie (przycisk zamknięcia itp.)
         try { if (typeof lucide !== 'undefined' && typeof lucide.createIcons === 'function') lucide.createIcons(); } catch (e) { /* ignore */ }
         
-        // Setup save button and Ctrl+S
+        // Skonfiguruj przycisk zapisu i skrót Ctrl+S
         setupWizardSave();
         setupSummaryButton();
         setupHero();
@@ -376,7 +374,7 @@ function setupHero() {
  */
 const Browser = {
     initialized: false,
-    view: 'legal', // 'legal' | 'technical'
+    view: 'legal', // 'legal' | 'technical' (widok ustawowy lub techniczny)
     currentCategory: null,
     searchQuery: '',
 
@@ -565,7 +563,7 @@ const Browser = {
         const categoryLabel = (this.view === 'legal' ? '' : this.currentCategory + ' ') + (chapterNames[this.currentCategory] || this.currentCategory);
         this.updateTitle(`${categoryLabel} — Przeglądarka wymagań`);
 
-        // Render breadcrumb
+        // Renderuj okruszki (breadcrumb)
         breadcrumbs.innerHTML = `
             <a href="#" id="browser-back-to-cats" class="browser-back-link"><span aria-hidden="true">←</span> Powrót do listy kategorii</a>
         `;
@@ -584,7 +582,7 @@ const Browser = {
         const catHeading = document.getElementById('browser-current-category');
         if (catHeading) catHeading.focus();
 
-        // Filter dictionary by category
+        // Filtruj słownik wg kategorii
         let reqs = [];
         if (this.view === 'legal') {
             // Budujemy listę bezpośrednio z matrixData (posortowanej numerycznie po artykułach w init())
@@ -635,7 +633,7 @@ const Browser = {
             list.appendChild(card);
         });
 
-        // Annotate links that open in a new tab (visual via CSS + SR text via JS)
+        // Oznacz linki otwierające się w nowej karcie (wizualnie CSS + tekst dla SR)
         indicateNewTabLinks(list);
 
         if (typeof lucide !== 'undefined') lucide.createIcons();
@@ -647,13 +645,13 @@ const Browser = {
         const div = document.createElement('div');
         div.className = 'browser-card';
         
-        // Helper function for rendering elements with standard utilities
+        // Funkcja pomocnicza do renderowania elementów ze standardowymi narzędziami
         const clean = (text) => {
             if (!text) return '';
             let t = text;
             if (W.stripNumbering) t = W.stripNumbering(t);
             if (W.fixOrphans) t = W.fixOrphans(t);
-            // Apply markdown parsing
+            // Parsuj Markdown
             if (window.utils && window.utils.parseMarkdown) {
                 t = window.utils.parseMarkdown(t);
             }
@@ -663,15 +661,15 @@ const Browser = {
         const renderListContent = (arr) => {
             if (!arr || arr.length === 0) return '';
             
-            // Special handling for test objects - render as interactive cards (browser view)
+            // Specjalna obsługa obiektów testów — renderuj jako interaktywne karty (widok przeglądarki)
             const hasTests = arr.some(item => item && typeof item === 'object' && item.type === 'test');
             if (hasTests) {
                 return arr.map(item => {
                     if (item && typeof item === 'object' && item.type === 'test') {
-                        // Use the minimal test card (without form controls) for browser view
+                        // Użyj minimalnej karty testu (bez formularza oceny) dla przeglądarki
                         return renderTestCardMinimal(item);
                     }
-                    // Parse markdown for regular string items
+                    // Parsuj Markdown dla zwykłych elementów tekstowych
                     let itemText = item || '';
                     if (W.fixOrphans) itemText = W.fixOrphans(itemText);
                     if (W.parseMarkdown) itemText = W.parseMarkdown(itemText);
@@ -679,7 +677,7 @@ const Browser = {
                 }).join('');
             }
             
-            // Convert test objects to readable text for summary views (non-browser)
+            // Konwertuj obiekty testów na tekst dla widoków podsumowania (nie-przeglądarka)
             const stringified = arr.map(item => {
                 if (item && typeof item === 'object' && item.type === 'test') {
                     let text = `**${item.title || ''}**`;
@@ -689,7 +687,7 @@ const Browser = {
                 return item;
             });
 
-            // Join with newlines to allow parseMarkdown to detect blocks/lists
+            // Połącz z nowym wierszem, by parseMarkdown mógł wykrywać bloki/listy
             let content = stringified.join('\n');
             if (W.fixOrphans) content = W.fixOrphans(content);
             if (W.parseMarkdown) content = W.parseMarkdown(content);
@@ -701,7 +699,7 @@ const Browser = {
             return content;
         };
 
-        // Formating ID for legal/technical display
+        // Formatowanie ID dla wyświetlania ustawowego/technicznego
         let displayId = req.overrideId || req.id;
         
         if (!req.overrideId && req.id.startsWith('U.')) {
@@ -770,7 +768,7 @@ const Browser = {
             `;
         }
 
-        // Checklist
+        // Checklist (lista kontrolna)
         let checklistHtml = '';
         if (req.checklist && req.checklist.length > 0) {
             checklistHtml = `
@@ -908,7 +906,7 @@ const Browser = {
                     searchContent += ' ' + req.procedure;
                 }
                 
-                // Checklist
+                // Lista kontrolna (checklist)
                 if (req.checklist && Array.isArray(req.checklist)) {
                     searchContent += ' ' + req.checklist.join(' ');
                 } else if (req.checklist) {
@@ -1002,11 +1000,11 @@ function scrollToRequirement(targetId) {
     const headerOffset = header ? header.getBoundingClientRect().height : 0;
     const top = element.getBoundingClientRect().top + window.pageYOffset - headerOffset - 16;
     
-    // Instant jump — no animation (better for motion sensitivity and screen readers)
+    // Skok natychmiastowy — bez animacji (lepsza dla wrażliwości na ruch i czytników ekranu)
     window.scrollTo({ top, behavior: 'instant' });
     element.focus({ preventScroll: true });
 
-    // Announce navigation to screen readers via live region
+    // Ogłoś nawigację technologiom wspomagającym przez live region
     const label = element.getAttribute('aria-label') || '';
     const announcement = document.getElementById('generation-announcement');
     if (announcement && label) {
@@ -1020,7 +1018,7 @@ function scrollToRequirement(targetId) {
     
     setTimeout(() => {
         element.style.backgroundColor = originalBg;
-        // Clean up transition after animation
+        // Wyczyść transition po zakończeniu animacji
         setTimeout(() => { element.style.transition = ''; }, 300);
     }, 2000);
 }
@@ -1404,11 +1402,11 @@ function generateDescriptiveSummary(isInitial = false) {
     displayArea.innerHTML = html;
     displayArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
     
-    // Announce to screen readers
+    // Ogłoś dla czytników ekranu
     const announcement = document.getElementById('generation-announcement');
     if (announcement) {
         announcement.textContent = `Wygenerowano podsumowanie oceny. Status: ${displayStatus}`;
-        // Clear announcement after a moment so it can be re-announced
+        // Wyczyść ogłoszenie po chwili, by można było wyzwolić je ponownie
         setTimeout(() => { if (announcement.textContent.includes('podsumowanie')) announcement.textContent = ""; }, 1000);
     }
 
@@ -1467,12 +1465,12 @@ function generateWizardFileName(extension) {
     return `${base}_${date}.${extension}`;
 }
 
-// Helper for ID Normalization
+// Pomocnik do normalizacji ID
 function normalizeId(rawId) {
     if (!rawId) return '';
     rawId = rawId.trim();
     if (rawId.startsWith('C.')) return rawId;
-    // Map "9.1.1.1" -> "C.9.1.1.1"
+    // Mapuj "9.1.1.1" -> "C.9.1.1.1"
     if (/^\d/.test(rawId)) return 'C.' + rawId;
     return rawId;
 }
@@ -1517,7 +1515,7 @@ async function downloadSummaryODT() {
         const title = row.querySelector('.requirement-text')?.textContent?.trim() || '';
         const note = row.querySelector('textarea')?.value || '';
         
-        // Ensure ID format matches what getAuditStats/exportToODT expects
+        // Upewnij się, że format ID pasuje do oczekiwań getAuditStats/exportToODT
         const id = normalizeId(rawArticle);
 
         // Dodajemy definicję testu
@@ -1532,7 +1530,7 @@ async function downloadSummaryODT() {
         let status = 'nt'; // domyślnie nietestowany
         if (selectedRadio) {
             const val = selectedRadio.value;
-            // Map wizard radio values to summary internal status codes
+            // Mapuj wartości radio Wizarda na kody statusów wewnętrznych
             if (val === 'compliant') status = 'pass';
             else if (val === 'non-compliant') status = 'fail';
             else if (val === 'not-applicable') status = 'na';
@@ -1683,13 +1681,11 @@ async function downloadSummaryODT() {
         results: results
     };
 
-    console.log('Generating ODT report (Wizard) with state:', state);
-    console.log('Target filename:', targetFilename);
+    console.log('Generowanie raportu ODT (Wizard), stan:', state);
+    console.log('Docelowa nazwa pliku:', targetFilename);
     
     try {
-        // Pass filename as a 3rd argument (exporter.js needs update to support this)
-        // OR temporarily hack it by hooking into utils.getFilename output?
-        // Better: Update exporter.js to accept filenameOverride
+        // Nazwa pliku przekazana jako 3. argument do exporter.js (filenameOverride)
         exportToODT(state, null, targetFilename);
     } catch (e) {
         console.error('Błąd generowania ODT:', e);
@@ -1698,7 +1694,7 @@ async function downloadSummaryODT() {
 }
 
 /**
- * Setup save functionality for wizard
+ * Konfiguruje funkcję zapisu w Wizardzie.
  */
 let isDownloadingWizard = false;
 
@@ -1789,9 +1785,9 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             const r = summarySheet.addRow([rowValue]);
             r.getCell(1).alignment = { wrapText: true };
             
-            // Bold specific values if label is present (label standard, value bold)
+            // Pogrub wartości gdy obecna jest etykieta (etykieta — normalny, wartość — pogrubiona)
             if (label && value) {
-                // ExcelJS Rich Text
+                // ExcelJS Rich Text (sformatowany tekst)
                 r.getCell(1).value = {
                     richText: [
                         { text: label + ' ' },
@@ -2353,7 +2349,7 @@ function downloadWizardAssessment() {
     // Assertions z testów (Jak sprawdzić?)
     document.querySelectorAll('.checklist-test-item[data-test-id]').forEach((card) => {
         const testDataId = card.dataset.testId;
-        // Convert "U.7.1.1.a--test--0" → "U.7.1.1.a#test-0" for EARL identifier
+        // Konwertuj "U.7.1.1.a--test--0" → "U.7.1.1.a#test-0" dla identyfikatora EARL
         const earlTestId = testDataId.replace(/--test--(\d+)$/, '#test-$1');
         const safeTestId = testDataId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
@@ -2468,7 +2464,7 @@ async function handleWizardFileLoad(event) {
             // 5. Wywołaj submit formularza aby wygenerować wiersze wymagań
             const form = document.getElementById('auditForm');
             if (form) {
-                // Wywołujemy onsubmit bezpośrednio, ponieważ dispatchEvent nie zawsze wyzwala onsubmit przypisane przez element.onsubmit
+                // Wywołujemy onsubmit bezpośrednio — dispatchEvent nie zawsze wyzwala onsubmit z atrybutu elementu
                 if (typeof form.onsubmit === 'function') {
                     form.onsubmit(new Event('submit'));
                 }
@@ -2492,9 +2488,9 @@ async function handleWizardFileLoad(event) {
 
                 if (!articleId) return;
 
-                // Test card assertions have "#test-N" in the identifier
+                // Asercje kart testów mają "#test-N" w identyfikatorze
                 if (articleId.includes('#test-')) {
-                    // Convert "U.7.1.1.a#test-0" → "U.7.1.1.a--test--0" → safeTestId
+                    // Konwertuj "U.7.1.1.a#test-0" → "U.7.1.1.a--test--0" → safeTestId
                     const testDataId = articleId.replace(/#test-(\d+)$/, '--test--$1');
                     const safeTestId = testDataId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
 
@@ -2507,7 +2503,7 @@ async function handleWizardFileLoad(event) {
                         const radio = document.querySelector(`input[name="test-status-${safeTestId}"][value="${testVal}"]`);
                         if (radio) {
                             radio.checked = true;
-                            // Trigger visual state update and open the card
+                            // Wyzwól aktualizację stanu wizualnego i otwórz kartę
                             const card = radio.closest('.checklist-test-item');
                             if (card) {
                                 card.classList.remove('is-pass', 'is-fail', 'is-na');
@@ -2573,7 +2569,7 @@ async function handleWizardFileLoad(event) {
                 liveRegion.innerText = 'Błąd podczas wczytywania pliku: ' + err.message;
             }
             
-            // Friendly error messages for common issues
+            // Przyjazne komunikaty błędów dla typowych problemów
             let userMsg = 'Wystąpił błąd podczas wczytywania pliku.';
             if (err instanceof SyntaxError) {
                 if (err.message.includes('%PDF')) {
@@ -2645,7 +2641,7 @@ function setupWizardSave() {
         });
     }
 
-    // Handle Ctrl+S / Cmd+S to save and Ctrl+O to load
+    // Obsługa Ctrl+S / Cmd+S (zapis) i Ctrl+O (wczytaj)
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 's') {
             e.preventDefault();
@@ -2662,10 +2658,10 @@ function setupWizardSave() {
 }
 
 /**
- * Renders an interactive test card (fieldset) for a single test object.
- * @param {string} clauseId - the parent clause ID (e.g. "U.7.1.1.a")
- * @param {{type:string, title:string, description?:string}} testObj
- * @param {number} testIndex - zero-based index of this test in the checklist array
+ * Renderuje interaktywną kartę testu (fieldset) dla pojedynczego obiektu testu.
+ * @param {string} clauseId - ID klauzuli nadrzędnej (np. "U.7.1.1.a").
+ * @param {{type:string, title:string, description?:string}} testObj - Obiekt testu.
+ * @param {number} testIndex - Indeks (od 0) tego testu w tablicy checklisty.
  */
 function renderTestCard(clauseId, testObj, testIndex) {
     const testDataId = `${clauseId}--test--${testIndex}`;
@@ -2695,8 +2691,8 @@ function renderTestCard(clauseId, testObj, testIndex) {
 }
 
 /**
- * Renders a test card for the clause browser (bez formularza oceny)
- * Reuses the card structure from renderTestCard but without rating options and comment field
+ * Renderuje kartę testu dla przeglądarki klauzul (bez formularza oceny).
+ * Używa struktury z renderTestCard, ale bez opcji oceny i pola komentarza.
  */
 function renderTestCardMinimal(testObj) {
     const title = (W.fixOrphans ? W.fixOrphans(testObj.title || '') : (testObj.title || ''));
@@ -2717,14 +2713,14 @@ function populateRadioList() {
     const fieldset = document.getElementById('productFieldset');
     const container = fieldset.querySelector('fieldset') || fieldset;
     
-    // Remove old radio buttons but keep legend and error alert
+    // Usuń stare radio-buttony, zachowaj legend i komunikat o błędzie
     const oldRadios = container.querySelectorAll('label.product-radio-card');
     oldRadios.forEach(label => label.remove());
     
-    // Filter products first to ensure order is consistent
+    // Filtruj produkty, by zapewnić spójną kolejność
     const entries = Object.entries(productDictionary)
         .filter(([key, name]) => name && name.trim())
-        // Make sure the special "default" product is first, then sort alphabetically by name
+        // Produkt 'default' zawsze pierwszy, reszta alfabetycznie po nazwie
         .sort((a, b) => {
             if (a[0] === 'default') return -1;
             if (b[0] === 'default') return 1;
@@ -2732,7 +2728,7 @@ function populateRadioList() {
         });
 
     entries.forEach(([key, name], idx) => {
-        // Label acts as the container card for accessibility and click area
+        // Label pełni rolę karty-kontenera dla dostępności i obszaru kliknięcia
         const card = document.createElement('label');
         card.className = 'product-radio-card';
         
@@ -2763,7 +2759,7 @@ function populateRadioList() {
         lucide.createIcons();
     }
     
-    // Add event listeners to hide errors when user starts typing
+    // Dodaj nasłuchiwacze ukrywające błędy, gdy użytkownik zacznie wpisywać
     const productNameInput = document.getElementById('wizard-product-name');
     const productDescInput = document.getElementById('wizard-product-desc');
     const auditorInput = document.getElementById('wizard-auditor-name');
@@ -2816,20 +2812,20 @@ document.getElementById('auditForm').onsubmit = (e) => {
     if (!selectedRadio) {
         if (resultsArea) resultsArea.classList.add('hidden');
         
-        // Show the error message and highlight the group
+        // Pokaż komunikat błędu i oznacz grupę
         errorEl.classList.remove('hidden');
         errorEl.style.display = 'flex';
         firstFieldset.setAttribute('aria-invalid', 'true');
         firstFieldset.setAttribute('aria-describedby', 'product-selection-error');
         
-        // Scroll the actual error element into view (account for sticky header) and focus it
+        // Przewiń do elementu błędu (z uwzględnieniem stałego nagłówka) i ustaw fokus
         const header = document.querySelector('.app-header');
         const headerHeight = header ? header.getBoundingClientRect().height : 0;
         const targetTop = window.pageYOffset + errorEl.getBoundingClientRect().top - headerHeight - 20;
         
         window.scrollTo({ top: targetTop, behavior: 'smooth' });
 
-        // Ensure the error element can receive focus so it's announced once by SR
+        // Upewnij się, że element błędu może odebrać fokus, by czytnik ekranu ogłosił go raz
         errorEl.setAttribute('tabindex', '-1');
         errorEl.focus();
 
@@ -2844,7 +2840,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
     firstFieldset.removeAttribute('aria-invalid');
     firstFieldset.removeAttribute('aria-describedby');
     
-    // Validate required fields
+    // Walidacja wymaganych pól
     const productNameInput = document.getElementById('wizard-product-name');
     const productDescInput = document.getElementById('wizard-product-desc');
     const auditorInput = document.getElementById('wizard-auditor-name');
@@ -2861,7 +2857,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
     const header = document.querySelector('.app-header');
     const headerHeight = header ? header.getBoundingClientRect().height : 0;
     
-    // Check product name
+    // Sprawdź nazwę produktu
     if (!productName) {
         hasErrors = true;
         productNameError.classList.remove('hidden');
@@ -2875,7 +2871,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
         productNameInput.removeAttribute('aria-describedby');
     }
     
-    // Check product description
+    // Sprawdź opis produktu
     if (!productDesc) {
         hasErrors = true;
         productDescError.classList.remove('hidden');
@@ -2889,7 +2885,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
         productDescInput.removeAttribute('aria-describedby');
     }
     
-    // Check auditor name
+    // Sprawdź imię i nazwisko oceniającego
     if (!auditor) {
         hasErrors = true;
         auditorError.classList.remove('hidden');
@@ -2906,7 +2902,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
     if (hasErrors) {
         if (resultsArea) resultsArea.classList.add('hidden');
         
-        // Determine which input field to focus on (first one with error)
+        // Określ, które pole ma błąd (pierwsze z błędem)
         let firstInputWithError = null;
         if (!productName) {
             firstInputWithError = productNameInput;
@@ -2919,7 +2915,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
         const targetTop = window.pageYOffset + firstInputWithError.getBoundingClientRect().top - headerHeight - 20;
         window.scrollTo({ top: targetTop, behavior: 'smooth' });
         
-        // Focus on the input field, not the error message
+        // Ustaw fokus na polu (nie na komunikacie błędu)
         firstInputWithError.focus();
         
         if (typeof lucide !== 'undefined') {
@@ -2970,7 +2966,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                 h3.innerHTML = `<span aria-hidden="true">${cleanCategory}</span><span class="sr-only">${expandLegal(cleanCategory)}</span>`;
                 list.appendChild(h3);
                 
-                // Add description with toggle for Art. 19 if present
+                // Dodaj opis z przełącznikiem dla Art. 19 jeśli wymagany
                 if (item.description || isArt19) {
                     const descDiv = document.createElement('div');
                     descDiv.className = 'category-description';
@@ -2982,7 +2978,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                         descDiv.appendChild(descText);
                     }
                     
-                    // Add switch toggle for Art. 19 inside description
+                    // Dodaj przełącznik toggle dla Art. 19 wewnątrz opisu
                     if (isArt19) {
                         const switchId = `art19-switch-${Math.random().toString(36).substr(2, 9)}`;
                         const label = document.createElement('label');
@@ -2993,7 +2989,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                         checkbox.type = 'checkbox';
                         checkbox.id = switchId;
                         checkbox.setAttribute('role', 'switch');
-                        // Use native checked state; aria-checked is implicitly mapped from 'checked' for role="switch" on input type="checkbox"
+                        // Używamy natywnego stanu checked; aria-checked jest implicitnie mapowane z 'checked' dla role="switch" na input[type="checkbox"]
                         
                         const labelText = document.createElement('span');
                         labelText.textContent = 'Skontroluj wymagania artykułu 19';
@@ -3002,13 +2998,13 @@ document.getElementById('auditForm').onsubmit = (e) => {
                         label.appendChild(labelText);
                         descDiv.appendChild(label);
                         
-                        // Create container for Art. 19 requirements (AFTER description, not inside)
+                        // Utwórz kontener dla wymagań Art. 19 (PO opisie, nie wewnątrz)
                         art19Container = document.createElement('div');
                         art19Container.className = 'art19-requirements-container';
                         art19Container.style.display = 'none';
                         art19Container.setAttribute('data-art19-container', 'true');
                         
-                        // Create status announcement for screen readers
+                        // Utwórz ogłoszenie statusu dla czytników ekranu
                         statusAnnouncement = document.createElement('div');
                         statusAnnouncement.setAttribute('role', 'status');
                         statusAnnouncement.setAttribute('aria-live', 'polite');
@@ -3016,7 +3012,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                         statusAnnouncement.className = 'sr-only';
                         statusAnnouncement.dataset.art19Status = switchId;
                         
-                        // Store reference on checkbox so we can access it in handler
+                        // Zachowaj referencję na checkbox, by była dostępna w obsłudze zdarzeń
                         checkbox.dataset.art19ContainerId = switchId;
                         
                         // Toggle handler
@@ -3037,7 +3033,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                     
                     list.appendChild(descDiv);
                     
-                    // Add status announcement and container after description (for Art. 19)
+                    // Dodaj ogłoszenie statusu i kontener po opisie (dla Art. 19)
                     if (isArt19 && art19Container && statusAnnouncement) {
                         list.appendChild(statusAnnouncement);
                         list.appendChild(art19Container);
@@ -3047,11 +3043,11 @@ document.getElementById('auditForm').onsubmit = (e) => {
                 currentCategory = cleanCategory;
             }
 
-            // Helper for rendering lists locally within this scope
+            // Pomocnik do renderowania list w bieżącym zakresie
             const renderBlocksFromDictionary = (arr, clauseId = '') => {
                 if (!arr || arr.length === 0) return '';
 
-                // Separate string items and test objects; render test objects as interactive cards
+                // Rozdziel łańcuchy i obiekty testowe; obiekty testowe renderuj jako interaktywne karty
                 const parts = [];
                 let stringBuf = [];
                 let testItemIndex = 0;
@@ -3238,13 +3234,13 @@ document.getElementById('auditForm').onsubmit = (e) => {
                 </section>
             `;
             
-            // For Art. 19, append to container; otherwise append to list
+            // Dla Art. 19 dodaj do kontenera, w pozostałych przypadkach do listy
             const targetContainer = isArt19 && art19Container ? art19Container : list;
             targetContainer.appendChild(article);
             
-            // Annotate links that open in a new tab (visual via CSS + SR text via JS)
+            // Oznacz linki otwierające się w nowej karcie (wizualnie CSS + tekst dla SR)
             indicateNewTabLinks(article);
-            // Ensure clause-tag buttons in dynamically generated article are enhanced
+            // Upewnij się, że przyciski clause-tag w dynamicznie generowanym article są wzbogacone
             try { enhanceClauseTagsWizard(article); } catch (e) { /* ignore */ }
         }
     });
@@ -3259,28 +3255,28 @@ document.getElementById('auditForm').onsubmit = (e) => {
         }
     });
     
-    // Announce completion to screen readers
+    // Ogłoś zakończenie generowania technologiom wspomagającym
     const announcement = document.getElementById('generation-announcement');
     announcement.textContent = "Wygenerowano arkusz dla: " + productFullName;
     
     // Zawsze generuj pustą kartę podsumowania na starcie
     generateDescriptiveSummary(true);
 
-    // Move focus and scroll to the results header for better visibility
+    // Przenieś fokus i przewiń do nagłówka wyników
     setTimeout(() => {
-        // Account for the sticky header so the heading is not hidden behind it
+        // Uwzględnij wysokość stałego nagłówka, by tytuł nie znikał za nim
         const header = document.querySelector('.app-header');
         const headerOffset = header ? header.getBoundingClientRect().height : 0;
         const top = selectedNameDisplay.getBoundingClientRect().top + window.pageYOffset - headerOffset - 8;
         window.scrollTo({ top, behavior: 'smooth' });
-        // Focus after scrolling; preventScroll so focus doesn't jump
+        // Ustaw fokus po przewinęciu; preventScroll zapobiega skokowi
         setTimeout(() => { selectedNameDisplay.focus({ preventScroll: true }); }, 100);
-        // Clear announcement after it's read to allow re-triggering
+        // Wyczyść ogłoszenie po odczytaniu, by można było wyzwolić ponownie
         setTimeout(() => { announcement.textContent = ""; }, 800);
     }, 50);
 };
 
-// --- Modal Opening Lock ---
+// --- Blokada otwierania modalu ---
 let isModalOpening = false;
 
 function getFocusableElements(modal) {
@@ -3396,7 +3392,7 @@ window.showGlossary = (triggerEl = null) => {
     const listContainer = body.querySelector('#glossaryList');
 
     if (searchInput) {
-        // Wait for dialog layout, then move focus and scroll to the search field.
+        // Poczekaj na układ dialogu, następnie przenieś fokus i przewiń do pola wyszukiwania.
         requestAnimationFrame(() => {
             requestAnimationFrame(() => {
                 if (!modal.open) return;
@@ -3419,7 +3415,7 @@ window.showGlossary = (triggerEl = null) => {
         `;
     }).join('');
 
-    // Render the heavy glossary list after modal open and focus handoff.
+    // Renderuj dużą listę słownika po otwarciu modalu i przekazaniu focusu.
     setTimeout(() => {
         if (!modal.open || !listContainer) return;
         listContainer.innerHTML = glossaryHtml;
@@ -3427,7 +3423,7 @@ window.showGlossary = (triggerEl = null) => {
     }, 60);
     
     if (searchInput) {
-        // Filter glossary items as user types.
+        // Filtruj hasła słownika w miarę wpisywania.
         searchInput.addEventListener('input', () => {
             const q = searchInput.value.toLowerCase().trim();
             const items = listContainer.querySelectorAll('.glossary-item');
@@ -3441,7 +3437,7 @@ window.showGlossary = (triggerEl = null) => {
             });
         });
 
-        // Keyboard path to content: ArrowDown from search moves focus to first visible term.
+        // Klawiaturowa ścieżka do treści: strzałka w dół z wyszukiwania przenosi fokus do pierwszego widocznego hasła.
         searchInput.addEventListener('keydown', (e) => {
             if (e.key === 'ArrowDown' && listContainer) {
                 e.preventDefault();
@@ -3626,11 +3622,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
-// --- Accessibility helpers for icon buttons (wizard-specific simplified version) ---
+// --- Pomocniki dostępności dla przycisków ikon (uproszczona wersja właściwa dla Wizarda) ---
 function placeIconLabelWizard(buttonEl, labelEl) {
     if (!buttonEl || !labelEl) return;
 
-    // Reset previous positioning and classes
+    // Zresetuj poprzednie pozycjonowanie i klasy
     labelEl.classList.remove('icon-label--left','icon-label--right');
     labelEl.style.left = '';
     labelEl.style.right = '';
@@ -3638,45 +3634,45 @@ function placeIconLabelWizard(buttonEl, labelEl) {
     labelEl.style.maxWidth = '';
     labelEl.style.whiteSpace = 'nowrap';
 
-    // Force layout so measurements are reliable
+    // Wymuś przeliczenie układu, by pomiary były wiarygodne
     void labelEl.offsetWidth;
 
     const brect = buttonEl.getBoundingClientRect();
     const labelRect = labelEl.getBoundingClientRect();
     const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
 
-    // Preferred: center above the button when possible
+    // Preferowane: wyśrodkowanie nad przyciskiem, jeśli to możliwe
     const centerLeft = brect.left + (brect.width / 2) - (labelRect.width / 2);
     if (centerLeft >= 8 && (centerLeft + labelRect.width) <= (vw - 8)) {
         labelEl.style.left = `${centerLeft}px`;
     } else if (brect.left < vw / 2) {
-        // Place to the right aligned to button's left edge
-        const leftPx = Math.min(brect.left + 8, vw - labelRect.width - 8);
-        labelEl.style.left = `${leftPx}px`;
-        labelEl.classList.add('icon-label--left');
-    } else {
-        // Place to the left aligned to button's right edge
-        const leftPx = Math.max(brect.right - labelRect.width - 8, 8);
-        labelEl.style.left = `${leftPx}px`;
-        labelEl.classList.add('icon-label--right');
-    }
+            // Wyrównanie do prawej krawędzi przycisku (lewa strona)
+            const leftPx = Math.min(brect.left + 8, vw - labelRect.width - 8);
+            labelEl.style.left = `${leftPx}px`;
+            labelEl.classList.add('icon-label--left');
+        } else {
+            // Wyrównanie do lewej krawędzi przycisku (prawa strona)
+            const leftPx = Math.max(brect.right - labelRect.width - 8, 8);
+            labelEl.style.left = `${leftPx}px`;
+            labelEl.classList.add('icon-label--right');
+        }
 
-    // Vertical placement: prefer below button, but move above if it would overflow viewport
-    const viewportH = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    let topPx = brect.bottom + 8;
-    if ((topPx + labelRect.height + 8) > viewportH) {
-        // move above
-        topPx = Math.max(brect.top - labelRect.height - 8, 8);
-    }
-    labelEl.style.top = `${topPx}px`;
-    labelEl.style.transform = 'translateY(0)';
+        // Pozycja pionowa: preferuj pod przyciskiem, przesuń powyżej jeśli wychodzi poza viewport
+        const viewportH = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
+        let topPx = brect.bottom + 8;
+        if ((topPx + labelRect.height + 8) > viewportH) {
+            // przesuń powyżej
+            topPx = Math.max(brect.top - labelRect.height - 8, 8);
+        }
+        labelEl.style.top = `${topPx}px`;
+        labelEl.style.transform = 'translateY(0)';
 
-    // If label is wider than viewport, allow wrapping and cap width
-    if (labelRect.width > (vw - 16)) {
-        labelEl.style.maxWidth = `${vw - 16}px`;
-        labelEl.style.whiteSpace = 'normal';
+        // Jeśli etykieta jest szersza niż viewport, zezwól na zawijanie i ogranicz szerokość
+        if (labelRect.width > (vw - 16)) {
+            labelEl.style.maxWidth = `${vw - 16}px`;
+            labelEl.style.whiteSpace = 'normal';
+        }
     }
-}
 
 function updateThemeToggleButtonsWizard(theme) {
     try {
@@ -3687,12 +3683,12 @@ function updateThemeToggleButtonsWizard(theme) {
             el.setAttribute('aria-label', actionText);
             const labelEl = el.querySelector('.icon-label');
             if (labelEl) {
-                // Visible label should show full action text on hover (hidden by default via CSS); aria-label keeps the action for SR
+                // Widoczna etykieta pokazuje pełny tekst akcji przy hover (domyślnie ukryta przez CSS); aria-label zachowuje akcję dla SR
                 labelEl.textContent = actionText;
                 placeIconLabelWizard(el, labelEl);
             }
         });
-        // Announce for screen readers (reuse generation-announcement if present)
+        // Ogłoś zmianę dla czytników ekranu (użyj generation-announcement jeśli dostępny)
         const announcement = document.getElementById('generation-announcement');
         if (announcement) {
             announcement.textContent = (lang && lang.startsWith('pl')) ? `Ustawiono motyw: ${theme === 'dark' ? 'ciemny' : 'jasny'}` : `Theme set: ${theme}`;
@@ -3701,7 +3697,7 @@ function updateThemeToggleButtonsWizard(theme) {
     } catch (e) { /* ignore */ }
 }
 
-// Ensure labels reposition on resize
+// Repozycjonuj etykiety przy zmianie rozmiaru okna
 window.addEventListener('resize', () => {
     document.querySelectorAll('.icon-label').forEach(label => {
         const btn = label.parentElement;
@@ -3710,17 +3706,17 @@ window.addEventListener('resize', () => {
 });
 
 
-// Annotate links that open in a new tab for accessibility and security:
-// - Visual marker (pseudo-element) is handled via CSS (see wizard.css)
-// - For screen readers we append a hidden text node and ensure rel includes noopener/noreferrer
+// Oznacza linki otwierające się w nowej karcie (dostępność i bezpieczeństwo):
+// - Marker wizualny (pseudo-element) obsługiwany przez CSS (wizard.css)
+// - Dla czytników ekranu dodajemy ukryty węzeł tekstowy i upewniamy się, że rel zawiera noopener/noreferrer
 function indicateNewTabLinks(container = document) {
     try {
         const links = (container && container.querySelectorAll) ? container.querySelectorAll('a[target="_blank"]') : [];
         links.forEach(a => {
-            // Skip nav items and buttons
+            // Pomiń elementy nawigacji i przyciski
             if (a.closest('nav') || a.classList.contains('nav-item') || a.getAttribute('role') === 'button') return;
 
-            // Ensure rel includes noopener and noreferrer for security
+            // Upewnij się, że rel zawiera noopener i noreferrer dla bezpieczeństwa
             try {
                 const relParts = (a.getAttribute('rel') || '').split(/\s+/).filter(Boolean);
                 ['noopener','noreferrer'].forEach(x => { if (!relParts.includes(x)) relParts.push(x); });
@@ -3735,7 +3731,7 @@ function indicateNewTabLinks(container = document) {
                 a.dataset.newTabIndicator = '1';
             }
 
-            // Append Lucide icon markup for visual indicator if not present
+            // Dodaj ikonę Lucide jako wizualny wskaźnik, jeśli jeszcze nie ma
             if (!a.querySelector('.external-link-icon')) {
                 const iconWrap = document.createElement('span');
                 iconWrap.className = 'external-link-icon';
@@ -3744,20 +3740,20 @@ function indicateNewTabLinks(container = document) {
                 a.appendChild(iconWrap);
                 try { if (window.lucide && typeof window.lucide.createIcons === 'function') window.lucide.createIcons(); } catch (e) { /* ignore */ }
             }
-            // Also enhance any clause tags inside the container (if present)
+            // Wzbogać też przyciski clause-tag wewnątrz kontenera (jeśli są)
             try { enhanceClauseTagsWizard(container); } catch (e) { /* ignore */ }
         });
     } catch (e) { /* ignore */ }
 }
 
-// Run once on DOM ready to annotate any static content
+// Uruchom raz po załadowaniu DOM, by oznaczyć statyczną treść
 document.addEventListener('DOMContentLoaded', () => { indicateNewTabLinks(document); enhanceClauseTagsWizard(document); });
 
 
-// Enhance clause-tag buttons: ensure screen reader label (visual labels are now inline)
+// Wzbogaca przyciski clause-tag: zapewnia etykiety dostępne dla czytników ekranu (etykiety wizualne są inline)
 function enhanceClauseTagsWizard(container = document) {
-    // Labels are now generated inline in modern OZ-PAD version to satisfy WCAG 1.4.13
-    // and avoid flickering issues with multiple small tags.
+    // Etykiety są generowane inline w nowoczesnej wersji OZ-PAD (WCAG 1.4.13),
+    // by uniknąć migotania przy wielu małych tagach.
     try {
         const els = (container && container.querySelectorAll) ? container.querySelectorAll('.clause-tag') : [];
         els.forEach(btn => {
@@ -3768,7 +3764,7 @@ function enhanceClauseTagsWizard(container = document) {
             if (data && data.title) {
                 const titleClean = stripNumbering(data.title.replace(/&nbsp;|\u00A0/g, ' '));
                 
-                // Ensure aria-label contains the clause name for screen readers
+                // Upewnij się, że aria-label zawiera nazwę klauzuli dla czytników ekranu
                 const articleRef = btn.getAttribute('aria-label') || '';
                 if (!articleRef.includes(titleClean)) {
                     const newLabel = articleRef ? `${articleRef}: ${titleClean}` : `Klauzula ${clauseId}: ${titleClean}`;

@@ -48,9 +48,9 @@ function clearState() {
 }
 
 /**
- * Escapes XML special characters for ODT export.
- * @param {string} str The string to escape.
- * @returns {string} Escaped string.
+ * Zamienia znaki specjalne XML na encje — potrzebne przy eksporcie ODT.
+ * @param {string} str Tekst do zamiany.
+ * @returns {string} Tekst z zamienionymi znakami.
  */
 function xmlEscape(str) {
     if (!str) return '';
@@ -68,18 +68,18 @@ function xmlEscape(str) {
     });
 }
 
-// App version for cache-busting verification
+// Wersja aplikacji do weryfikacji cache'u
 window.EAA_APP_VERSION = 'v16';
 
 /**
- * Shows a prompt to refresh the page when a new version is available.
+ * Wyświetla monit o odświeżenie strony po wykryciu nowej wersji aplikacji.
  */
 function showUpdatePrompt() {
     const statusMessage = document.getElementById('status-message');
     if (statusMessage) {
         const message = window.M ? window.M.utils.updateAvailable : 'A new version of the application is available. Refresh the page to apply it.';
         statusMessage.textContent = message;
-        // Auto-refresh after 3 seconds
+        // Automatyczne odświeżenie po 3 sekundach
         setTimeout(() => {
             window.location.reload();
         }, 3000);
@@ -95,7 +95,7 @@ function initTheme() {
     const theme = savedTheme ? savedTheme : (systemDark ? 'dark' : 'light');
     document.documentElement.setAttribute('data-theme', theme);
     updateThemeIcon(theme);
-    // Ensure theme toggle buttons reflect current state for assistive tech and visible labels
+    // Upewnij się, że przyciski przełącznika motywu odzwierciedlają aktualny stan (dla AT i etykiet widocznych)
     if (typeof updateThemeToggleButtons === 'function') updateThemeToggleButtons(theme);
 }
 
@@ -108,7 +108,7 @@ function toggleTheme() {
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
     updateThemeIcon(newTheme);
-    // Update buttons and announce new state to assistive technologies
+    // Zaktualizuj przyciski i ogłoś nowy stan technologiom wspomagającym
     if (typeof updateThemeToggleButtons === 'function') updateThemeToggleButtons(newTheme);
     const hasM = (typeof M !== 'undefined' && M && M.navigation);
     const modeText = (newTheme === 'dark') ? (hasM && M.navigation.themeDark ? M.navigation.themeDark : 'Dark') : (hasM && M.navigation.themeLight ? M.navigation.themeLight : 'Light');
@@ -130,19 +130,19 @@ function updateThemeIcon(theme) {
 }
 
 /**
- * Place an icon label so it stays inside the viewport.
- * Tries to center above the button, but if there's not enough space
- * it positions left or right accordingly.
+ * Pozycjonuje etykietę ikony tak, by pozostała w obszarze widoku.
+ * Stara się wyśrodkować ją nad przyciskiem; jeśli brakuje miejsca,
+ * przesuwa etykietę odpowiednio w lewo lub w prawo.
  */
 function placeIconLabel(buttonEl, labelEl) {
     if (!buttonEl || !labelEl) return;
     try {
-        // Reset positioning classes/styles
+        // Zresetuj klasy i style pozycjonowania
         labelEl.classList.remove('icon-label--left', 'icon-label--right');
         labelEl.style.left = '';
         labelEl.style.right = '';
 
-        // Force layout so measurements are reliable (label may be hidden initially)
+        // Wymuś przeliczenie układu, by pomiary były wiarygodne (etykieta może być początkowo ukryta)
         void labelEl.offsetWidth;
 
         const brect = buttonEl.getBoundingClientRect();
@@ -151,37 +151,37 @@ function placeIconLabel(buttonEl, labelEl) {
         const spaceRight = vw - brect.left;
         const centerLeft = brect.left + (brect.width / 2) - (labelRect.width / 2);
 
-        // Preferred: center above button using absolute pixel coords (works with position:fixed)
+        // Preferowane: wyśrodkowanie nad przyciskiem przy użyciu bezwzględnych współrzędnych (działa z position:fixed)
         if (centerLeft >= 8 && (centerLeft + labelRect.width) <= (vw - 8)) {
             labelEl.style.left = `${centerLeft}px`;
             labelEl.classList.remove('icon-label--left', 'icon-label--right');
         } else if (brect.left < vw / 2) {
-            // Place to the right aligned to button's left edge
+            // Wyrównanie do prawej krawędzi przycisku (lewa strona)
             const leftPx = Math.min(brect.left + 8, vw - labelRect.width - 8);
             labelEl.style.left = `${leftPx}px`;
             labelEl.classList.add('icon-label--left');
         } else {
-            // Place to the left aligned to button's right edge
+            // Wyrównanie do lewej krawędzi przycisku (prawa strona)
             const leftPx = Math.max(brect.right - labelRect.width - 8, 8);
             labelEl.style.left = `${leftPx}px`;
             labelEl.classList.add('icon-label--right');
         }
 
-        // Vertical placement: prefer below button, but move above if it would overflow viewport
+        // Pozycja pionowa: pod przyciskiem, chyba że wykracza poza viewport — wtedy powyżej
         const viewportH = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
         let topPx = brect.bottom + 8;
         if ((topPx + labelRect.height + 8) > viewportH) {
-            // move above
+            // przesuń powyżej
             topPx = Math.max(brect.top - labelRect.height - 8, 8);
         }
         labelEl.style.top = `${topPx}px`;
         labelEl.style.transform = 'translateY(0)';
     } catch (e) {
-        // Ignore measurement errors
+        // Ignoruj błędy pomiarów
     }
 }
 
-// Global function to hide all icon labels
+// Globalna funkcja ukrywająca wszystkie etykiety ikon
 function hideAllIconLabels() {
     document.querySelectorAll('.icon-label').forEach(label => {
         label.classList.remove('icon-label--visible');
@@ -189,18 +189,18 @@ function hideAllIconLabels() {
 }
 
 function showIconLabel(label) {
-    // If user dismissed this label via Escape, don't show it again until they move away and back
+    // Jeśli użytkownik zamknął etykietę Escape'em, nie pokazuj jej ponownie, dopóki kursor nie oddali się i nie wróci
     if (label.dataset.isDismissed === 'true') return;
 
-    // Hide all others immediately
+    // Ukryj wszystkie pozostałe etykiety
     hideAllIconLabels();
-    // Show this one
+    // Pokaż tę
     label.classList.add('icon-label--visible');
 }
 
 /**
- * Enhance icon-only buttons with visible labels on hover/focus for affordance.
- * Adds .icon-label spans that appear on hover/focus, removes redundant aria-label/title.
+ * Ulepsza przyciski zawierające tylko ikony o widoczne etykiety pojawiające się przy hover/focus.
+ * Dodaje spany .icon-label, usuwa nadmiarowe aria-label/title.
  */
 function enhanceIconButtons() {
     const selectors = ['#menu-toggle', '#btn-save-audit', '#btn-edit-config', '#btn-save-wizard', '#btn-load-wizard', '#btn-download-spreadsheet', 'button[onclick*="toggleTheme"]', '.theme-toggle'];
@@ -209,16 +209,16 @@ function enhanceIconButtons() {
         document.querySelectorAll(sel).forEach(el => {
             if (seen.has(el)) return;
             seen.add(el);
-            // Special case: theme toggle buttons should always get icon-label even if they have other helpers
+            // Szczególny przypadek: przyciski przełącznika motywu zawsze dostają icon-label
             const isThemeToggle = el.matches('button[onclick*="toggleTheme"]') || el.classList.contains('theme-toggle');
-            // Skip buttons that already have helper spans (but allow theme toggles)
+            // Pomiń przyciski, które już mają pomocnicze spany (z wyjątkiem przełączników motywu)
             if (!isThemeToggle && el.querySelector('.nav-helper, .sr-only, .visually-hidden')) return;
-            // Prefer data-icon-label (for visual/phonetic split), then aria-label or title
+            // Preferuj data-icon-label (rozdzielenie wizualne/fonetyczne), następnie aria-label lub title
             const label = el.getAttribute('data-icon-label') || el.getAttribute('aria-label') || el.title || el.getAttribute('data-i18n-title');
             if (!label) return;
-            // Avoid duplicating existing labels
+            // Unikaj duplikowania istniejących etykiet
             if (el.querySelector('.icon-label')) return;
-            // Ensure the button is positioned relative for absolute label
+            // Upewnij się, że przycisk ma position:relative dla absolutnego pozycjonowania etykiety
             if (!getComputedStyle(el).position || getComputedStyle(el).position === 'static') {
                 el.style.position = 'relative';
             }
@@ -228,12 +228,12 @@ function enhanceIconButtons() {
             span.setAttribute('aria-hidden', 'true');
             el.appendChild(span);
 
-            // For buttons with visible labels, remove title to avoid browser tooltip (keep aria-label for screen readers)
+            // Dla przycisków z widoczną etykietą usuń title, by uniknąć tooltipa przeglądarki (zachowaj aria-label dla czytników ekranu)
             if (el.hasAttribute('title')) {
                 el.removeAttribute('title');
             }
 
-            // Position label correctly to avoid viewport overflow; do in next tick to allow layout to settle
+            // Pozycjonuj etykietę po ustabilizowaniu układu (next tick)
             const showAndPosition = () => {
                 placeIconLabel(el, span);
                 showIconLabel(span);
@@ -243,7 +243,7 @@ function enhanceIconButtons() {
             el.addEventListener('focus', showAndPosition);
 
             el.addEventListener('mouseleave', (e) => {
-                // Only hide if we aren't moving into the label itself (WCAG 1.4.13 Hoverable)
+                // Ukryj tylko jeśli kursor nie przeszedł na samą etykietę (WCAG 1.4.13 Hoverable)
                 if (e.relatedTarget !== span && !span.contains(e.relatedTarget)) {
                     delete span.dataset.isDismissed;
                     hideAllIconLabels();
@@ -251,7 +251,7 @@ function enhanceIconButtons() {
             });
 
             el.addEventListener('blur', (e) => {
-                // Only hide if focus didn't move to the label (though labels aren't usually focusable)
+                // Ukryj tylko jeśli fokus nie przeszedł na etykietę (etykiety zazwyczaj nie są focusowalne)
                 if (e.relatedTarget !== span) {
                     delete span.dataset.isDismissed;
                     hideAllIconLabels();
@@ -264,10 +264,10 @@ function enhanceIconButtons() {
                 }
             });
 
-            // Allow hovering on the label itself
+            // Zezwól na najechanie na samą etykietę (WCAG 1.4.13)
             span.addEventListener('mouseenter', () => showIconLabel(span));
             span.addEventListener('mouseleave', (e) => {
-                // Hide if we aren't moving back to the button or one of its children
+                // Ukryj jeśli kursor nie wrócił do przycisku ani jego potomków
                 if (e.relatedTarget !== el && !el.contains(e.relatedTarget)) {
                     delete span.dataset.isDismissed;
                     hideAllIconLabels();
@@ -280,7 +280,7 @@ function enhanceIconButtons() {
 }
 
 /**
- * Handle Escape key to hide all tooltips/labels (WCAG 1.4.13 Dismissible)
+ * Obsługa klawisza Escape — ukrywa wszystkie tooltips/etykiety (WCAG 1.4.13 Dismissible)
  */
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -291,7 +291,7 @@ document.addEventListener('keydown', (e) => {
     }
 });
 
-// Reposition labels on resize to keep them inside viewport
+// Repozycjonuj etykiety przy zmianie rozmiaru okna, by pozostały w obszarze widoku
 window.addEventListener('resize', () => {
     document.querySelectorAll('.icon-label').forEach(label => {
         const btn = label.parentElement;
@@ -299,7 +299,7 @@ window.addEventListener('resize', () => {
     });
 });
 
-// Hide icon labels on scroll or when clicking outside
+// Ukryj etykiety ikon przy przewijaniu lub kliknięciu poza przyciskiem
 window.addEventListener('scroll', () => hideAllIconLabels());
 document.addEventListener('click', (e) => {
     if (!e.target.closest('button') && !e.target.closest('.clause-tag')) {
@@ -308,11 +308,11 @@ document.addEventListener('click', (e) => {
 });
 
 /**
- * Update accessible labels for theme toggle buttons.
- * Theme toggle is treated as a button (action) rather than a switch (state)
- * to better reflect its function and provide a clear action-oriented label.
- * - update aria-label to reflect the action (toggle to the other mode)
- * - update visible .icon-label if present to include action text
+ * Aktualizuje dostępne etykiety przycisków przełącznika motywu.
+ * Przełącznik motywu traktowany jest jak przycisk (akcja), a nie przełącznik (stan),
+ * co lepiej odzwierciedla jego funkcję i zapewnia czytelną etykietę akcji.
+ * - aktualizuje aria-label tak, by opisywał akcję (przełącz na drugi tryb)
+ * - aktualizuje widoczny .icon-label (jeśli istnieje) z tekstem akcji
  */
 function updateThemeToggleButtons(theme) {
     try {
@@ -334,23 +334,23 @@ function updateThemeToggleButtons(theme) {
         const opposite = (theme === 'dark') ? 'light' : 'dark';
         const oppositeText = localizedMode(opposite);
 
-        // Template for action (what will happen when activated)
+        // Szablon dla akcji (co się stanie po aktywacji)
         const actionTemplate = (hasM && M.navigation.toggleTo) ? M.navigation.toggleTo : (lang && lang.startsWith('pl') ? 'Przełącz motyw na {mode}' : 'Toggle theme to {mode}');
         const actionText = actionTemplate.replace('{mode}', oppositeText);
 
         document.querySelectorAll('button[onclick*="toggleTheme"]').forEach(el => {
-            // Update aria-label to show the action (toggle to opposite)
+            // Zaktualizuj aria-label do opisu akcji (przełącz na przeciwny tryb)
             el.setAttribute('aria-label', actionText);
 
-            // Update visible label to show the action (toggle to opposite)
+            // Zaktualizuj widoczną etykietę do opisu akcji (przełącz na przeciwny tryb)
             const labelEl = el.querySelector('.icon-label');
             if (labelEl) {
                 labelEl.textContent = actionText;
-                // Remove title to avoid duplicate tooltip when visible label exists
+                // Usuń title, by uniknąć duplikatu tooltipa gdy widoczna etykieta istnieje
                 if (el.hasAttribute('title')) {
                     el.removeAttribute('title');
                 }
-                // Position label to stay in viewport
+                // Pozycjonuj etykietę w obszarze widoku
                 placeIconLabel(el, labelEl);
             }
         });
@@ -383,7 +383,7 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
             dialog.id = 'app-confirm-dialog';
             dialog.setAttribute('aria-labelledby', 'dialog-title');
             dialog.setAttribute('aria-modal', 'true');
-            // aria-describedby removed to prevent repetitive reading on child focus in VoiceOver
+            // aria-describedby usunięte, by uniknąć powtórnego odczytywania przez VoiceOver przy focusie na elemencie potomnym
             dialog.innerHTML = `
                 <h3 id="dialog-title" style="margin-top: 0;"></h3>
                 <p id="dialog-message"></p>
@@ -413,7 +413,7 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
         cancelBtn.onclick = () => close(false);
         confirmBtn.onclick = () => close(true);
 
-        // Handle ESC
+        // Obsługa ESC
         dialog.oncancel = (e) => {
             e.preventDefault();
             close(false);
@@ -421,15 +421,15 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
 
         const actions = dialog.querySelector('.dialog-actions');
         if (focusOn === 'cancel') {
-            // Place the cancel button on the right and make it the primary (focused) action
+            // Umieść przycisk anulowania po prawej i ustaw go jako główny (fokus)
             actions.classList.add('reverse-buttons');
-            // Swap visual styling: make cancel primary, confirm secondary
+            // Zamień style wizualne: anuluj jako główny, potwierdź jako drugorzędny
             cancelBtn.classList.remove('outline', 'secondary');
             confirmBtn.classList.add('outline', 'secondary');
             cancelBtn.focus();
         } else {
             actions.classList.remove('reverse-buttons');
-            // Ensure default styling: confirm is primary
+            // Upewnij się, że domyślny styl: potwierdź jest główny
             confirmBtn.classList.remove('outline', 'secondary');
             cancelBtn.classList.add('outline', 'secondary');
             confirmBtn.focus();
@@ -483,7 +483,7 @@ async function alertModal(message, title = 'Informacja') {
             close();
         };
 
-        // Focus the OK button by default
+        // Domyślnie fokus na przycisku OK
         okBtn.focus();
 
         dialog.showModal();
@@ -625,7 +625,7 @@ function generateEARL(state) {
         "dct:date": new Date().toISOString()
     };
 
-    // App Configuration (Custom extension to preserve state)
+    // Konfiguracja aplikacji (rozszerzenie niestandardowe do zachowania stanu)
     const appConfig = {
         "@type": "eaa:Configuration",
         "eaa:clauses": state.clauses || [],
@@ -680,23 +680,23 @@ function generateEARL(state) {
 }
 
 /**
- * Parses an EARL report back into an application state object.
- * @param {Object} earlData The EARL report object.
- * @returns {Object} The reconstructed application state.
+ * Parsuje raport EARL z powrotem do obiektu stanu aplikacji.
+ * @param {Object} earlData Obiekt raportu EARL.
+ * @returns {Object} Odtworzony stan aplikacji.
  */
 function parseEARL(earlData) {
     const graph = earlData['@graph'] || [];
 
-    // Find Config
+    // Znajdź konfigurację
     const config = graph.find(item => item['@type'] === 'eaa:Configuration') || {};
 
-    // Find Subject
+    // Znajdź podmiot testu
     const subject = graph.find(item => {
         const types = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
         return types.includes('earl:TestSubject') || types.includes('sch:Product');
     }) || {};
 
-    // Find Assertor (Human)
+    // Znajdź assertora (człowieka)
     const human = graph.find(item => {
         const types = Array.isArray(item['@type']) ? item['@type'] : [item['@type']];
         return types.includes('foaf:Person');
@@ -710,11 +710,11 @@ function parseEARL(earlData) {
         clauses: config['eaa:clauses'] || [],
         currentIdx: config['eaa:currentIdx'] || 0,
         selectedProfile: config['eaa:selectedProfile'] || 'none',
-        tests: [], // Will be re-populated by the app based on clauses
+        tests: [], // Zostanie uzupełnione przez aplikację na podstawie klauzul
         results: {}
     };
 
-    // Parse Assertions
+    // Parsuj asercje
     graph.forEach(item => {
         if (item['@type'] === 'earl:Assertion') {
             const testId = item['earl:test']?.['dct:identifier'];
@@ -754,7 +754,7 @@ function getAuditStats(state) {
     const naTests = tests.filter(t => results[t.id]?.status === 'na' || results[t.id]?.status === 'Nie dotyczy');
     const ntTests = tests.filter(t => results[t.id]?.status === 'nt' || results[t.id]?.status === 'Nietestowalne' || results[t.id]?.status === 'Nie do sprawdzenia');
 
-    // "To Verify" = All tests - (Failed + Passed + NA + NT)
+    // "Do weryfikacji" = wszystkie testy − (Niezaliczone + Zaliczone + ND + NT)
     const processedIds = new Set([...failedTests, ...passedTests, ...naTests, ...ntTests].map(t => t.id));
     const verifyTests = tests.filter(t => !processedIds.has(t.id));
 
@@ -796,30 +796,30 @@ function getAuditStats(state) {
 }
 
 /**
- * Fixes orphaned conjunctions in text by adding non-breaking spaces.
- * @param {string} text The text to fix.
- * @returns {string} The fixed text.
+ * Naprawia osierocone spójniki w tekście, dodając spacje niełamliwe.
+ * @param {string} text Tekst do naprawy.
+ * @returns {string} Naprawiony tekst.
  */
 function fixOrphans(text) {
     if (!text) return text;
-    // Replace space + single letter (a, i, o, u, w, z) + space with space + letter + non-breaking space
-    // Case insensitive. We use \u00a0 which is safer for both XML and HTML.
+    // Zamień spację + pojedyncza litera (a, i, o, u, w, z) + spację na spację + litera + spacja niełamliwa
+    // Bez rozróżniania wielkości liter. Używamy \u00a0, bezpieczniejszego zarówno dla XML, jak i HTML.
     return text.replace(/(\s|^)([aiouwzAIOWZ])\s+/g, '$1$2\u00a0');
 }
 
 /**
- * Simple Markdown parser for a subset of standard signs.
- * Supports: **bold**, *italic*, [link](url), `code`, \n -> br
- * @param {string} text Markdown string
- * @returns {string} Sanitized HTML string
+ * Prosty parser Markdown dla podzbioru standardowych znaczników.
+ * Obsługuje: **pogrubienie**, *kursywa*, [link](url), `kod`, \n -> br
+ * @param {string} text Tekst Markdown
+ * @returns {string} Oczyszczony ciąg HTML
  */
 function parseMarkdown(text) {
     if (!text) return '';
 
-    // 1. Handle literal \n string if present (backslash + n)
+    // 1. Obsłuż dosłowny ciąg \n (backslash + n)
     let t = text.replace(/\\n/g, '\n');
 
-    // Stash HTML tables and other pre-formatted HTML before escaping
+    // Przechowaj tabele HTML i inne gotowe bloki HTML przed escapowaniem
     const htmlStash = [];
     const stash = (tag) => {
         const key = `\x00${htmlStash.length}\x00`;
@@ -827,42 +827,42 @@ function parseMarkdown(text) {
         return key;
     };
 
-    // Stash HTML tables: <table>...</table>
+    // Przechowaj tabele HTML: <table>...</table>
     t = t.replace(/<table[\s\S]*?<\/table>/gi, (match) => stash(match));
 
-    // 2. Initial escape to prevent raw HTML injection
+    // 2. Wstępny escaping — zapobiega wstrzyknięciu surowego HTML
     let html = t
         .replace(/&/g, '&amp;')
         .replace(/</g, '&lt;')
         .replace(/>/g, '&gt;');
 
-    // 3. Inline formatting
-    // Images: ![alt](src)
+    // 3. Formatowanie inline
+    // Obrazy: ![alt](src)
     html = html.replace(/!\[(.*?)\]\((.*?)\)/g, (_, alt, src) =>
         stash(`<img src="${src}" alt="${alt}" style="max-width:100%;display:block;margin:0.5em 0">`)
     );
-    // Links: [text](url)
+    // Linki: [tekst](url)
     html = html.replace(/\[(.*?)\]\((https?:\/\/.*?)\)/g, (_, text, url) =>
         stash(`<a href="${url}" target="_blank" rel="noopener noreferrer">${text}</a>`)
     );
 
     html = html
-        // Bold: **text** or __text__
+        // Pogrubienie: **tekst** lub __tekst__
         .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
         .replace(/__(.*?)__/g, '<strong>$1</strong>')
-        // Italic: *text* or _text_
+        // Kursywa: *tekst* lub _tekst_
         .replace(/\*(.*?)\*/g, '<em>$1</em>')
         .replace(/_(.*?)_/g, '<em>$1</em>')
-        // Inline code: `text`
+        // Kod inline: `tekst`
         .replace(/`(.*?)`/g, '<code>$1</code>');
 
-    // Restore stashed HTML tags
+    // Przywróć przechowane tagi HTML
     html = html.replace(/\x00(\d+)\x00/g, (_, i) => htmlStash[+i]);
 
-    // 4. Block formatting: Headers, Lists and New Lines
+    // 4. Formatowanie blokowe: nagłówki, listy, nowe linie
     const lines = html.split('\n');
     let result = '';
-    let listStack = []; // Stack to keep track of nested list types and indents
+    let listStack = []; // Stos do śledzenia zagnieżdżonych typów list i wcięć
 
     const closeAllLists = () => {
         while (listStack.length > 0) {
@@ -871,12 +871,12 @@ function parseMarkdown(text) {
     };
 
     lines.forEach((line, idx) => {
-        // Match leading spaces/indentation
+        // Dopasuj wiodące spacje/wcięcia
         const indentMatch = line.match(/^(\s*)/);
         const indent = indentMatch ? indentMatch[1].length : 0;
         const trimmed = line.trim();
 
-        // Headers: # Header
+        // Nagłówki: # Nagłówek
         const headerMatch = trimmed.match(/^(#{1,3})\s+(.+)$/);
         if (headerMatch) {
             closeAllLists();
@@ -885,9 +885,9 @@ function parseMarkdown(text) {
             return;
         }
 
-        // Unordered matching: "- " or "* "
+        // Lista nieuporządkowana: "- " lub "* "
         const ulMatch = trimmed.match(/^[-*]\s+(.+)$/);
-        // Ordered matching: "1. " or "2. " etc.
+        // Lista uporządkowana: "1. " lub "2. " itp.
         const olMatch = trimmed.match(/^(\d+)\.\s+(.+)$/);
 
         if (ulMatch || olMatch) {
@@ -896,45 +896,45 @@ function parseMarkdown(text) {
 
             const getStartAttr = () => (olMatch && olMatch[1] !== '1') ? ` start="${olMatch[1]}"` : '';
 
-            // Logic for nesting
+            // Logika zagnieżdżania
             if (listStack.length === 0) {
-                // Start a brand new list
+                // Rozpocznij nową listę
                 result += `<${currentType}${getStartAttr()} class="markdown-list">`;
                 listStack.push({ type: currentType, indent: indent });
             } else {
                 let top = listStack[listStack.length - 1];
 
                 if (indent > top.indent) {
-                    // Start a nested list
+                    // Rozpocznij zagnieżdżoną listę
                     result += `<${currentType}${getStartAttr()} class="markdown-list">`;
                     listStack.push({ type: currentType, indent: indent });
                 } else if (indent < top.indent) {
-                    // Close nested list(s) until we hit a matching or lower indent
+                    // Zamknij zagnieżdżone listy do pasującego lub niższego wcięcia
                     while (listStack.length > 0 && indent < listStack[listStack.length - 1].indent) {
                         result += `</${listStack.pop().type}>`;
                     }
-                    // If the type at this level is different, switch it
+                    // Jeśli typ na tym poziomie jest inny, zmień go
                     top = listStack[listStack.length - 1];
                     if (top && top.type !== currentType) {
                         result += `</${listStack.pop().type}><${currentType}${getStartAttr()} class="markdown-list">`;
                         listStack.push({ type: currentType, indent: indent });
                     }
                 } else if (currentType !== top.type) {
-                    // Same indent but different type (e.g., switched from - to 1.)
+                    // Takie samo wcięcie, ale inny typ (np. przejście z - na 1.)
                     result += `</${listStack.pop().type}><${currentType}${getStartAttr()} class="markdown-list">`;
                     listStack.push({ type: currentType, indent: indent });
                 }
             }
             result += `<li>${content}</li>`;
         } else {
-            // Not a list item
+            // Nie jest elementem listy
             if (trimmed === '') {
-                // Empty lines: close lists unless specified otherwise by MD flavour (we close for simplicity)
+                // Puste linie: zamknij listy
                 closeAllLists();
                 if (idx < lines.length - 1) result += '<br>';
             } else {
-                // Regular paragraph text - if we were in a list, close it unless it's intended to be a multi-line list item
-                // In our current simple model, any non-list-marked line closes the list.
+                // Zwykły akapit — jeśli byliśmy w liście, zamknij ją
+                // W tym prostym modelu każda linia bez znacznika listy zamyka listę.
                 closeAllLists();
                 result += line;
                 if (idx < lines.length - 1) {
@@ -954,8 +954,7 @@ function parseMarkdown(text) {
  */
 function stripNumbering(text) {
     if (!text) return '';
-    // see wizard.js stripNumbering change above for rationale; we also need to
-    // absorb hyphens because of clauses like "C.5.3-1".
+    // Zob. stripNumbering w wizard.js — pochłaniamy też myślniki (klauzule typu "C.5.3-1").
     return text.replace(/^((?:C|U)\.[A-Za-z0-9\.-]+|[\d\.]+|[A-Z]\d+[\.\)]?)\s*/, '');
 }
 
@@ -976,9 +975,9 @@ function expandLegal(text) {
 }
 
 /**
- * Returns the Polish label for a given status code.
- * @param {string} status The status code (pass, fail, na, nt, etc.)
- * @returns {string} The Polish label.
+ * Zwraca polską etykietę dla podanego kodu statusu.
+ * @param {string} status Kod statusu (pass, fail, na, nt, itp.)
+ * @returns {string} Polska etykieta.
  */
 function getStatusLabel(status) {
     if (!status || status === 'not-tested' || status === 'brak') return 'Nietestowany';
@@ -1038,7 +1037,7 @@ function downloadAudit(state, isDraft = true) {
     liveRegion.innerText = (window.M && window.M.utils && window.M.utils.saveSuccess) || 'Zapisano raport i pobrano plik.';
 }
 
-// Data-i18n helper (messages object + optional root element)
+// Pomocnik data-i18n (obiekt komunikatów + opcjonalny element root)
 function getMessageByKey(messages, key) {
     if (!messages || !key) return undefined;
 
@@ -1052,11 +1051,11 @@ function getMessageByKey(messages, key) {
         return cur;
     };
 
-    // Try the exact key first
+    // Najpierw spróbuj dokładnego klucza
     let val = tryKey(key);
     if (typeof val !== 'undefined') return val;
 
-    // Aliases mapping to support gradual unification (backwards compatibility)
+    // Mapowanie aliasów dla zachowania wstecznej zgodności
     const aliasPairs = [
         ['fileLoad.', 'error.load.'],
         ['error.load.', 'fileLoad.']
@@ -1075,7 +1074,7 @@ function getMessageByKey(messages, key) {
 
 function applyDataI18n(messages, root = document) {
     if (!messages) return;
-    // Elements with data-i18n
+    // Elementy z data-i18n
     root.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         const val = getMessageByKey(messages, key);
@@ -1086,28 +1085,28 @@ function applyDataI18n(messages, root = document) {
             el.textContent = val;
         }
     });
-    // Hrefs
+    // Adresy href
     root.querySelectorAll('a[data-i18n-href]').forEach(a => {
         const hrefKey = a.getAttribute('data-i18n-href');
         const hrefVal = getMessageByKey(messages, hrefKey);
         if (hrefVal) a.setAttribute('href', hrefVal);
     });
 
-    // Titles
+    // Tytuły (title)
     root.querySelectorAll('[data-i18n-title]').forEach(el => {
         const key = el.getAttribute('data-i18n-title');
         const val = getMessageByKey(messages, key);
         if (val) el.setAttribute('title', val);
     });
 
-    // ARIA labels
+    // Etykiety ARIA
     root.querySelectorAll('[data-i18n-aria]').forEach(el => {
         const key = el.getAttribute('data-i18n-aria');
         const val = getMessageByKey(messages, key);
         if (val) el.setAttribute('aria-label', val);
     });
 
-    // Placeholders
+    // Placeholdery
     root.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         const val = getMessageByKey(messages, key);
@@ -1116,9 +1115,9 @@ function applyDataI18n(messages, root = document) {
 }
 
 /**
- * Dev-time check for unresolved data-i18n keys.
- * Usage: append ?i18n-check to the page URL to enable when loading the page.
- * Returns an array of missing entries (empty if none).
+ * Sprawdza niezdefiniowane klucze data-i18n (narzędzie deweloperskie).
+ * Użycie: dołącz ?i18n-check do URL strony przy ładowaniu.
+ * Zwraca tablicę brakujących wpisów (pustą jeśli wszystko OK).
  */
 function checkDataI18n(messages, root = document) {
     const missing = [];
@@ -1147,7 +1146,7 @@ function checkDataI18n(messages, root = document) {
     return missing;
 }
 
-// Expose functions globally
+// Udostępnij funkcje globalnie
 window.utils = {
     loadState,
     saveState,
@@ -1175,17 +1174,17 @@ window.utils = {
 };
 
 /**
- * Ensure sr-only / visually-hidden / nav-helper elements cannot be made visible via inline styles
- * Attaches MutationObservers to clear any inline 'style' attribute written to these elements
+ * Chroni elementy sr-only / visually-hidden / nav-helper przed ujawnieniem przez style inline.
+ * Dołącza MutationObservery, które usuwają atrybut 'style' dodany do tych elementów.
  */
 function protectAssistiveHelpers(root = document) {
     const protectElement = (el) => {
         if (!(el instanceof Element)) return;
         if (!el.classList) return;
         if (!el.classList.contains('sr-only') && !el.classList.contains('visually-hidden') && !el.classList.contains('nav-helper')) return;
-        // clear any existing inline styles
+        // Wyczyść istniejące style inline
         el.style.cssText = '';
-        // Attach observer only once
+        // Dołącz observer tylko raz
         if (el.__srProtected) return;
         try {
             const mo = new MutationObserver((mutations) => {
@@ -1201,16 +1200,16 @@ function protectAssistiveHelpers(root = document) {
             el.__srProtected = true;
             el.__srProtectedMo = mo;
         } catch (e) {
-            // ignore environments without MutationObserver
+            // Ignoruj środowiska bez MutationObserver
             console.warn('protectAssistiveHelpers: could not observe element', e);
         }
     };
 
     try {
-        // Protect existing elements
+        // Chroń istniejące elementy
         (root.querySelectorAll('.sr-only, .visually-hidden, .nav-helper') || []).forEach(protectElement);
 
-        // Observe additions to the DOM under root and protect new elements
+        // Obserwuj dodawanie elementów do DOM i chroń nowe
         const rootObserver = new MutationObserver((mutations) => {
             mutations.forEach(m => {
                 if (m.type === 'childList' && m.addedNodes && m.addedNodes.length) {
@@ -1228,14 +1227,14 @@ function protectAssistiveHelpers(root = document) {
     }
 }
 
-// Initialize theme on load
+// Inicjalizacja motywu przy załadowaniu strony
 document.addEventListener('DOMContentLoaded', () => {
-    // Force refresh if version changed significantly - prevents PWA from getting stuck
+    // Wymuś odświeżenie, jeśli wersja się zmieniła — zapobiega utknięciu PWA
     const currentVersion = window.EAA_APP_VERSION;
     const storedVersion = localStorage.getItem('eaa_app_version');
     if (storedVersion && storedVersion !== currentVersion) {
         localStorage.setItem('eaa_app_version', currentVersion);
-        // If we have caches, clear them to be safe
+        // Jeśli mamy cache, wyczyść go dla pewności
         if ('caches' in window) {
             caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
                 .then(() => window.location.reload(true));
@@ -1248,30 +1247,30 @@ document.addEventListener('DOMContentLoaded', () => {
 
     initTheme();
 
-    // Register Service Worker
+    // Zarejestruj Service Workera
     if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('service-worker.js')
             .then(registration => {
-                // Immediately check for updates once on load
-                try { registration.update(); } catch (e) { /* ignore */ }
+                // Natychmiast sprawdź aktualizacje po załadowaniu
+                try { registration.update(); } catch (e) { /* ignoruj */ }
 
-                // Auto-check periodically (every 6 hours)
+                // Automatyczne sprawdzanie co 6 godzin
                 setInterval(() => {
-                    try { registration.update(); } catch (e) { /* ignore */ }
+                    try { registration.update(); } catch (e) { /* ignoruj */ }
                 }, 1000 * 60 * 60 * 6);
 
-                // If a new worker is found, request it to skip waiting so it activates immediately
+                // Jeśli znaleziono nowego workera, wyślij mu skip waiting, by aktywował się od razu
                 registration.addEventListener('updatefound', () => {
                     const newWorker = registration.installing;
                     if (newWorker) {
                         newWorker.addEventListener('statechange', () => {
                             if (newWorker.state === 'installed') {
-                                // If there's an active controller, this is an update. Ask SW to skip waiting.
+                                // Jeśli jest aktywny kontroler, to aktualizacja — poproś SW o skip waiting
                                 if (navigator.serviceWorker.controller) {
                                     try {
                                         newWorker.postMessage({ type: 'SKIP_WAITING' });
                                     } catch (e) {
-                                        // Fallback: send message to registration.waiting if present
+                                        // Fallback: wyślij do registration.waiting, jeśli istnieje
                                         if (registration.waiting) registration.waiting.postMessage({ type: 'SKIP_WAITING' });
                                     }
                                 }
@@ -1280,12 +1279,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 });
 
-                // When the active controller changes (new SW took control), reload the page automatically
+                // Gdy zmieni się aktywny kontroler (nowy SW przejął kontrolę), przeładuj stronę
                 let refreshing = false;
                 navigator.serviceWorker.addEventListener('controllerchange', () => {
                     if (refreshing) return;
                     refreshing = true;
-                    // Give a small timeout to ensure new SW is fully controlling fetches
+                    // Krótki timeout, by nowy SW zdążył przejąć obsługę żądań
                     setTimeout(() => window.location.reload(true), 300);
                 });
 
@@ -1295,14 +1294,14 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
 
-    // Harden assistive helper elements to prevent accidental inline-style reveals
+    // Zabezpiecz elementy pomocnicze AT przed nieumyślnym ujawnieniem przez style inline
     try {
         protectAssistiveHelpers(document);
     } catch (e) {
         console.warn('protectAssistiveHelpers invocation failed', e);
     }
 
-    // Enhance icon buttons with labels
+    // Wzbogać przyciski ikon o widoczne etykiety
     try {
         enhanceIconButtons();
     } catch (e) {

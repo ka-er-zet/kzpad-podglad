@@ -9,13 +9,13 @@
     <link rel="apple-touch-icon" href="icon-180.png">
     <link rel="manifest" href="manifest.json">
     <link rel="stylesheet" href="css/pico.min.css">
-    <!-- Lucide Icons -->
+    <!-- Ikony Lucide -->
     <script src="js/lucide.min.js"></script>
-    <!-- ExcelJS for Excel generation (supports formatting and dropdowns) -->
+    <!-- ExcelJS do generowania Excelów (obsługuje formatowanie i listy rozwijane) -->
     <script src="js/exceljs.min.js"></script>
-    <!-- JSZip for ODT generation -->
+    <!-- JSZip do generowania ODT -->
     <script src="js/jszip.min.js"></script>
-    <!-- Utils common helpers -->
+    <!-- Wspólne funkcje pomocnicze utils -->
     <script src="js/utils.js"></script>
     <script src="js/exporter.js"></script>
     <link rel="stylesheet" href="css/wizard.css">
@@ -68,10 +68,10 @@
     </style>
 </head>
 <body>
-    <!-- Toast Container (Global Notifications) -->
+    <!-- Kontener powiadomień Toast -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Header -->
+    <!-- Nagłówek -->
     <header class="app-header">
         <a href="#main-content" class="skip-link" id="skip-link" aria-label="Pomiń nawigację do treści głównej">Pomiń nawigację</a>
         <div class="header-content">
@@ -248,7 +248,7 @@
                     Generuj Arkusz Oceny
                 </button>
             </form>
-        </section> <!-- /setup-section -->
+        </section> <!-- /sekcja-setup -->
 
         <section id="resultsArea" class="hidden" aria-label="Arkusz oceny">
             <div id="status-message" role="status" aria-live="polite" class="sr-only"></div>
@@ -260,7 +260,7 @@
         
     </main>
 
-    <!-- Modal for Clause Details -->
+    <!-- Modal ze szczegółami klauzuli -->
     <dialog id="clauseModal" aria-label="Szczegóły klauzuli">
         <article>
             <header id="clauseModalHeader">
@@ -270,7 +270,7 @@
                 </div>
             </header>
             <div id="clauseBody" class="modal-body" role="region" aria-label="Zawartość klauzuli" aria-busy="true">
-                <!-- Content injected here -->
+                <!-- Treść wstrzykiwana przez JS -->
             </div>
             <footer>
                 <button id="clauseCloseButton" type="button" onclick="handleCloseModal('clauseModal')">Zamknij</button>
@@ -278,14 +278,14 @@
         </article>
     </dialog>
 
-    <!-- Modal for Glossary -->
+    <!-- Modal słownika -->
     <dialog id="glossaryModal" aria-label="Słownik pojęć">
         <article>
             <header>
                 <div id="glossaryTitle" class="glossary-modal-title" aria-hidden="true">Słownik pojęć</div>
             </header>
             <div id="glossaryBody" class="modal-body">
-                <!-- Content injected here -->
+                <!-- Treść wstrzykiwana przez JS -->
             </div>
             <footer>
                 <button onclick="handleCloseModal('glossaryModal')">Zamknij</button>
@@ -293,7 +293,7 @@
         </article>
     </dialog>
 
-    <!-- Footer -->
+    <!-- Stopka -->
     <footer class="app-footer">
         <div class="footer-logos">
             <div class="footer-row">

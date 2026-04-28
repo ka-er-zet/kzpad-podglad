@@ -2,109 +2,109 @@
     --form-element-invalid-border-color: #FF8383;
     --form-element-invalid-active-border-color: #FF8383;
 
-    /* Buttons */
+    /* Przyciski */
     --btn-bg: #0A5B76;
-    /* primary button background (dark) */
+    /* tło przycisku głównego (ciemny motyw) */
 
-    /* Search icon color (used to theme search input border) */
+    /* Kolor ikony wyszukiwania (używany do stylizacji obramowania pola szukaj) */
     --search-icon-color: #C8D0DD;
-    /* enhanced contrast for dark theme */
+    /* zwiększony kontrast dla ciemnego motywu */
     --btn-bg-hover: #07465B;
     --btn-foreground: #ffffff;
 
-    /* Requirement header foreground */
+    /* Kolor tekstu nagłówka wymagania */
     --requirement-id-foreground: #ffffff;
 
-    /* Header subtitle color (used for .app-header .text-muted) */
+    /* Kolor podtytułu nagłówka (używany dla .app-header .text-muted) */
     --header-subtitle-color: var(--color);
 
-    /* Error states */
+    /* Stany błędu */
     --error: #FF8383;
     --error-bg: #2D1515;
-    /* Darker red-tinted background for better visibility in dark theme */
+    /* Ciemniejsze czerwonawate tło dla lepszej widoczności w ciemnym motywie */
 
-    /* Card/border color used instead of muted */
+    /* Kolor karty/obramowania zamiast wyciszonego */
     --card-border-color: rgba(255, 255, 255, 0.06);
 
-    /* Border for individual requirement rows (lighter in dark theme) */
+    /* Obramowanie wierszy wymagań (jaśniejsze w ciemnym motywie) */
     --requirement-row-border-color: rgba(255, 255, 255, 0.04);
 
-    /* Emphasis color used for category headers, tags, and labels */
+    /* Kolor akcentu dla nagłówków kategorii, tagów i etykiet */
     --emphasis-color: var(--primary);
     --primary-inverse: #ffffff;
-    /* Default inverse for darker primary */
+    /* Domyślny odwrócony kolor dla ciemniejszego primary */
 
-    /* Default focus color (swapped in themes) */
+    /* Domyślny kolor fokusu (zamieniany w motywach) */
     --focus-color: hsl(38, 92%, 60%);
-    /* Summary warning color (amber, readable on dark background) */
+    /* Kolor ostrzeżenia w podsumowaniu (bursztyn, czytelny na ciemnym tle) */
     --summary-warning-color: #f59e0b;
-    /* Skip Link defaults: high contrast teal for safety */
+    /* Domyślne Skip Link: wysoki kontrast, kolor morski */
     --skip-bg: #06425A;
     --skip-color: #ffffff;
 
-    /* Secondary colors for muted/disabled states */
+    /* Kolory pomocnicze dla stanów wyciszonych/wyłączonych */
     --secondary-border-color: rgba(255, 255, 255, 0.06);
     --secondary-text-color: #9ca3af;
 }
 
-/* Light theme overrides */
+/* Nadrzędne style jasnego motywu */
 :root[data-theme="light"],
 [data-theme="light"] {
     --btn-bg: #1D6A8C;
-    /* lighter button variant for light theme */
+    /* jaśniejszy wariant przycisku dla jasnego motywu */
     --btn-bg-hover: #155766;
     --btn-foreground: #ffffff;
 
     --requirement-id-foreground: #111111;
 
-    /* Override input border color for adequate contrast (5.1:1 vs 1.5:1) */
+    /* Zmiana koloru obramowania inputu dla odpowiedniego kontrastu (5,1:1 vs 1,5:1) */
     --form-element-border-color: #555555;
 
-    /* Search icon color for light theme - ensure contrast with light background */
+    /* Kolor ikony wyszukiwania dla jasnego motywu — zapewnia kontrast z jasnym tłem */
     --search-icon-color: #555555;
 
     --error: #A41E34;
     --error-bg: #FFF6F8;
-    /* Very light pinkish background */
+    /* Bardzo jasne różowate tło */
 
     --card-border-color: rgba(0, 0, 0, 0.08);
 
-    /* Border for individual requirement rows in light theme (darker for contrast) */
+    /* Obramowanie wierszy wymagań w jasnym motywie (ciemniejsze dla kontrastu) */
     --requirement-row-border-color: rgba(0, 0, 0, 0.12);
 
-    /* Background for the whole page in light mode */
+    /* Tło całej strony w jasnym motywie */
     --background-color: #f3f3f3;
 
-    /* Cards should have white background in light mode */
+    /* Karty powinny mieć białe tło w jasnym motywie */
     --card-background-color: #ffffff;
     --card-sectionning-background-color: #ffffff;
 
-    /* In light theme use a stronger/darker emphasis color for these UI accents */
+    /* W jasnym motywie używamy mocniejszego/ciemniejszego koloru akcentu dla tych elementów UI */
     --emphasis-color: #0A5B76;
-    /* darker teal for contrast in light mode */
+    /* ciemniejszy morski dla kontrastu w jasnym motywie */
     --primary: #0A5B76;
     --primary-inverse: #ffffff;
     --focus-color: hsl(224, 76%, 48%);
 
-    /* Summary warning color (amber-700, readable on light background) */
+    /* Kolor ostrzeżenia w podsumowaniu (amber-700, czytelny na jasnym tle) */
     --summary-warning-color: #B45309;
 
-    /* Skip link high contrast for light theme */
+    /* Skip link wysoki kontrast dla jasnego motywu */
     --skip-bg: #06425A;
     --skip-color: #ffffff;
 
-    /* Secondary colors for light theme */
+    /* Kolory pomocnicze dla jasnego motywu */
     --secondary-border-color: rgba(0, 0, 0, 0.08);
     --secondary-text-color: #6b7280;
 }
 
-/* Override input border color for dark theme (improve from 4.5:1 to 4.6:1) */
+/* Zmiana koloru obramowania inputów w ciemnym motywie (poprawa z 4,5:1 do 4,6:1) */
 :root:not([data-theme="light"]),
 [data-theme="dark"] {
     --form-element-border-color: #AEBACE;
 }
 
-/* Improve contrast for code elements */
+/* Poprawa kontrastu dla elementów code */
 code {
     --code-color: var(--color);
 }
@@ -116,7 +116,7 @@ code strong {
     color: var(--code-color) !important;
 }
 
-/* Enhanced contrast for code elements in summary sections (WCAG AA: 4.5:1) */
+/* Zwiększony kontrast dla elementów code w sekcjach podsumowania (WCAG AA: 4,5:1) */
 .summary-result-card code,
 .summary-anchor code,
 .summary-item-content code {
@@ -136,7 +136,7 @@ code strong {
     color: var(--primary) !important;
 }
 
-/* Dark theme: use bright cyan/light blue for code elements */
+/* Ciemny motyw: użyj jasnego cyjan/błękitu dla elementów code */
 :root:not([data-theme="light"]) .summary-result-card code,
 :root:not([data-theme="light"]) .summary-anchor code,
 :root:not([data-theme="light"]) .summary-item-content code,
@@ -161,7 +161,7 @@ code strong {
     color: #7DD3FC !important;
 }
 
-/* Light theme: use dark teal */
+/* Jasny motyw: użyj ciemnego morskiego */
 :root[data-theme="light"] .summary-result-card code,
 :root[data-theme="light"] .summary-anchor code,
 :root[data-theme="light"] .summary-item-content code,
@@ -197,7 +197,7 @@ hgroup p {
     color: var(--h5-color);
 }
 
-/* Header styles (copied from audit.html, scoped for wizard) */
+/* Style nagłówka (przeniesione z audit.html, ograniczone do wizarda) */
 .skip-link {
     position: absolute;
     top: 0;
@@ -231,9 +231,8 @@ hgroup p {
     text-decoration: none;
 }
 
-/* Pico sets --text-decoration to none by default; restore underlines for ordinary
-   content links inside the wizard for accessibility. Keep UI/navigation exceptions
-   (nav links, icon buttons) unchanged. */
+/* Pico domyślnie ustawia --text-decoration na none; przywróć podkreślenia dla zwykłych
+   linków w treści wizarda (dostępność). Wyjątki (linki nawigacyjne, przyciski ikon) bez zmian. */
 #main-content a,
 .u-interpretation a,
 .technical-area a {
@@ -245,9 +244,9 @@ hgroup p {
     text-underline-offset: 2px;
 }
 
-/* Also ensure anchors inside the clause modal/dialog are underlined. The modal
-   content is injected dynamically and lives inside the <dialog id="clauseModal">.
-   Target specific modal content containers to avoid affecting header/nav UI. */
+/* Upewnij się także, że linki wewnątrz modalu/okna dialogowego są podkreślone. Treść
+   modalu jest wstrzykiwana dynamicznie i żyje w <dialog id="clauseModal">.
+   Celuj w konkretne kontenery, by nie wpływać na header/nav UI. */
 dialog#clauseModal a,
 #clauseModal .section-content a,
 #clauseModal li a {
@@ -259,13 +258,13 @@ dialog#clauseModal a,
     text-underline-offset: 2px;
 }
 
-/* Icon for links that open in a new tab — markup inserted by JS for full flexibility */
+/* Ikona dla linków otwieranych w nowej karcie — znacznik wstawiany przez JS dla pełnej elastyczności */
 #main-content a[target="_blank"]::after,
 dialog#clauseModal a[target="_blank"]::after,
 .section-content a[target="_blank"]::after,
 .u-interpretation a[target="_blank"]::after,
 .technical-area a[target="_blank"]::after {
-    /* removed textual fallback; JS will insert Lucide icon element */
+    /* usunięto tekstowy fallback; JS wstawi element ikony Lucide */
     content: none;
 }
 
@@ -288,14 +287,14 @@ dialog#clauseModal a[target="_blank"]::after,
     height: 1em;
 }
 
-/* Prevent color change and make background more subtle for external links on hover/focus */
+/* Zapobiegaj zmianie koloru i spraw by tło było subtelniejsze dla linków zewnętrznych przy hover/focus */
 a[target="_blank"]:hover,
 a[target="_blank"]:focus {
     --color: var(--primary);
     --background-color: rgba(10, 91, 118, 0.05);
 }
 
-/* Scroll-hide header behavior */
+/* Zachowanie chowania/pokazywania nagłówka przy przewijaniu */
 .app-header {
     background-color: var(--card-background-color);
     border-bottom: 1px solid var(--secondary-border-color);
@@ -313,12 +312,12 @@ a[target="_blank"]:focus {
     transform: translateY(-100%);
 }
 
-/* Fix for 400% zoom and mobile layout - Reflow and Sticky Management */
+/* Naprawa dla 400% zoom i mobilnego układu — Reflow i zarządzanie sticky */
 @media (max-width: 600px),
 (max-height: 500px) {
     .app-header {
         position: relative;
-        /* Remove sticky on small heights/zoom for better space */
+        /* Usuń sticky przy małej wysokości/zoomie dla lepszego miejsca */
         flex-wrap: wrap;
         padding: 0.5rem;
     }
@@ -382,7 +381,7 @@ a[target="_blank"]:focus {
     background: transparent;
     cursor: pointer;
     color: var(--primary);
-    /* using primary theme color for icons */
+    /* używaj kolor primary dla ikon */
     margin: 0;
     border-radius: 6px;
 }
@@ -392,10 +391,10 @@ a[target="_blank"]:focus {
     background: var(--primary-focus);
 }
 
-/* Selected product heading adjustments for desktop */
+/* Dostosowanie nagłówka wybranego produktu dla desktopu */
 #selectedProductName {
     font-size: 1.4rem;
-    /* Slightly larger product name */
+    /* Nieco większy rozmiar nazwy produktu */
     font-weight: 600;
     line-height: 1.2;
     margin-top: 0.25rem;
@@ -404,13 +403,13 @@ a[target="_blank"]:focus {
 #selectedProductName .selected-product-label {
     display: block;
     font-size: 1.1rem;
-    /* Smaller label for desktop */
+    /* Mniejsza etykieta dla desktopu */
     font-weight: 400;
     margin-bottom: 0.25rem;
     color: var(--color);
 }
 
-/* Hide header subtitle on small screens to avoid crowding */
+/* Ukryj podtytuł nagłówka na małych ekranach, by nie zatraczać miejsca */
 @media (max-width: 480px) {
     .header-content .text-muted {
         display: none;
@@ -429,20 +428,20 @@ a[target="_blank"]:focus {
         max-height: 34px;
     }
 
-    /* Responsive paddings and heading sizes for narrow devices */
+    /* Responsywne paddingi i rozmiary nagłówków dla wąskich urządzeń */
     :root {
         --page-padding-horizontal: 0.75rem;
         --card-padding: 0.75rem;
     }
 
-    /* Global container adjustments */
+    /* Globalne dostosowania kontenera */
     .container,
     #main-content {
         padding-left: var(--page-padding-horizontal);
         padding-right: var(--page-padding-horizontal);
     }
 
-    /* Headings scale down for mobile for better fit */
+    /* Nagłówki zmniejszają się na mobilnych dla lepszego dopasowania */
     h1 {
         font-size: clamp(1.25rem, 4vw, 1.6rem);
         margin-top: 2rem;
@@ -457,12 +456,12 @@ a[target="_blank"]:focus {
         font-size: clamp(0.95rem, 3vw, 1.05rem);
     }
 
-    /* Mobile: reduce label size to 1.2rem */
+    /* Mobile: zmniejsz etykietę do 1.2rem */
     #selectedProductName .selected-product-label {
         font-size: 1.2rem;
     }
 
-    /* Requirement rows and summary cards become more compact on mobile */
+    /* Wiersze wymagań i karty podsumowania stają się bardziej kompaktowe na mobilnych */
     .requirement-row {
         padding: 0.5rem;
     }
@@ -484,7 +483,7 @@ a[target="_blank"]:focus {
         padding-bottom: 1rem;
     }
 
-    /* Stack header and button vertically in initial summary on mobile */
+    /* Na mobilnych układaj nagłówek i przycisk pionowo w początkowym podsumowaniu */
     .summary-header.initial {
         flex-direction: column;
         align-items: stretch;
@@ -497,19 +496,19 @@ a[target="_blank"]:focus {
         display: block;
     }
 
-    /* Compact modal spacing on small devices */
+    /* Kompaktowe odstępy modalu na małych urządzeniach */
     #clauseModal #modalBody {
         padding: 0.75rem;
     }
 }
 
-/* --- GLOBAL FOCUS STYLE (MATCHING AUDIT PAGE) --- */
+/* --- GLOBALNY STYL FOKUSU (ZGODNY Z AUDIT PAGE) --- */
 *:focus-visible {
     outline: 3px solid var(--focus-color) !important;
     outline-offset: 2px !important;
 }
 
-/* Ensure focus is visible on specific wizard elements */
+/* Upewnij się, że fokus jest widoczny na konkretnych elementach wizarda */
 #main-content a:focus-visible,
 #main-content button:focus-visible,
 #main-content .icon-btn:focus-visible,
@@ -518,10 +517,10 @@ a[target="_blank"]:focus {
 dialog .icon-btn:focus-visible {
     outline: 3px solid var(--focus-color) !important;
     outline-offset: 2px !important;
-    /* Do NOT set background: transparent; keep original background for readability */
+    /* NIE ustawiaj background: transparent; zachowaj oryginalne tło dla czytelności */
 }
 
-/* Specific fix for radio cards: use internal focus to show which one is selected vs focused */
+/* Konkretna naprawa dla kart radio: fokus wewnętrzny pokazuje która jest wybrana, a która sfokusowana */
 .product-radio-card:focus-within {
     border-color: var(--focus-color) !important;
     box-shadow: 0 0 0 3px var(--focus-color) !important;
@@ -541,7 +540,7 @@ dialog .icon-btn:focus-visible {
 }
 
 .header-actions .icon-btn {
-    /* ensures vertical centering inside header */
+    /* zapewnia pionowe wycentrowanie wewnątrz nagłówka */
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -552,14 +551,14 @@ dialog .icon-btn:focus-visible {
     vertical-align: middle;
 }
 
-/* Icon button visible labels (copied from global style.css, scoped for wizard) */
+/* Widoczne etykiety przycisków ikon (przeniesione z global style.css, ograniczone do wizarda) */
 .icon-label {
     position: fixed;
-    /* keep label relative to viewport to avoid ancestor clipping */
+    /* utrzymuj etykietę względem viewport, by uniknąć przycinania przez przodka */
     top: 0;
-    /* positioned via JS */
+    /* pozycjonowane przez JS */
     left: 0;
-    /* positioned via JS */
+    /* pozycjonowane przez JS */
     background: var(--card-background-color);
     border: 1px solid var(--secondary-border-color);
     color: var(--h5-color);
@@ -571,7 +570,7 @@ dialog .icon-btn:focus-visible {
     opacity: 0;
     visibility: hidden;
     pointer-events: auto;
-    /* allow hover on the label itself to avoid flicker */
+    /* pozwól na hover na etykiecie samej, by uniknąć migotania */
     cursor: default;
     z-index: 9999;
     transition: opacity 120ms ease, transform 120ms ease, visibility 120ms ease;
@@ -579,30 +578,30 @@ dialog .icon-btn:focus-visible {
     transform-origin: center top;
 }
 
-/* Visibility handled via JS to satisfy WCAG 1.4.13 (Dismissible, Hoverable, Persistent) */
+/* Widoczność sterowana przez JS zgodnie z WCAG 1.4.13 (Dismissible, Hoverable, Persistent) */
 .icon-label--visible {
     opacity: 1;
     visibility: visible;
     transform: translateY(0) !important;
 }
 
-/* Dark mode: ensure high contrast for icon labels */
+/* Tryb ciemny: zapewnij wysoki kontrast dla etykiet ikon */
 [data-theme="dark"] .icon-label {
     color: hsl(0, 0%, 100%);
 }
 
-/* Dark theme overrides for wizard: adjust primary/emphasis to requested cyan */
+/* Nadpisania ciemnego motywu wizarda: dostosuj primary/emphasis do żądanego cyjanu */
 :root[data-theme="dark"],
 [data-theme="dark"] {
     --primary: #13C4FF;
     --emphasis-color: #13C4FF;
     --primary-inverse: #000000;
-    /* High contrast black for cyan background */
+    /* Czarny — wysoki kontrast dla cyjanołego tła */
     --skip-bg: var(--primary);
     --skip-color: var(--primary-inverse);
 }
 
-/* On touch devices, show only on focus (no hover) */
+/* Na urządzeniach dotykowych pokazuj tylko przy fokusu (bez hover) */
 @media (hover: none) {
     button:hover .icon-label {
         opacity: 0;
@@ -615,7 +614,7 @@ dialog .icon-btn:focus-visible {
     font-size: 0.8rem;
 }
 
-/* High-contrast subtitle for the wizard header */
+/* Podtytuł z wysokim kontrastem dla nagłówka wizarda */
 .app-header .text-muted {
     color: var(--header-subtitle-color);
     opacity: 0.95;
@@ -660,7 +659,7 @@ main {
     font-weight: 400;
     border-left: 1px solid currentColor;
     padding-left: 8px;
-    /* Allow wrapping for very long titles if needed, but usually keep it concise */
+    /* Zezwól na zawijanie dla bardzo długich tytułów — zazwyczaj zwięzły */
     display: inline-block;
 }
 
@@ -721,27 +720,27 @@ main {
     margin: 0;
 }
 
-/* Improve contrast for unchecked switch in Art. 19 */
+/* Poprawa kontrastu dla niezałączonego przełącznika w Art. 19 */
 .art19-switch-label input[type="checkbox"][role="switch"] {
     --switch-width: 3rem !important;
     --switch-height: 1.5rem !important;
     position: relative;
     border: 2px solid var(--primary) !important;
     background-image: none !important;
-    /* Remove Pico's default dot image */
+    /* Usuń domyślny obraz kropki Pico */
     background-color: transparent !important;
-    /* Fix: Force transparent track by default */
+    /* Poprawka: wymuś domyślnie przezroczyste tło toru */
 }
 
 .art19-switch-label input[type="checkbox"][role="switch"]:checked {
     background-image: none !important;
     background-color: var(--primary) !important;
-    /* Track background when checked */
+    /* Tło toru gdy zaznaczony */
 }
 
 .art19-switch-label input[type="checkbox"][role="switch"]::before {
     display: none !important;
-    /* Hide any extra pseudo-elements from Pico */
+    /* Ukryj dodatkowe pseudo-elementy Pico */
 }
 
 .art19-switch-label input[type="checkbox"][role="switch"]::after {
@@ -754,20 +753,20 @@ main {
     background-color: var(--primary) !important;
     background-image: none !important;
     border: 2px solid var(--primary) !important;
-    /* Thicker border matching switch border */
+    /* Grubsze obramowanie dopasowane do obramowania przełącznika */
     border-radius: 50% !important;
     transition: left 0.2s ease-in-out !important;
     left: 0.1rem !important;
     margin: 0 !important;
     right: auto !important;
-    /* Ensure right doesn't interfere */
+    /* Upewnij się, że right nie koliduje */
 }
 
 .art19-switch-label input[type="checkbox"][role="switch"]:checked::after {
     left: calc(100% - 0.1rem - 0.85rem) !important;
     background-color: var(--primary-inverse) !important;
     border-color: var(--primary) !important;
-    /* Still match switch border when checked */
+    /* Dopasuj obramowanie przełącznika gdy zaznaczony */
 }
 
 .art19-switch-label span {
@@ -789,8 +788,8 @@ main {
     background: var(--card-background-color);
 }
 
-/* Suppress focus ring on programmatic focus (mouse click from summary),
-   show only on keyboard navigation via focus-visible */
+/* Ukryj ramkę fokusu przy programowym fokusu (kliknięcie myszą),
+   pokazuj tylko przy nawigacji klawiaturową przez focus-visible */
 .requirement-row:focus { outline: none; }
 .requirement-row:focus-visible { outline: 3px solid var(--focus-color); outline-offset: 2px; }
 
@@ -859,7 +858,7 @@ main {
     font-weight: bold;
 }
 
-/* Technical tests (EN 301 549) styling */
+/* Stylizacja testów technicznych (EN 301 549) */
 .technical-area details,
 .technical-details {
     border: none;
@@ -879,7 +878,7 @@ main {
     padding: 0.5rem 0.75rem;
     border-radius: 6px;
     margin-left: -0.75rem;
-    /* pull back to align text despite padding */
+    /* cofnij, by wyrównać tekst pomimo paddingu */
     gap: 0.5rem;
 }
 
@@ -894,20 +893,20 @@ main {
     letter-spacing: 0.5px;
     margin: 0;
     line-height: 1.2;
-    /* Always underline technical title */
+    /* Zawsze podkreślaj tytuł techniczny */
     text-decoration: underline;
     text-decoration-thickness: 1px;
     text-underline-offset: 2px;
 }
 
-/* Ensure the chevron (Pico pseudo-element) is vertically centered */
+/* Upewnij się, że chevron (pseudo-element Pico) jest wycentrowany pionowo */
 .technical-summary::after {
     float: none !important;
     margin-bottom: 0 !important;
     margin-top: 0 !important;
 }
 
-/* Underline for interactive technical summary */
+/* Podkreślenie dla interaktywnego podsumowania technicznego */
 .technical-summary:hover .technical-title,
 .technical-summary:focus .technical-title,
 .technical-summary:focus-visible .technical-title,
@@ -1058,9 +1057,9 @@ dialog header #closeModal:focus {
 #modalTitle {
     margin: 0;
     color: var(--color);
-    /* use neutral page color */
+    /* użyj neutralnego koloru strony */
     font-size: 1.28rem;
-    /* slightly smaller to fit denser layout */
+    /* nieco mniejszy dla bardziej zagęszczonego układu */
     line-height: 1.2;
 }
 
@@ -1072,7 +1071,7 @@ dialog header #closeModal:focus {
     opacity: 0.9;
 }
 
-/* Clause title shown inside modal body (moved from header) */
+/* Tytuł klauzuli pokazywany wewnątrz treści modalu (przeniesiony z nagłówka) */
 .clause-body-title {
     padding: 0 1.5rem 0.75rem 1.5rem;
     border-bottom: none;
@@ -1156,7 +1155,7 @@ dialog header #closeModal:focus {
     margin-top: 0.7rem;
 }
 
-/* Modal body heading adjustments: ensure h4 is not styled like a link and reduce spacing */
+/* Dostosowania nagłówków w treści modalu: h4 nie wygląda jak link, mniejsze odstępy */
 dialog .modal-body h4 {
     margin-top: 0.25rem;
     margin-bottom: 0.5rem;
@@ -1165,7 +1164,7 @@ dialog .modal-body h4 {
     text-transform: uppercase;
     letter-spacing: 0.5px;
     color: var(--color);
-    /* Removed emphasis color to avoid blue text */
+    /* Usunięto kolor akcentu, by uniknąć niebieskiego tekstu */
 }
 
 dialog .modal-body .browser-card-section-title {
@@ -1179,7 +1178,7 @@ dialog .modal-body .browser-card-section-title {
 }
 
 
-/* Normalize list and paragraph spacing inside modal body */
+/* Normalizuj odstępy list i akapitów wewnątrz treści modalu */
 dialog .modal-body p,
 dialog .modal-body li {
     margin: 0 0 0.4rem 0;
@@ -1192,7 +1191,7 @@ dialog .modal-body ol {
     padding: 0;
 }
 
-/* Glossary styles */
+/* Style słownika */
 dialog .modal-body .glossary-intro {
     margin: 0 0 2.5rem 0 !important;
     display: block;
@@ -1271,7 +1270,7 @@ dialog .modal-body .glossary-intro {
     padding: 0 1.5rem 0.75rem 1.5rem;
 }
 
-/* Increase spacing after sections slightly so 'after criteria' gap feels consistent */
+/* Zwiększ nieco odstęp po sekcjach dla spójności */
 dialog article section {
     margin-bottom: 1.5rem;
     padding: 0 1.5rem;
@@ -1281,7 +1280,7 @@ dialog article section:first-of-type {
     margin-top: 1.25rem;
 }
 
-/* Modal footer close button styling */
+/* Stylizacja przycisku zamknięcia w stopce modalu */
 dialog footer button.outline {
     --background-color: transparent;
     --border-color: var(--primary);
@@ -1303,15 +1302,15 @@ dialog .section-content {
     border-left: 2px solid var(--secondary-border-color);
     margin-top: 0.5rem;
     margin-left: 0.25rem;
-    /* subtle offset for the vertical line */
+    /* subtelne przesunięcie dla pionowej linii */
 }
 
-/* More breathing room specifically for checklist items in "How to check" */
+/* Więcej odstępu dla pozycji listy sprawdzającej w sekcji "Jak sprawdzić" */
 dialog .how-to-check-section .checklist-item {
     margin-bottom: 0.75rem;
 }
 
-/* Specific spacing for criteria section to prevent border from sticking to last item */
+/* Konkretny odstęp w sekcji kryteriów, by obramowanie nie przylegało do ostatniego elementu */
 dialog article section.criteria-section {
     padding-bottom: 0.5rem;
 }
@@ -1438,7 +1437,7 @@ dialog[open] {
     display: flex;
     align-items: flex-start;
     justify-content: center;
-    /* Prevent outer wrapper scroll — the modal body handles scrolling */
+    /* Zapobiegaj przewijaniu zewnętrznego wrappera — treść modalu obsługuje przewijanie */
     overflow: hidden;
     padding: 2rem 0;
 }
@@ -1452,8 +1451,8 @@ dialog[open] article {
     display: none !important;
 }
 
-/* Prevent horizontal overflow on small screens: make images and tables responsive
-   and allow tables to scroll horizontally when necessary. Also ensure long words wrap. */
+/* Zapobiegaj poziomemu przepełnieniu na małych ekranach: obrazy i tabele responsywne
+   i tabele scrollowalne poziomo gdy potrzeba. Długie słowa zawijają. */
 img,
 dialog img,
 .summary-result-card img,
@@ -1463,7 +1462,7 @@ dialog img,
     display: block;
 }
 
-/* Tables can be wide (from normative content) — make them scroll inside their container */
+/* Tabele mogą być szerokie (z treści normatywnych) — scrollowalne wewnątrz kontenera */
 .requirement-row table,
 .summary-result-card table,
 dialog table,
@@ -1475,7 +1474,7 @@ dialog table,
     -webkit-overflow-scrolling: touch;
 }
 
-/* Ensure inline content breaks so long tokens don't force horizontal scroll */
+/* Upewnij się, że długie tokeny zawijają, by nie wymuszać poziomego przewijania */
 .requirement-row,
 .summary-result-card,
 .summary-link-list,
@@ -1485,7 +1484,7 @@ dialog table,
     overflow-wrap: anywhere;
 }
 
-/* Extra safety on very narrow viewports */
+/* Dodatkowe zabezpieczenie dla bardzo wąskich viewportów */
 @media (max-width: 480px) {
 
     body,
@@ -1575,7 +1574,7 @@ dialog table,
     text-transform: uppercase;
 }
 
-/* State-based coloring via data-state attribute (avoids JS theme detection) */
+/* Kolorowanie na podstawie atrybutu data-state (bez detekcji motywu przez JS) */
 .summary-result-card[data-state="pass"] { border-left-color: var(--form-element-valid-border-color); }
 .summary-result-card[data-state="fail"] { border-left-color: var(--form-element-invalid-border-color); }
 .summary-result-card[data-state="warning"] { border-left-color: var(--summary-warning-color); }
@@ -1767,8 +1766,8 @@ dialog table,
     line-height: 1.4;
 }
 
-/* Global rule: make radio control border color match the surrounding text color
-   This only changes the border color; it does NOT alter appearance or sizing. */
+/* Globalna reguła: kolor obramowania radio dopasowany do koloru otaczającego tekstu
+   Zmienia tylko kolor obramowania; NIE zmienia wyglądu ani rozmiaru. */
 input[type="radio"] {
     border-color: currentColor !important;
 }
@@ -1788,14 +1787,14 @@ input[type="radio"] {
     border-color: var(--btn-bg-hover);
 }
 
-/* Fieldset error state - Pico CSS pattern */
+/* Stan błędu fieldset — wzorzec Pico CSS */
 fieldset {
     padding: 1.25rem;
     border-radius: 8px;
     transition: border 0.2s;
 }
 
-/* Improve contrast for form controls */
+/* Poprawa kontrastu dla kontrolek formularza */
 input[type="text"],
 input[type="search"],
 input[type="number"],
@@ -1808,7 +1807,7 @@ textarea {
     color: var(--form-element-color);
 }
 
-/* Make browser search input border match the search icon color */
+/* Dopasuj kolor obramowania pola wyszukiwania do koloru ikony wyszukiwania */
 #browser-search {
     border-color: var(--search-icon-color);
 }
@@ -1819,7 +1818,7 @@ textarea {
     outline-offset: 2px;
 }
 
-/* Increase contrast for browser search and glossary search placeholders */
+/* Zwiększ kontrast dla placeholderów pola wyszukiwania i słownika */
 #browser-search::placeholder,
 #glossarySearch::placeholder {
     color: var(--color);
@@ -1835,7 +1834,7 @@ textarea:focus-visible {
     border-color: var(--primary);
 }
 
-/* Darken placeholder color slightly to improve legibility */
+/* Nieco ciemniejszy kolor placeholdera dla lepszej czytelności */
 input::placeholder,
 textarea::placeholder {
     color: var(--form-element-placeholder-color);
@@ -1886,7 +1885,7 @@ fieldset[aria-invalid="true"] {
     line-height: 1.4;
 }
 
-/* Accessibility utilities */
+/* Narzędzia dostępności */
 .sr-only {
     position: absolute;
     width: 1px;
@@ -1899,7 +1898,7 @@ fieldset[aria-invalid="true"] {
     border: 0;
 }
 
-/* Toast Notification System */
+/* System powiadomień toast */
 #toast-container {
     position: fixed;
     top: 5rem;
@@ -2019,7 +2018,7 @@ fieldset[aria-invalid="true"] {
     }
 }
 
-/* Mobile responsive */
+/* Responsywność mobilna */
 @media (max-width: 640px) {
     #toast-container {
         left: 1rem;
@@ -2028,7 +2027,7 @@ fieldset[aria-invalid="true"] {
     }
 }
 
-/* Hero Section Styles */
+/* Style sekcji Hero */
 .hero-container {
     transition: opacity 0.3s ease-out;
 }
@@ -2042,7 +2041,7 @@ fieldset[aria-invalid="true"] {
     margin: 0 !important;
 }
 
-/* RWD / Reflow for small mobile and high zoom levels */
+/* RWD / Reflow dla małych urządzeń mobilnych i wysokich poziomów powiększenia */
 @media (max-width: 350px) {
     .hero-grid {
         grid-template-columns: 1fr;
@@ -2096,7 +2095,7 @@ fieldset[aria-invalid="true"] {
     border-color: var(--primary);
 }
 
-/* Persisted/selected state for hero-cards (used by editor) — match hover/active visual */
+/* Stan utrwalony/wybrany dla hero-cards (używany przez edytor) — dopasuj wygląd hover/active */
 .hero-card[aria-pressed="true"],
 .hero-card.active {
     transform: translateY(-3px);
@@ -2145,7 +2144,7 @@ h2.hero-card-title {
 }
 
 
-/* Refined Hero Styles */
+/* Dopracowane style Hero */
 .hero-container {
     min-height: 50vh;
     display: flex;
@@ -2170,14 +2169,14 @@ h2.hero-card-title {
     margin-bottom: 0;
 }
 
-/* Ensure sections are spaced out */
+/* Upewnij się, że sekcje mają odstępy */
 .product-select-container {
     margin-top: 2rem;
     padding-top: 0rem;
 }
 
 
-/* Browser Section Styles */
+/* Style sekcji Przegladarki */
 #browser-section {
     padding: 2rem 0;
     max-width: 1200px;
@@ -2212,7 +2211,7 @@ h2.hero-card-title {
     border: 2px solid transparent !important;
     position: relative;
     background: transparent !important;
-    /* Reset default backgound */
+    /* Resetuj domyślne tło */
 }
 
 .view-switcher button[aria-checked="true"] {
@@ -2225,7 +2224,7 @@ h2.hero-card-title {
     z-index: 2;
 }
 
-/* Fix for possible background ghosting on text/icons */
+/* Poprawka dla możliwego efektu ghost tła na tekście/ikonach */
 .view-switcher button * {
     background: none !important;
     background-color: transparent !important;
@@ -2302,7 +2301,7 @@ h2.hero-card-title {
     text-decoration: none;
     /* Dla elementu <a> */
 
-    /* Reset link/button styles */
+    /* Resetuj style linków/przycisków */
     font-family: inherit;
     font-size: inherit;
     font-weight: normal;
@@ -2454,7 +2453,7 @@ h2.hero-card-title {
 }
 
 
-/* Hero Card Title adjustments to replace H3 */
+/* Dostosowania tytułu karty Hero zastępującego H3 */
 p.hero-card-title {
     font-size: 1.25rem;
     font-weight: 700;
@@ -2464,10 +2463,10 @@ p.hero-card-title {
     line-height: 1.2;
 }
 
-/* Footer styles - light background for logos */
+/* Style stopki — jasne tło dla logotypów */
 .app-footer {
     background-color: #ffffff;
-    /* Light background for both themes */
+    /* Jasne tło dla obu motywów */
     border-top: 1px solid #e0e0e0;
     padding: 1rem 0;
     margin-top: 1rem;
@@ -2496,7 +2495,7 @@ p.hero-card-title {
     width: auto;
 }
 
-/* Mobile adjustments for footer */
+/* Dostosowania stopki dla urządzeń mobilnych */
 @media (max-width: 640px) {
     .footer-row {
         gap: 1rem;
@@ -2507,7 +2506,7 @@ p.hero-card-title {
     }
 }
 
-/* Glossary button above modal */
+/* Przycisk słownika nad modalem */
 #btn-show-glossary {
     z-index: 10001;
 }
@@ -2572,7 +2571,7 @@ p.hero-card-title {
     transform: none !important;
 }
 
-/* Badge for unevaluated tests */
+/* Znacznik dla nieocenionych testów */
 .checklist-test-item:not(.is-pass):not(.is-fail):not(.is-na):not(.browser-minimal) .checklist-test-summary::after {
     display: flex !important;
     content: 'Brak oceny';
@@ -2686,10 +2685,10 @@ p.hero-card-title {
     opacity: 0.7;
 }
 
-/* State indicators */
-/* Border color and width changes removed per user request */
+/* Wskaźniki stanu */
+/* Zmiany koloru i szerokości obramowania usunięte na żądanie użytkownika */
 
-/* Status badge on summary (visible when collapsed) */
+/* Znacznik statusu w podsumowaniu (widoczny gdy zwinięty) */
 .checklist-test-item.is-pass  .checklist-test-summary::after,
 .checklist-test-item.is-fail  .checklist-test-summary::after,
 .checklist-test-item.is-na    .checklist-test-summary::after {
@@ -2723,7 +2722,7 @@ p.hero-card-title {
     color: var(--contrast);
 }
 
-/* Theme-specific colors for test badges to ensure proper contrast */
+/* Kolory znaczników testów specyficzne dla motywu — odpowiedni kontrast */
 [data-theme="dark"] .checklist-test-item.is-pass .checklist-test-summary::after {
     background: color-mix(in srgb, #66BB6A 15%, transparent);
     color: #66BB6A;
@@ -2744,7 +2743,7 @@ p.hero-card-title {
     color: #C62828;
 }
 
-/* Theme-specific colors for summary cards to match test cards */
+/* Kolory kart podsumowania specyficzne dla motywu — dopasowane do kart testów */
 [data-theme="dark"] .summary-result-card[data-state="pass"] {
     border-left-color: #66BB6A;
 }
@@ -2773,7 +2772,7 @@ p.hero-card-title {
     color: #C62828;
 }
 
-/* Theme-specific colors for incomplete warning to match */
+/* Kolory ostrzeżenia o niekompletności specyficzne dla motywu */
 [data-theme="dark"] .summary-incomplete-warning {
     border-color: #EF5350;
 }
@@ -2810,7 +2809,7 @@ p.hero-card-title {
 .ts-pass { color: var(--color-pass, #27ae60); }
 .ts-na   { color: var(--secondary-text-color); }
 
-/* Modal Article Emulation (to avoid 'document' landmark in NVDA) */
+/* Emulacja article modalu (by uniknąć landmarka ‘document’ w NVDA) */
 .modal-article-div {
     display: block;
     margin-top: 0;
@@ -2843,16 +2842,16 @@ p.hero-card-title {
     }
 }
 
-/* --- NVDA ECHO FIX: Disable animations on modal dialogs ---
-   Pico.css applies a fade-in animation to dialog[open]. 
-   When this animation ends, Chrome updates the A11y tree, causing NVDA to re-read the dialog name. 
-   Removing these animations stops the NVDA echo effect. */
+/* --- POPRAWKA NVDA ECHO: Wyłącz animacje w oknach modalnych ---
+   Pico.css stosuje animację zanikania dla dialog[open].
+   Po zakończeniu animacji Chrome aktualizuje drzewo A11y, przez co NVDA ponownie odczytuje nazwę okna dialogowego.
+   Usunięcie tych animacji kończy efekt echa NVDA. */
 dialog, dialog[open], dialog::backdrop {
     animation: none !important;
     transition: none !important;
 }
 
-/* Modal UI Adjustments */
+/* Dostosowania UI modalu */
 dialog article header {
     margin-bottom: 0 !important;
 }

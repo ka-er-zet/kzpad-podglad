@@ -1,13 +1,13 @@
 /**
- * OZ-PAD JSON Editor Logic
- * Handles loading, editing, and exporting JSON database files.
+ * Logika edytora JSON OZ-PAD
+ * Obsługuje wczytywanie, edytowanie i eksportowanie plików JSON bazy danych.
  */
 
 /**
- * Toast notification system - displays non-blocking messages to users
- * @param {string} message - The message to display
- * @param {string} type - Type of toast: 'success', 'error', 'warning' (default: 'success')
- * @param {number} duration - How long to show the toast in ms (default: 0 - stays until closed)
+ * System powiadomień toast — wyświetla nieblokujące komunikaty dla użytkownika.
+ * @param {string} message - Treść komunikatu.
+ * @param {string} type - Typ toastu: 'success', 'error', 'warning' (domyślnie: 'success').
+ * @param {number} duration - Czas wyświetlania w ms (domyślnie: 0 — do ręcznego zamknięcia).
  */
 let lastToastMessage = "";
 let lastToastTime = 0;
@@ -86,7 +86,7 @@ let confirmPromiseResolve = null;
  * @returns {Promise<boolean>} Resolves with true if confirmed, false otherwise
  */
 function showConfirm(title, message, confirmText = 'Potwierdź', cancelText = 'Anuluj', type = 'default') {
-    // Legacy support for callback as 3rd parameter
+    // Wsteczna zgodność: obsługa callbacku jako 3. parametru
     let callback = null;
     if (typeof confirmText === 'function') {
         callback = confirmText;
@@ -103,29 +103,29 @@ function showConfirm(title, message, confirmText = 'Potwierdź', cancelText = 'A
             return;
         }
 
-        // Update content
+        // Zaktualizuj zawartość
         document.getElementById('modal-confirm-title').textContent = title;
         document.getElementById('modal-confirm-message').textContent = message;
 
-        // Update button labels and styles
+        // Zaktualizuj etykiety i style przycisków
         const confirmBtn = document.getElementById('modal-confirm-btn');
         const cancelBtn = document.getElementById('modal-confirm-cancel-btn');
 
         if (confirmBtn) confirmBtn.textContent = typeof confirmText === 'string' ? confirmText : 'Potwierdź';
         if (cancelBtn) cancelBtn.textContent = typeof cancelText === 'string' ? cancelText : 'Anuluj';
 
-        // Swap styles based on type
+        // Zamień style w zależności od typu
         if (type === 'warning') {
             if (confirmBtn) confirmBtn.className = 'primary outline';
-            if (cancelBtn) cancelBtn.className = 'primary'; // Safe action is primary
+            if (cancelBtn) cancelBtn.className = 'primary'; // Bezpieczna akcja jest główna
         } else {
-            if (confirmBtn) confirmBtn.className = 'primary'; // Intentional action is primary
+            if (confirmBtn) confirmBtn.className = 'primary'; // Zamierzona akcja jest główna
             if (cancelBtn) cancelBtn.className = 'secondary outline';
         }
 
         confirmPromiseResolve = (confirmed) => {
             const currentResolve = confirmPromiseResolve;
-            confirmPromiseResolve = null; // Prevent double resolution
+            confirmPromiseResolve = null; // Zapobiegaj podwójnemu wywołaniu resolve
             if (confirmed && callback) callback();
             resolve(confirmed);
         };
@@ -222,11 +222,11 @@ function showToast(message, type = 'success', duration = 0) {
         return;
     }
 
-    // NEW: Check if this exact message is already being displayed
+    // NOWE: Sprawdź, czy ten sam komunikat jest już wyświetlany
     const existingToasts = container.querySelectorAll('.toast-content');
     for (const t of existingToasts) {
         if (t.textContent === message) {
-            // Pulse the existing toast instead of adding a new one
+            // Pulsuj istniejący toast zamiast dodawać nowy
             const parent = t.closest('.toast');
             parent.style.animation = 'none';
             parent.offsetHeight; /* trigger reflow */
@@ -235,7 +235,7 @@ function showToast(message, type = 'success', duration = 0) {
         }
     }
 
-    // Prevent spamming the same toast message in very quick succession (fallback)
+    // Zapobiegaj zasypywaniu tymi samymi toastami w krótkim czasie (zabezpieczenie)
     const now = Date.now();
     if (message === lastToastMessage && (now - lastToastTime < 500)) {
         return;
@@ -290,7 +290,7 @@ function showToast(message, type = 'success', duration = 0) {
 
     container.appendChild(toast);
 
-    // Screen reader announcement
+    // Ogłoszenie dla czytników ekranu
     setTimeout(() => {
         announcement.textContent = message;
     }, 50);
@@ -299,25 +299,25 @@ function showToast(message, type = 'success', duration = 0) {
         window.lucide.createIcons();
     }
 
-    // Store previously focused element for restore after close
+    // Zapamiętaj poprzednio sfocusowany element, by przywrócić fokus po zamknięciu
     const previouslyFocused = document.activeElement;
 
     closeBtn.addEventListener('click', () => {
-        if (lastToastMessage === message) lastToastMessage = ""; // reset so same message can be shown again
+        if (lastToastMessage === message) lastToastMessage = ""; // zresetuj, by ten sam komunikat mógł pojawić się ponownie
         toast.remove();
-        // Restore focus to the element that triggered the toast
+        // Przywróć fokus do elementu, który wywołał toast
         if (previouslyFocused && previouslyFocused !== document.body) {
             previouslyFocused.focus();
         }
     });
 
-    // Move focus to close button immediately after display
-    // Use setTimeout to ensure the element is in the DOM and visible
+    // Przenieś fokus na przycisk zamknięcia zaraz po wyświetleniu
+    // setTimeout zapewnia, że element jest w DOM i widoczny
     setTimeout(() => {
         closeBtn.focus();
     }, 100);
 
-    // Auto-hide only if explicitly requested with duration > 0
+    // Ukryj automatycznie tylko gdy wyraźnie podano duration > 0
     if (duration > 0) {
         setTimeout(() => {
             if (toast.parentNode) toast.remove();
@@ -325,7 +325,7 @@ function showToast(message, type = 'success', duration = 0) {
     }
 }
 
-// Global state to store data and modification status for each JSON type
+// Globalny stan przechowujący dane i status modyfikacji dla każdego typu JSON
 let editorState = {
     clauses: { data: null, modified: false, label: 'Klauzule', modifiedItems: new Set() },
     mapping: { data: null, modified: false, label: 'Mapowania', modifiedItems: new Set() },
@@ -334,14 +334,14 @@ let editorState = {
 };
 
 let currentType = 'clauses'; // 'clauses' | 'mapping' | 'summaries' | 'glossary'
-let currentData = null;      // shortcut to editorState[currentType].data
+let currentData = null;      // skrót do editorState[currentType].data
 let activeItemId = null;
-let currentPrefixFilter = ''; // Quick filter for clauses (C. or U.)
-let isFormDirty = false;     // Tracks if the current form has unsaved changes
-let isCreatingNewItem = false; // Flag: are we creating a new item or editing existing
-let currentNewItemPrefix = null; // Stores forcedPrefix for new items so re-renders stay correct
+let currentPrefixFilter = ''; // Szybki filtr dla klauzul (C. lub U.)
+let isFormDirty = false;     // Śledzi, czy bieżący formularz ma niezapisane zmiany
+let isCreatingNewItem = false; // Flaga: czy tworzymy nowy element czy edytujemy istniejący
+let currentNewItemPrefix = null; // Przechowuje forcedPrefix dla nowych elementów, by re-rendery były poprawne
 
-// DOM Elements
+// Elementy DOM
 const typeButtons = document.querySelectorAll('#file-type-selector button');
 const loaderSection = document.getElementById('loader-section');
 const workspaceSection = document.getElementById('editor-workspace');
@@ -349,7 +349,7 @@ const itemsList = document.getElementById('items-list');
 const formContainer = document.getElementById('form-container');
 const searchInput = document.getElementById('sidebar-search');
 
-// Configuration for file paths
+// Konfiguracja ścieżek do plików
 const DEFAULT_PATHS = {
     clauses: 'clauses_json/clauses.json',
     mapping: 'clauses_json/mapping.json',
@@ -358,22 +358,22 @@ const DEFAULT_PATHS = {
 };
 
 /**
- * Initialize Event Listeners
+ * Inicjalizacja nasłuchiwaczy zdarzeń
  */
 function init() {
     if (window.lucide) window.lucide.createIcons();
-    // Apply persisted theme (default: dark)
+    // Zastosuj utrwalony motyw (domyślnie: ciemny)
     applyTheme(localStorage.getItem('kzpad-theme') || 'dark');
 
-    // Note: Removed beforeunload to use consistent UI (toasts/modals only)
-    // Users are warned when switching sections if form has unsaved changes
+    // Uwaga: Usunięto beforeunload na rzecz spójnego UI (tylko toasty/modale)
+    // Użytkownik jest ostrzegany przy przełączaniu sekcji, jeśli formularz ma niezapisane zmiany
 
-    // Tab switching — no preselection: user must choose type first
-    // visually mark all as unpressed initially
+    // Przełączanie zakładek — bez wstępnego wyboru: użytkownik musi najpierw wybrać typ
+    // Wszystkie przyciski widocznie oznaczone jako nieaktywne na starcie
     typeButtons.forEach(btn => { btn.setAttribute('aria-pressed', 'false'); });
     typeButtons.forEach(btn => {
         btn.addEventListener('click', async () => {
-            // Check if current form has unsaved changes before switching
+            // Sprawdź, czy formularz ma niezapisane zmiany przed przełączeniem
             if (isFormDirty) {
                 const confirmSwitch = await showConfirm(
                     `Niezapisane zmiany w formularzu`,
@@ -385,33 +385,33 @@ function init() {
                 if (!confirmSwitch) return;
             }
 
-            // mark selection visually & accessibility state
+            // Oznacz wybór wizualnie i aktualizuj stan ARIA
             typeButtons.forEach(b => { b.setAttribute('aria-pressed', 'false'); b.classList.remove('active'); });
             btn.setAttribute('aria-pressed', 'true');
             btn.classList.add('active');
 
-            // set chosen type
+            // Ustaw wybrany typ
             const newType = btn.dataset.type;
             currentType = newType;
 
-            // Clear search when switching categories
+            // Wyczyść wyszukiwanie przy przełączaniu kategorii
             const searchInput = document.getElementById('sidebar-search');
             if (searchInput) searchInput.value = '';
 
-            // If we already have data for this type, switch to it
+            // Jeśli mamy już dane dla tego typu, przełącz
             if (editorState[currentType].data) {
                 currentData = editorState[currentType].data;
                 onDataLoaded(`Pamięć: ${currentType}`);
             } else {
-                // No data, show loader (next step)
+                // Brak danych — pokaż loader
                 loaderSection.classList.remove('hidden');
                 workspaceSection.classList.add('hidden');
 
-                // show & focus loader H2
+                // Pokaż i sfocusuj nagłówek loadera H2
                 const loaderTitle = document.getElementsByClassName('loader-title')[0];
                 if (loaderTitle) {
                     loaderTitle.classList.remove('hidden');
-                    // Update heading text to reflect selected category with specific messages
+                    // Zaktualizuj tekst nagłówka zależnie od wybranej kategorii
                     const categoryMessages = {
                         'clauses': 'Wczytaj plik z klauzulami',
                         'mapping': 'Wczytaj plik z mapowaniem',
@@ -422,7 +422,7 @@ function init() {
                     loaderTitle.textContent = headingText;
                     loaderTitle.className = 'loader-title';
                     
-                    // Update loader card descriptions based on category
+                    // Zaktualizuj opisy kart loadera zależnie od kategorii
                     const categoryLabels = {
                         'clauses': 'klauzulami',
                         'mapping': 'mapowaniem',
@@ -449,8 +449,7 @@ function init() {
                         }
                     }
                     
-                    // Focus first action button to provide immediate interaction point
-                    // Screen reader announces heading automatically when text changes
+                    // Skup fokus na pierwszym przycisku akcji — czytnik ekranu ogłosi nagłówek automatycznie przy zmianie tekstu
                     const firstButton = document.getElementById('btn-load-defaults');
                     if (firstButton) {
                         firstButton.focus();
@@ -458,60 +457,60 @@ function init() {
                     loaderSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 }
 
-                // reset editor view state (keep other types' data)
+                // Zresetuj stan widoku edytora (zachowaj dane innych typów)
                 resetEditorViewState();
             }
         });
     });
 
-    // Load defaults
+    // Wczytaj domyślne dane
     document.getElementById('btn-load-defaults').addEventListener('click', loadDefaults);
 
-    // File input change
+    // Zmiana pliku
     document.getElementById('file-input').addEventListener('change', handleFileUpload);
 
-    // Clear selection/focus when clicking outside list items
+    // Wyczyść wybór/fokus po kliknięciu poza elementami listy
     document.addEventListener('click', (e) => {
-        // Find if we clicked inside a list item or a button/input
+        // Sprawdzi, czy kliknięto wewnątrz elementu listy lub przycisku/inputu
         const isClickInside = e.target.closest('.list-item') ||
             e.target.closest('button') ||
             e.target.closest('input') ||
             e.target.closest('textarea');
 
         if (!isClickInside) {
-            // Remove focus from any active element
+            // Usuń fokus z aktywnego elementu
             if (document.activeElement) {
                 document.activeElement.blur();
             }
         }
     });
 
-    // Search functionality
+    // Funkcjonalność wyszukiwania
     searchInput.addEventListener('input', (e) => {
         const term = e.target.value.toLowerCase();
         renderList(term);
     });
 
-    // Track changes in the form to prevent accidental data loss
+    // Śledź zmiany w formularzu, by zapobiec przypadkowej utracie danych
     formContainer.addEventListener('input', () => {
         isFormDirty = true;
     });
     formContainer.addEventListener('change', (e) => {
-        // Change event covers checkboxes and selects better than input in some browsers
+        // Zdarzenie change lepiej obsługuje checkboxy i selecty niż input w niektórych przeglądarkach
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.tagName === 'SELECT') {
             isFormDirty = true;
         }
     });
 
-    // Topbar download icon (nav)
+    // Przycisk pobierania w górnym pasku (nav)
     const navDownload = document.getElementById('btn-download-json-nav');
     if (navDownload) navDownload.addEventListener('click', exportAllModified);
 
-    // Theme toggle
+    // Przełącznik motywu
     const themeToggle = document.getElementById('btn-theme-toggle');
     if (themeToggle) themeToggle.addEventListener('click', () => toggleTheme());
 
-    // Enhance icon buttons with visible labels
+    // Wzbogać przyciski ikon o widoczne etykiety
     enhanceIconButtons();
 }
 
@@ -530,7 +529,7 @@ function addNewItem(forcedPrefix) {
         return;
     }
 
-    // Mark as creating new item and open form directly
+    // Oznacz jako tworzenie nowego elementu i od razu otwórz formularz
     isCreatingNewItem = true;
     activeItemId = '';
     
@@ -568,7 +567,7 @@ function addNewItem(forcedPrefix) {
         };
     }
 
-    // Show form directly
+    // Pokaż formularz bezpośrednio
     itemsList.style.display = 'none';
     formContainer.style.display = 'block';
     
@@ -595,7 +594,7 @@ function addNewItem(forcedPrefix) {
     if (window.lucide) window.lucide.createIcons();
 
     setTimeout(() => {
-        // Focus on ID input field
+        // Ustaw fokus na polu ID
         const idInput = document.getElementById('edit-id');
         if (idInput) idInput.focus();
     }, 0);
@@ -681,7 +680,7 @@ window.confirmAddItem = () => {
     } else if (currentType === 'glossary') {
         if (currentData[newId]) { showToast("To hasło już istnieje!", "error"); return; }
         currentData = insertKeyAtNaturalPosition(currentData, newId, "");
-        editorState[currentType].data = currentData; // New entry in glossary is just an empty definition string
+        editorState[currentType].data = currentData; // Nowy wpis słownika to pusty ciąg definicji
     } else if (currentType === 'mapping') {
         if (currentData.matrix.find(it => it.id === newId)) { showToast("Element o tym ID już istnieje!", "error"); return; }
         currentData.matrix = insertMatrixItemAtNaturalPosition(currentData.matrix, {
@@ -756,7 +755,7 @@ function markAsModified(itemId = null) {
     const state = editorState[currentType];
     state.modified = true;
 
-    // Add specific item to modified list if provided or if we have an active item
+    // Dodaj konkretny element do listy zmodyfikowanych, jeśli podano lub mamy aktywny element
     const targetId = itemId || activeItemId;
     if (targetId) {
         state.modifiedItems.add(targetId);
@@ -788,7 +787,7 @@ function updateDownloadButtonState() {
     navDownload.setAttribute('aria-label', label);
     navDownload.setAttribute('data-icon-label', label);
 
-    // Update visible label if exists
+    // Zaktualizuj widoczną etykietę, jeśli istnieje
     const labelEl = navDownload.querySelector('.icon-label');
     if (labelEl) {
         labelEl.textContent = label;
@@ -797,7 +796,7 @@ function updateDownloadButtonState() {
         }
     }
 
-    // Update category buttons (hero-cards) to show modification status
+    // Zaktualizuj przyciski kategorii (hero-cards) o wskaźnik modyfikacji
     typeButtons.forEach(btn => {
         const type = btn.dataset.type;
         const state = editorState[type];
@@ -826,7 +825,7 @@ function resetEditorViewState() {
     activeItemId = null;
     currentPrefixFilter = ''; // Reset quick filter
 
-    // Reset quick filter UI buttons
+    // Zresetuj przyciski szybkiego filtra
     document.querySelectorAll('#quick-filters button').forEach(btn => {
         if (btn.dataset.prefix === '') btn.classList.add('active');
         else btn.classList.remove('active');
@@ -836,11 +835,11 @@ function resetEditorViewState() {
     itemsList.innerHTML = '';
     formContainer.innerHTML = '<p class="secondary">Wybierz element z listy, aby rozpocząć edycję.</p>';
 
-    // Show list, hide form
+    // Pokaż listę, ukryj formularz
     itemsList.style.display = 'block';
     formContainer.style.display = 'none';
 
-    // hide title container until user selects a category or loads data
+    // Ukryj kontener tytułu, aż użytkownik wybierze kategorię lub wczyta dane
     const titleContainer = document.querySelector('.editor-title-container');
     if (titleContainer) titleContainer.classList.add('hidden');
 }
@@ -892,17 +891,17 @@ function onDataLoaded(sourceInfo) {
     // Pokazujemy workspace (był hidden), ale NIE chowamy loadera.
     workspaceSection.classList.remove('hidden');
 
-    // update editor H2
+    // Zaktualizuj nagłówek H2 edytora
     const mapNames = { clauses: 'klauzule', mapping: 'mapowania', summaries: 'podsumowania', glossary: 'słownik' };
     const catName = mapNames[currentType] || currentType;
     const editorCat = document.getElementById('editor-category-name');
     if (editorCat) editorCat.textContent = catName;
 
-    // show editor title container and secondary actions
+    // Pokaż kontener tytułu edytora i dodatkowe akcje
     const titleContainer = document.querySelector('.editor-title-container');
     if (titleContainer) titleContainer.classList.remove('hidden');
 
-    // Show/hide quick filters for clauses
+    // Pokaż/ukryj szybkie filtry dla klauzul
     const quickFilters = document.getElementById('quick-filters');
     if (quickFilters) {
         quickFilters.classList.toggle('hidden', currentType !== 'clauses');
@@ -1005,7 +1004,7 @@ function renderList(searchTerm = '') {
     };
 
     if (currentType === 'clauses' || currentType === 'glossary') {
-        // Keep the original order from JSON (legal text structure)
+        // Zachowaj oryginalną kolejność z JSON (struktura tekstu prawnego)
         keys = Object.keys(currentData);
     } else if (currentType === 'mapping') {
         keys = (currentData.matrix || []).map(item => item.id);
@@ -1013,7 +1012,7 @@ function renderList(searchTerm = '') {
         keys = Object.keys(currentData.compliance_summaries || {});
     }
 
-    // Apply quick prefix filter if active
+    // Zastosuj szybki filtr prefiksu, jeśli aktywny
     if (currentType === 'clauses' && currentPrefixFilter) {
         keys = keys.filter(k => k.startsWith(currentPrefixFilter));
     }
@@ -1021,7 +1020,7 @@ function renderList(searchTerm = '') {
     keys.filter(key => {
         if (key.toLowerCase().includes(term)) return true;
 
-        // Extended search for better usability
+        // Rozszerzone wyszukiwanie dla lepszej użyteczności
         if (currentType === 'clauses' && currentData[key]) {
             return (currentData[key].title || '').toLowerCase().includes(term);
         } else if (currentType === 'mapping') {
@@ -1055,11 +1054,11 @@ function renderList(searchTerm = '') {
             const li = document.createElement('li');
             li.className = 'list-item' + (activeItemId === key ? ' active' : '');
             li.dataset.key = key;
-            // li is NOT a tab stop — buttons inside are the tab targets.
-            // Clicking anywhere on the card (not on action buttons) opens the edit form.
+            // li NIE jest tabstopem — focusowalny jest przycisk Edytuj wewnątrz.
+            // Kliknięcie w dowolne miejsce karty (poza przyciskami akcji) otwiera formularz.
             li.onclick = () => loadItem(key);
 
-            // 1. Add Drag Handle (Grip) for visual cue only
+            // 1. Dodaj uchwyt do przeciągania (tylko wizualny wskaźnik)
             if (currentType !== 'summaries' && currentType !== 'glossary') {
                 const handle = document.createElement('span');
                 handle.className = 'drag-handle';
@@ -1068,7 +1067,7 @@ function renderList(searchTerm = '') {
                 li.appendChild(handle);
             }
 
-            // Drag and Drop support — ENABLED only when reordering is allowed
+            // Drag and Drop — WᐚĄCZONY tylko gdy sortowanie jest dozwolone
             if (currentType !== 'summaries' && currentType !== 'glossary') {
                 li.draggable = true;
 
@@ -1105,7 +1104,7 @@ function renderList(searchTerm = '') {
                 li.draggable = false;
             }
 
-            // Modification indicator (per-item)
+            // Wskaźnik modyfikacji (per element)
             if (editorState[currentType].modifiedItems.has(key)) {
                 const dot = document.createElement('span');
                 dot.className = 'item-mod-indicator';
@@ -1115,12 +1114,12 @@ function renderList(searchTerm = '') {
                 li.appendChild(dot);
             }
 
-            // Visual label — aria-hidden because screen reader gets context from editBtn's aria-label
+            // Etykieta wizualna — aria-hidden, bo czytnik ekranu pobiera kontekst z aria-label przycisku Edytuj
             const label = document.createElement('span');
             label.className = 'list-key';
             label.setAttribute('aria-hidden', 'true');
 
-            // Compute displayText
+            // Oblicz displayText
             let displayText = key;
             if (currentType === 'clauses' && currentData[key] && currentData[key].title) {
                 const title = currentData[key].title;
@@ -1159,15 +1158,15 @@ function renderList(searchTerm = '') {
             label.textContent = displayText;
             li.appendChild(label);
 
-            // Edit button — PRIMARY tab stop on the card.
-            // aria-label includes full displayText so screen reader announces
-            // context + action in one: "Edytuj: [full name], przycisk"
+            // Przycisk Edytuj — GŁÓWNY tabstop na karcie.
+            // aria-label zawiera pełny displayText, dzięki czemu czytnik ekranu ogłasza
+            // kontekst + akcję łącznie: „Edytuj: [pełna nazwa], przycisk”
             const editBtn = document.createElement('button');
             editBtn.className = 'primary outline small';
             editBtn.textContent = 'Edytuj';
             editBtn.setAttribute('aria-label', `Edytuj: ${displayText}`);
 
-            // Keyboard reordering (Alt+Arrow) handled on the edit button
+            // Klawiaturowe zmiana kolejności (Alt+Strzałka) obsługiwana na przycisku Edytuj
             if (currentType !== 'summaries' && currentType !== 'glossary') {
                 editBtn.addEventListener('keydown', (e) => {
                     if (e.altKey && (e.key === 'ArrowUp' || e.key === 'ArrowDown')) {
@@ -1178,7 +1177,7 @@ function renderList(searchTerm = '') {
                         } else {
                             moveObjectItem(currentType, key, delta);
                         }
-                        // Refocus the edit button after re-render
+                        // Przekieruj fokus na przycisk po re-renderze
                         setTimeout(() => {
                             const newLi = document.querySelector(`li[data-key="${key}"]`);
                             if (newLi) {
@@ -1192,7 +1191,7 @@ function renderList(searchTerm = '') {
             editBtn.onclick = (e) => { e.stopPropagation(); loadItem(key); };
             li.appendChild(editBtn);
 
-            // Delete button
+            // Przycisk Usuń
             if (currentType !== 'summaries' && currentType !== 'glossary') {
                 const delBtn = document.createElement('button');
                 delBtn.className = 'primary outline small';
@@ -1228,13 +1227,13 @@ async function showList(force = false) {
     isFormDirty = false;
     const lastActiveId = activeItemId; // zapamiętaj przed wyzerowaniem
     activeItemId = null;
-    // Clean up new-item placeholder if user cancels without saving
+    // Usprzątnij placeholder nowego elementu, jeśli użytkownik anuluje bez zapisywania
     if (currentData && currentData['']) delete currentData[''];
     currentNewItemPrefix = null;
     itemsList.style.display = 'block';
     formContainer.style.display = 'none';
 
-    // Show add actions and search
+    // Pokaż akcje dodawania i wyszukiwanie
     const addActions = document.getElementById('add-item-actions');
     const isSummaries = currentType === 'summaries';
     if (addActions) addActions.style.display = isSummaries ? 'none' : 'block';
@@ -1244,7 +1243,7 @@ async function showList(force = false) {
     const specialActions = document.getElementById('special-actions');
     if (specialActions) specialActions.style.display = 'block';
 
-    // Show quick filters only for clauses in list view
+    // Pokaż szybkie filtry tylko dla klauzul w widoku listy
     const quickFilters = document.getElementById('quick-filters');
     if (quickFilters) {
         if (currentType === 'clauses') quickFilters.classList.remove('hidden');
@@ -1269,12 +1268,12 @@ async function showList(force = false) {
 }
 
 /**
- * Sets the prefix filter for clauses (C. or U.)
+ * Ustawia filtr prefiksu dla klauzul (C. lub U.)
  */
 window.setPrefixFilter = (prefix) => {
     currentPrefixFilter = prefix;
 
-    // Update UI + aria-pressed
+    // Zaktualizuj UI + aria-pressed
     document.querySelectorAll('#quick-filters button').forEach(btn => {
         const isActive = btn.dataset.prefix === prefix;
         btn.classList.toggle('active', isActive);
@@ -1306,7 +1305,7 @@ async function loadItem(id, force = false, suppressHeaderFocus = false) {
     itemsList.style.display = 'none';
     formContainer.style.display = 'block';
 
-    // Hide add actions container instead of individual button
+    // Ukryj kontener akcji dodawania zamiast poszczególnego przycisku
     const addActions = document.getElementById('add-item-actions');
     if (addActions) addActions.style.display = 'none';
 
@@ -1338,8 +1337,8 @@ async function loadItem(id, force = false, suppressHeaderFocus = false) {
 
     if (window.lucide) window.lucide.createIcons();
 
-    // Auto-resize all textareas once the form is loaded
-    // + przenieś fokus na formularz, aby czytnik ekranu wiedział o zmianie kontekstu
+    // Automatycznie dopasuj rozmiar textarea po załadowaniu formularza
+    // + przenieś fokus na formularz, by czytnik ekranu wiedział o zmianie kontekstu
     setTimeout(() => {
         document.querySelectorAll('#form-container textarea').forEach(tx => {
             autoResize(tx);
@@ -1368,7 +1367,7 @@ function renderClauseForm(id, data, forcedPrefix = null) {
     const isLegal = id.startsWith('U.') || forcedPrefix === 'U.';
     const isNew = isCreatingNewItem;
 
-    // Ensure all required arrays exist
+    // Upewnij się, że wymagane tablice istnieją
     if (!data.preconditions) data.preconditions = [];
     if (!data.procedure) data.procedure = [];
     if (!data.checklist) data.checklist = [];
@@ -1376,7 +1375,7 @@ function renderClauseForm(id, data, forcedPrefix = null) {
     if (!data.form) data.form = {};
     if (!data.form.inputs && !isLegal) data.form.inputs = [];
 
-    // Build ID hints HTML — always shown so layout is consistent for new and edit
+    // Buduj podpowiedzi ID — zawsze widoczne dla spójności układu dla nowych i edytowanych elementów
     let idHintsHTML;
     if (forcedPrefix === 'C.' || id.startsWith('C.')) {
         idHintsHTML = `
@@ -1520,7 +1519,7 @@ function renderClauseForm(id, data, forcedPrefix = null) {
  * EDITOR: Products (Global)
  */
 function renderProductsForm() {
-    // Ensure we track this view correctly
+    // Upewnij się, że widok jest poprawnie śledzony
     activeItemId = '_products';
     isFormDirty = false;
 
@@ -1656,18 +1655,18 @@ window.updateProductName = (pId, newName) => {
     markAsModified();
 };
 
-// Add / remove products inline
+// Dodawanie / usuwanie produktów inline
 window.addProductPrompt = () => {
-    // 1. Ensure we are in mapping mode
+    // 1. Upewnij się, że jesteśmy w trybie mapowania
     if (currentType !== 'mapping' || !currentData) return;
 
-    // 2. Save current state of the list if any (though products use live-sync oninput)
+    // 2. Zapisz bieżący stan listy (produkty używają synchronizacji live oninput)
     updateStateFromUI();
 
-    // 3. Ensure products object exists
+    // 3. Upewnij się, że obiekt products istnieje
     if (!currentData.products) currentData.products = {};
 
-    // 4. Generate next ID (p1, p2, etc.)
+    // 4. Generuj następne ID (p1, p2 itd.)
     const keys = Object.keys(currentData.products);
     let maxNum = 0;
     keys.forEach(k => {
@@ -1679,11 +1678,11 @@ window.addProductPrompt = () => {
     });
     const newId = `p${maxNum + 1}`;
 
-    // 5. Add empty product to the master list
+    // 5. Dodaj pusty produkt do głównej listy
     currentData.products[newId] = "";
 
-    // 6. Explicitly ensure this product key exists in ALL matrix entries as null (not applicable)
-    // This solves the issue of the product not appearing in mappings until manually touched
+    // 6. Jawnie upewnij się, że ten klucz produktu istnieje we WSZYSTKICH wpisach macierzy jako null (nie dotyczy)
+    // To rozwiązuje problem braku produktu w mapowaniach do momentu ręcznego dotknięcia
     if (currentData.matrix && Array.isArray(currentData.matrix)) {
         currentData.matrix.forEach(item => {
             if (!item.product_mappings) item.product_mappings = {};
@@ -1693,11 +1692,11 @@ window.addProductPrompt = () => {
         });
     }
 
-    // 7. Mark as modified and refresh UI
+    // 7. Oznacz jako zmodyfikowane i odśwież UI
     markAsModified('_products');
     renderProductsForm();
 
-    // 8. Focus the new input
+    // 8. Ustaw fokus na nowym polu
     setTimeout(() => {
         const inputs = document.querySelectorAll('#products-editor-main input');
         if (inputs.length > 0) {
@@ -1715,7 +1714,7 @@ window.removeProduct = (pId) => {
         `Czy na pewno chcesz usunąć produkt '${pId}' oraz wszystkie jego przypisania w tej tabeli?`,
         () => {
             if (currentData.products) delete currentData.products[pId];
-            // remove from all matrix entries
+            // usuń ze wszystkich wpisów macierzy
             (currentData.matrix || []).forEach(m => { if (m.product_mappings) delete m.product_mappings[pId]; });
             markAsModified();
             renderList();
@@ -1726,11 +1725,11 @@ window.removeProduct = (pId) => {
     );
 };
 
-// Clause picker: fetch clauses.json on demand and show a checkbox list to select clause IDs
+// Wybieracz klauzul: pobiera clauses.json na żądanie i pokazuje listę checkboxów do wyboru ID klauzul
 window._clausesCache = null;
 window.openClausePicker = async (productId) => {
     if (!activeItemId) return showToast("Wybierz najpierw artykuł/mapowanie po lewej.", "warning");
-    // load clauses.json if needed
+    // wczytaj clauses.json jeśli potrzebne
     if (!window._clausesCache) {
         try {
             const resp = await fetch(`clauses_json/clauses.json?t=${Date.now()}`, { cache: 'no-store' });
@@ -1743,10 +1742,10 @@ window.openClausePicker = async (productId) => {
 
     const pName = currentData.products[productId] || productId;
 
-    // build overlay using Pico.css <dialog> style
+    // zbuduj overlay w stylu <dialog> Pico.css
     const overlay = document.createElement('dialog');
     overlay.id = 'clause-picker-dialog';
-    // Native <dialog> handles ESC by default when opened with showModal()
+    // Natywny <dialog> obsługuje ESC domyślnie przy otwieraniu przez showModal()
     overlay.innerHTML = `
         <article class="dialog-article">
             <header>
@@ -1772,11 +1771,11 @@ window.openClausePicker = async (productId) => {
     `;
     document.body.appendChild(overlay);
 
-    // Cleanup on close
+    // Sprzątanie po zamknięciu
     overlay.addEventListener('close', () => {
         overlay.remove();
         document.body.classList.remove('modal-is-open');
-        // Return focus to the trigger button
+        // Przywróć fokus do przycisku wyzwalającego
         const trigger = document.querySelector(`button[onclick="openClausePicker('${productId}')"]`);
         if (trigger) trigger.focus();
     });
@@ -1790,7 +1789,7 @@ window.openClausePicker = async (productId) => {
     const searchEl = overlay.querySelector('.clause-picker-search');
     const item = currentData.matrix.find(it => it.id === activeItemId);
 
-    // Get current value from the input field in the main editor UI
+    // Pobierz bieżącą wartość z pola input w głównym UI edytora
     const inputField = document.getElementById(`input-${productId}`);
     const currentVal = inputField ? inputField.value : '';
     const selectedSet = new Set(currentVal.split(';').map(s => s.trim()).filter(Boolean));
@@ -1830,7 +1829,7 @@ window.openClausePicker = async (productId) => {
     };
 
     renderList('');
-    // Focus search input after modal is shown
+    // Skup fokus na polu wyszukiwania po otwarciu modalu
     setTimeout(() => searchEl.focus(), 50);
     searchEl.addEventListener('input', (e) => renderList(e.target.value.toLowerCase()));
 
@@ -1855,7 +1854,7 @@ window.openClausePicker = async (productId) => {
 };
 
 window.openLegalClausePicker = async () => {
-    // load clauses.json if needed
+    // wczytaj clauses.json jeśli potrzebne
     if (!window._clausesCache) {
         try {
             const resp = await fetch(`clauses_json/clauses.json?t=${Date.now()}`, { cache: 'no-store' });
@@ -1866,7 +1865,7 @@ window.openLegalClausePicker = async () => {
         }
     }
 
-    // build overlay using Pico.css <dialog> style
+    // zbuduj overlay w stylu <dialog> Pico.css
     const overlay = document.createElement('dialog');
     overlay.id = 'legal-clause-picker-dialog';
     overlay.innerHTML = `
@@ -1894,11 +1893,11 @@ window.openLegalClausePicker = async () => {
     `;
     document.body.appendChild(overlay);
 
-    // Cleanup on close
+    // Sprzątanie po zamknięciu
     overlay.addEventListener('close', () => {
         overlay.remove();
         document.body.classList.remove('modal-is-open');
-        // Return focus to the trigger button
+        // Przywróć fokus do przycisku wyzwalającego
         const trigger = document.querySelector('button[onclick="openLegalClausePicker()"]');
         if (trigger) trigger.focus();
     });
@@ -1959,14 +1958,14 @@ window.openLegalClausePicker = async () => {
     });
 };
 
-// Move an item inside mapping.matrix up or down by delta (-1 = up, +1 = down)
+// Przesuwa element w mapping.matrix o delta (-1 = w górę, +1 = w dół)
 window.moveMatrixItem = (id, delta) => {
     if (!currentData || !Array.isArray(currentData.matrix)) return;
     const idx = currentData.matrix.findIndex(it => it.id === id);
     if (idx === -1) return;
     const newIndex = idx + delta;
     if (newIndex < 0 || newIndex >= currentData.matrix.length) return;
-    // swap
+    // zamień miejscami
     const tmp = currentData.matrix[newIndex];
     currentData.matrix[newIndex] = currentData.matrix[idx];
     currentData.matrix[idx] = tmp;
@@ -1975,12 +1974,12 @@ window.moveMatrixItem = (id, delta) => {
     renderList(searchInput.value);
     // Przywróć widoczność listy i podpowiedzi po powrocie do listy
     itemsList.style.display = '';
-    // Announce new position to screen reader
+    // Ogłoś nową pozycję czytnikowi ekranu
     const newPos = currentData.matrix.findIndex(it => it.id === id) + 1;
     const total = currentData.matrix.length;
     const dir = delta < 0 ? 'w górę' : 'w dół';
     setTimeout(() => srAnnounce(`Karta przeniesiona ${dir} na pozycję ${newPos} z ${total}`), 200);
-    // Refocus edit button for keyboard users
+    // Przywróć fokus na przycisk edycji dla użytkowników klawiatury
     setTimeout(() => {
         const el = document.querySelector(`li[data-key="${id}"]`);
         if (el) {
@@ -1990,7 +1989,7 @@ window.moveMatrixItem = (id, delta) => {
     }, 50);
 };
 
-// Move an item in an object-based data structure (reorders keys)
+// Przesuwa element w strukturze obiektowej (zmieniając kolejność kluczy)
 window.moveObjectItem = (type, key, delta) => {
     const data = (type === 'summaries') ? currentData.compliance_summaries : currentData;
     if (!data) return;
@@ -2004,7 +2003,7 @@ window.moveObjectItem = (type, key, delta) => {
 
     const targetKey = keys[newIndex];
 
-    // Rebuild the object to reflect the new key order
+    // Przebuduj obiekt odzwierciedlając nową kolejność kluczy
     const newObj = {};
     keys.forEach((k, i) => {
         if (i === newIndex) {
@@ -2025,14 +2024,14 @@ window.moveObjectItem = (type, key, delta) => {
 
     markAsModified(key);
     renderList(searchInput.value);
-    // Announce new position to screen reader
+    // Ogłoś nową pozycję czytnikowi ekranu
     const posData = (type === 'summaries') ? currentData.compliance_summaries : currentData;
     const allKeys = Object.keys(posData);
     const newPos = allKeys.indexOf(key) + 1;
     const total = allKeys.length;
     const dir = delta < 0 ? 'w górę' : 'w dół';
     setTimeout(() => srAnnounce(`Karta przeniesiona ${dir} na pozycję ${newPos} z ${total}`), 200);
-    // Refocus edit button for keyboard users
+    // Przywróć fokus na przycisk edycji dla użytkowników klawiatury
     setTimeout(() => {
         const el = document.querySelector(`li[data-key="${key}"]`);
         if (el) {
@@ -2042,11 +2041,11 @@ window.moveObjectItem = (type, key, delta) => {
     }, 50);
 };
 
-// Reorder items by dragging: moves draggedKey to targetKey's position
+// Zmiana kolejności przez przeciąganie: przenosi draggedKey na pozycję targetKey
 window.reorderTo = (draggedKey, targetKey) => {
     if (!currentData || draggedKey === targetKey) return;
 
-    // Capture fromIdx before reorder to determine direction
+    // Zapamiętaj fromIdx przed zmianą kolejności, by określić kierunek
     let fromIdx = -1, toIdx = -1;
     if (currentType === 'mapping') {
         const matrix = currentData.matrix;
@@ -2079,7 +2078,7 @@ window.reorderTo = (draggedKey, targetKey) => {
 
     markAsModified(draggedKey);
     renderList(searchInput.value);
-    // Announce new position to screen reader
+    // Ogłoś nową pozycję dla czytników ekranu
     (() => {
         const posData = currentType === 'mapping'
             ? currentData.matrix
@@ -2091,7 +2090,7 @@ window.reorderTo = (draggedKey, targetKey) => {
         const dir = toIdx < fromIdx ? 'w górę' : 'w dół';
         setTimeout(() => srAnnounce(`Karta przeniesiona ${dir} na pozycję ${newPos} z ${total}`), 200);
     })();
-    // Refocus the edit button of the dragged item after re-render
+    // Przekieruj fokus na przycisk Edytuj przeciągniętego elementu po re-renderze
     setTimeout(() => {
         const newLi = document.querySelector(`li[data-key="${draggedKey}"]`);
         if (newLi) {
@@ -2205,7 +2204,7 @@ function renderSummaryForm(id, data) {
 function renderGlossaryForm(id, data) {
     const isNew = isCreatingNewItem;
     
-    // data is the definition string from glossary.json
+    // data to ciąg definicji ze słownika (glossary.json)
     let idHintsHTML = '';
     if (isNew) {
         idHintsHTML = `
@@ -2238,7 +2237,7 @@ function renderGlossaryForm(id, data) {
 };
 
 window.toggleGlossaryEdit = () => {
-    // simple UX: focus the definition field
+    // prosta UX: ustaw fokus na polu definicji
     const def = document.getElementById('edit-definition');
     if (def) def.focus();
 };
@@ -2247,17 +2246,17 @@ window.toggleGlossaryEdit = () => {
  * Helpers for Array fields (Checklist/Preconditions)
  */
 function renderArrayItem(type, value, index, isLegal = false, allItems = []) {
-    // Calculate separate numbering for tests vs non-test items
+    // Oblicz odrębne numerowanie dla testów i elementów niebędących testami
     let itemNumber = index + 1;
     if (value && typeof value === 'object' && value.type === 'test') {
-        // Count only tests before this index
+        // Policz tylko testy przed tym indeksem
         itemNumber = allItems.slice(0, index).filter(item => item && typeof item === 'object' && item.type === 'test').length + 1;
     } else {
-        // Count only non-test items before this index
+        // Policz tylko elementy niebędące testami przed tym indeksem
         itemNumber = allItems.slice(0, index).filter(item => !item || typeof item !== 'object' || item.type !== 'test').length + 1;
     }
     
-    // Object items (test cards) get a specialised two-field editor
+    // Obiekty (karty testów) mają specjalistyczny edytor dwupolowy
     if (value && typeof value === 'object' && value.type === 'test') {
         return `
         <div class="array-item array-item--test" data-type="${type}" data-index="${index}">
@@ -2276,7 +2275,7 @@ function renderArrayItem(type, value, index, isLegal = false, allItems = []) {
         `;
     }
     
-    // Generate label text based on type
+    // Generuj tekst etykiety na podstawie typu
     let labelText = `Element ${itemNumber}`;
     if (type === 'preconditions') {
         labelText = `Warunek wstępny ${itemNumber}`;
@@ -2313,9 +2312,9 @@ function updateStateFromUI() {
 
         if (newId !== activeItemId) {
             if (currentData[newId]) {
-                // If ID exists and we are not just saving, we might have a conflict.
-                // But for silent update, we just don't rename if there's a conflict to avoid data loss.
-                // Or we can just ignore renaming here and let saveCurrent handle it.
+                // Jeśli ID istnieje i nie tylko zapisujemy, może być konflikt.
+                // Przy cichej aktualizacji po prostu nie zmieniamy nazwy, by uniknąć utraty danych.
+                // Możemy to zignorować i pozwolić saveCurrent obsłużyć to.
             } else {
                 currentData[newId] = currentData[activeItemId];
                 delete currentData[activeItemId];
@@ -2332,7 +2331,7 @@ function updateStateFromUI() {
         if (evalInput) item.evaluation = evalInput.value;
         if (categoryRadio) item.category = categoryRadio.value;
 
-        // Note: form.legend and form.noteId are no longer used/saved from UI
+        // Uwaga: form.legend i form.noteId nie są już używane/zapisywane z UI
     } else if (currentType === 'mapping') {
         const idInput = document.getElementById('edit-id');
         const newId = idInput ? idInput.value.trim() : activeItemId;
@@ -2426,9 +2425,9 @@ function updateStateFromUI() {
 }
 
 window.syncArrayValue = (type, index, value) => {
-    // We update currentData directly for checklists/preconditions to avoid complex DOM state management
+    // Zaktualizuj currentData bezpośrednio dla checklists/preconditions, by uniknąć złożonego zarządzania stanem DOM
     if (currentType === 'clauses') {
-        // Guard: don't overwrite object items with a flat string
+        // Strzeż: nie nadpisuj obiektów płaskim ciągiem
         if (currentData[activeItemId][type][index] && typeof currentData[activeItemId][type][index] === 'object') return;
         currentData[activeItemId][type][index] = value;
         markAsModified();
@@ -2446,9 +2445,9 @@ window.syncTestArrayValue = (type, index, field, value) => {
 };
 
 const scrollToLastArrayItem = (type) => {
-    // Use two nested setTimeout(0) calls so this runs after loadItem's own
-    // setTimeout(0) (which focuses the form h3), ensuring focus lands on
-    // the new item's first input/textarea instead of the section header.
+    // Używamy dwóch zagnieżdżonych setTimeout(0), by uruchomić to po setTimeout(0) loadItem
+    // (który ustawia fokus na h3 formularza), dzięki czemu fokus trafia na
+    // pierwsze pole input/textarea nowego elementu zamiast nagłówka sekcji.
     setTimeout(() => {
         const container = document.getElementById(type + '-container');
         if (!container) return;
@@ -2456,15 +2455,15 @@ const scrollToLastArrayItem = (type) => {
         if (items.length === 0) return;
         const last = items[items.length - 1];
         last.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        // Focus the first editable field in the new item
+        // Ustaw fokus na pierwszym edytowalnym polu nowego elementu
         const focusTarget = last.querySelector('input[type="text"], textarea');
         if (focusTarget) focusTarget.focus({ preventScroll: true });
     }, 50);
 };
 
 /**
- * Add new array item directly to DOM without re-rendering the entire form
- * This ensures screen reader only announces the new item, not the whole form
+ * Dodaje nowy element tablicy bezpośrednio do DOM bez re-renderowania całego formularza.
+ * Dzięki temu czytnik ekranu ogłasza tylko nowy element, a nie cały formularz.
  */
 const addArrayItemToDOM = (type) => {
     const container = document.getElementById(type + '-container');
@@ -2472,24 +2471,24 @@ const addArrayItemToDOM = (type) => {
 
     const isLegal = activeItemId.startsWith('U.') || (isCreatingNewItem && currentNewItemPrefix === 'U.');
     const data = currentData[activeItemId][type];
-    const newIndex = data.length - 1; // Already added by addArrayItem
+    const newIndex = data.length - 1; // Już dodane przez addArrayItem
     const newItem = data[newIndex];
     
-    // Render just the new item
+    // Renderuj tylko nowy element
     const itemHTML = renderArrayItem(type, newItem, newIndex, isLegal, data);
     
-    // Create wrapper div and insert
+    // Utwórz wrapper div i wstaw
     const wrapper = document.createElement('div');
     wrapper.innerHTML = itemHTML;
     const newElement = wrapper.firstElementChild;
     container.appendChild(newElement);
     
-    // Initialize Lucide icons only for the new element
+    // Inicjalizuj ikony Lucide tylko dla nowego elementu
     if (window.lucide) {
         window.lucide.createIcons({ elements: [newElement] });
     }
     
-    // Announce to screen reader
+    // Ogłoś czytnikowi ekranu
     const label = {
         'preconditions': 'Warunek wstępny',
         'procedure': isLegal ? 'Punkt wyjaśnienia' : 'Krok procedury',
@@ -2499,7 +2498,7 @@ const addArrayItemToDOM = (type) => {
     
     srAnnounce(`Dodano ${label}`);
     
-    // Scroll and focus the new item - delay to let screen reader announce first (1200ms)
+    // Przewiń i sfocusuj nowy element — opóźnienie, by czytnik ekranu zdjął ogłoszenie (1200ms)
     setTimeout(() => {
         newElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         const focusTarget = newElement.querySelector('input[type="text"], textarea');
@@ -2524,14 +2523,14 @@ window.addTestItem = (type) => {
 };
 
 /**
- * Remove array item directly from DOM without re-rendering the entire form
- * This ensures screen reader only announces the removal, not the whole form
+ * Usuwa element tablicy bezpośrednio z DOM bez re-renderowania całego formularza.
+ * Dzięki temu czytnik ekranu ogłasza tylko usunięcie, a nie cały formularz.
  */
 const removeArrayItemFromDOM = (type, index) => {
     const container = document.getElementById(type + '-container');
     if (!container) return;
 
-    // Find element by data-index attribute (not by position)
+    // Znajdź element po atrybucie data-index (nie po pozycji)
     const itemToRemove = container.querySelector(`.array-item[data-index="${index}"]`);
     if (!itemToRemove) return;
     
@@ -2544,10 +2543,10 @@ const removeArrayItemFromDOM = (type, index) => {
     
     itemToRemove.remove();
     
-    // Announce to screen reader
+    // Ogłoś dla czytnika ekranu
     srAnnounce(`Usunięto ${labelText}`);
     
-    // Don't focus after removal - let screen reader announce cleanly without triggering region hierarchy read
+    // Nie ustawiaj fokusu po usunięciu — pozwól czytnikowi ekranu czysto ogłosić bez wyzwalania hierarchii regionu
 };
 
 window.removeArrayItem = (type, index) => {
@@ -2569,8 +2568,8 @@ window.syncFormInput = (index, field, value) => {
 };
 
 /**
- * Add new form input directly to DOM without re-rendering the entire form
- * This ensures screen reader only announces the new input, not the whole form
+ * Dodaje nowy wiersz kryterium sukcesu bezpośrednio do DOM bez re-renderowania całego formularza.
+ * Dzięki temu czytnik ekranu ogłasza tylko nowy wiersz, a nie cały formularz.
  */
 const addFormInputToDOM = () => {
     const container = document.getElementById('form-inputs-container');
@@ -2580,7 +2579,7 @@ const addFormInputToDOM = () => {
     const newIndex = data.inputs.length - 1;
     const newInput = data.inputs[newIndex];
     
-    // Render just the new form input row
+    // Renderuj tylko nowy wiersz kryterium
     const inputHTML = `
         <div class="grid-1-2-auto array-item" data-index="${newIndex}">
             <div class="col-stack">
@@ -2597,21 +2596,21 @@ const addFormInputToDOM = () => {
         </div>
     `;
     
-    // Create wrapper div and insert
+    // Utwórz wrapper div i wstaw
     const wrapper = document.createElement('div');
     wrapper.innerHTML = inputHTML;
     const newElement = wrapper.firstElementChild;
     container.appendChild(newElement);
     
-    // Initialize Lucide icons only for the new element
+    // Inicjalizuj ikony Lucide tylko dla nowego elementu
     if (window.lucide) {
         window.lucide.createIcons({ elements: [newElement] });
     }
     
-    // Announce to screen reader
+    // Ogłoś dla czytnika ekranu
     srAnnounce(`Dodano wiersz warunku ${newIndex + 1}`);
     
-    // Scroll and focus the new item - delay to let screen reader announce first (1200ms)
+    // Przewiń i sfocusuj nowy element — opóźnienie, by czytnik ekranu zdjął ogłoszenie (1200ms)
     setTimeout(() => {
         newElement.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
         const focusTarget = newElement.querySelector('input[type="text"]');
@@ -2629,23 +2628,23 @@ window.addFormInput = () => {
 };
 
 /**
- * Remove form input directly from DOM without re-rendering the entire form
- * This ensures screen reader only announces the removal, not the whole form
+ * Usuwa kryterium sukcesu bezpośrednio z DOM bez re-renderowania całego formularza.
+ * Dzięki temu czytnik ekranu ogłasza tylko usunięcie, a nie cały formularz.
  */
 const removeFormInputFromDOM = (index) => {
     const container = document.getElementById('form-inputs-container');
     if (!container) return;
 
-    // Find element by data-index attribute (not by position)
+    // Znajdź element po atrybucie data-index (nie po pozycji)
     const itemToRemove = container.querySelector(`.array-item[data-index="${index}"]`);
     if (!itemToRemove) return;
     
     itemToRemove.remove();
     
-    // Announce to screen reader
+    // Ogłoś dla czytnika ekranu
     srAnnounce('Usunięto wiersz warunku');
     
-    // Don't focus after removal - let screen reader announce cleanly without triggering region hierarchy read
+    // Nie ustawiaj fokusu po usunięciu — pozwól czytnikowi ekranu czysto ogłosić
 };
 
 window.removeFormInput = (index) => {
@@ -2659,7 +2658,7 @@ window.removeFormInput = (index) => {
  * Save current form values back to currentData
  */
 window.saveCurrent = () => {
-    // If we are in products mode, we skip ID validation as it's a bulk edit
+    // Jeśli jesteśmy w trybie produktów, pomijamy walidację ID — to edycja zbiorcza
     if (activeItemId === '_products') {
         isFormDirty = false;
         renderList(searchInput.value);
@@ -2667,7 +2666,7 @@ window.saveCurrent = () => {
         return;
     }
 
-    // Summaries have fixed IDs (no edit-id input in form) — skip ID validation
+    // Podsumowania mają stałe ID (brak pola edit-id w formularzu) — pomijamy walidację ID
     if (currentType === 'summaries') {
         updateStateFromUI();
         isFormDirty = false;
@@ -2678,7 +2677,7 @@ window.saveCurrent = () => {
         return;
     }
 
-    // Collect specific error for the toast
+    // Zbierz konkretny błąd dla toastu
     let error = null;
     const idInput = document.getElementById('edit-id');
     const newId = idInput ? idInput.value.trim() : null;
@@ -2686,12 +2685,12 @@ window.saveCurrent = () => {
     if (!newId) {
         error = "ID nie może być puste!";
     } else if (newId !== activeItemId && activeItemId !== '') {
-        // ID changed - check if new ID already exists
+        // ID zmieniono — sprawdź czy nowe ID już istnieje
         if (currentType === 'clauses' && currentData[newId]) error = "Element o tym ID już istnieje!";
         else if (currentType === 'mapping' && currentData.matrix.find(it => it.id === newId)) error = "Element o tym ID już istnieje!";
         else if (currentType === 'glossary' && currentData[newId]) error = "Takie hasło już istnieje w słowniku!";
     } else if (newId !== activeItemId && activeItemId === '') {
-        // New item - check if ID already exists
+        // Nowy element — sprawdź czy ID już istnieje
         if (currentType === 'clauses' && currentData[newId]) error = "Element o tym ID już istnieje!";
         else if (currentType === 'mapping' && currentData.matrix.find(it => it.id === newId)) error = "Element o tym ID już istnieje!";
         else if (currentType === 'glossary' && currentData[newId]) error = "Takie hasło już istnieje w słowniku!";
@@ -2702,10 +2701,10 @@ window.saveCurrent = () => {
         return;
     }
 
-    // Handle ID change or new item creation
+    // Obsłuż zmianę ID lub tworzenie nowego elementu
     if (newId !== activeItemId) {
         if (activeItemId !== '') {
-            // ID was changed - remove old ID, add new ID
+            // ID zmieniono — usuń stare ID, dodaj nowe
             if (currentType === 'clauses' || currentType === 'glossary') {
                 currentData[newId] = currentData[activeItemId];
                 delete currentData[activeItemId];
@@ -2716,7 +2715,7 @@ window.saveCurrent = () => {
                 }
             }
         } else {
-            // New item — move placeholder '' data to the real ID
+            // Nowy element — przenieś dane z placeholdera '' do prawdziwego ID
             if (currentType === 'clauses' || currentType === 'glossary') {
                 currentData[newId] = currentData[''];
                 delete currentData[''];
@@ -2725,12 +2724,12 @@ window.saveCurrent = () => {
         activeItemId = newId;
     }
 
-    // Call state update
+    // Wywołaj aktualizację stanu
     updateStateFromUI();
     isFormDirty = false;
     isCreatingNewItem = false; // Reset flag after save
 
-    // Refresh the sidebar list to show potential name/ID changes
+    // Odśwież listę boczną, by pokazać potencjalne zmiany nazwy/ID
     renderList(searchInput.value);
     loadItem(activeItemId, true); // Refresh form to sync any ID changes
 
@@ -2746,7 +2745,7 @@ function exportAllModified() {
     const modifiedEntries = Object.entries(editorState).filter(([type, s]) => s.modified && s.data);
 
     if (modifiedEntries.length === 0) {
-        // If nothing modified, fallback to current data even if not "modified" flag set (backwards compat)
+        // Jeśli nic nie zmodyfikowano, spróbuj pobrać bieżące dane (wsteczna zgodność)
         if (currentData) {
             downloadJson(currentType, currentData);
         } else {
@@ -2773,7 +2772,7 @@ function exportAllModified() {
  */
 function executeExport(entries) {
     entries.forEach(([type, s], index) => {
-        // Use a small delay for multiple downloads to prevent browser blocking
+        // Małe opóźnienie przy wielu pobraniach, by przeglądarka nie blokowała
         setTimeout(() => {
             downloadJson(type, s.data);
         }, index * 250);
@@ -2801,7 +2800,7 @@ function downloadJson(type, data) {
     document.body.appendChild(a);
     a.click();
 
-    // cleanup
+    // sprzątanie
     setTimeout(() => {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
@@ -2809,8 +2808,8 @@ function downloadJson(type, data) {
 }
 
 /**
- * Place an icon label so it stays inside the viewport.
- * Adapted from wizard.js for consistency.
+ * Pozycjonuje etykietę ikony, by nie wychodziła poza viewport.
+ * Dostosowane z wizard.js dla spójności.
  */
 function placeIconLabel(buttonEl, labelEl) {
     if (!buttonEl || !labelEl) return;
@@ -2819,7 +2818,7 @@ function placeIconLabel(buttonEl, labelEl) {
         labelEl.style.left = '';
         labelEl.style.right = '';
 
-        void labelEl.offsetWidth; // Force layout
+        void labelEl.offsetWidth; // Wymuś układ
 
         const brect = buttonEl.getBoundingClientRect();
         const labelRect = labelEl.getBoundingClientRect();
@@ -2915,7 +2914,7 @@ function enhanceIconButtons() {
 }
 
 /**
- * Handle Escape for tooltips and reposition on resize/scroll/click.
+ * Obsługuje Escape dla tooltipów i repozycjonuje przy resize/scroll/kliknięciu.
  */
 document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
@@ -2929,7 +2928,7 @@ window.addEventListener('resize', () => {
     document.querySelectorAll('.icon-label').forEach(label => placeIconLabel(label.parentElement, label));
 });
 
-// Header hide/show on scroll
+// Ukrywanie/pokazywanie nagłówka przy przewijaniu
 let lastScrollY = window.pageYOffset;
 window.addEventListener('scroll', () => {
     const header = document.querySelector('.app-header');
@@ -2940,12 +2939,12 @@ window.addEventListener('scroll', () => {
 
     const currentScrollY = window.pageYOffset;
     
-    // Don't hide at the top or on minimal scroll
+    // Nie ukrywaj na górze lub przy minimalnym przewinięciu
     if (currentScrollY < 100) {
         header.classList.remove('header-hidden');
         lastScrollY = currentScrollY;
     } else {
-        // Hide on scroll down, show on scroll up
+        // Ukryj przy przewijaniu w dół, pokaż przy przewijaniu w górę
         if (currentScrollY > lastScrollY && !header.classList.contains('header-hidden')) {
             header.classList.add('header-hidden');
         } else if (currentScrollY < lastScrollY && header.classList.contains('header-hidden')) {
@@ -2960,7 +2959,7 @@ document.addEventListener('click', (e) => {
     if (!e.target.closest('button')) hideAllIconLabels();
 });
 
-// Theme helpers
+// Pomocnicze funkcje motywu
 function applyTheme(theme) {
     document.documentElement.setAttribute('data-theme', theme);
     localStorage.setItem('kzpad-theme', theme);
@@ -2973,7 +2972,7 @@ function applyTheme(theme) {
         window.lucide.createIcons();
     }
 
-    // Update labels for theme toggle
+    // Zaktualizuj etykiety przełącznika motywu
     const themeToggle = document.getElementById('btn-theme-toggle');
     if (themeToggle) {
         const actionText = theme === 'dark' ? 'Przełącz na motyw jasny' : 'Przełącz na motyw ciemny';
@@ -2992,7 +2991,7 @@ function toggleTheme() {
     applyTheme(cur === 'dark' ? 'light' : 'dark');
 }
 
-// Start app
+// Uruchom aplikację
 init();
 
 window.toggleMappingInput = (pId, isChecked) => {
