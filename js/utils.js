@@ -68,8 +68,7 @@ function xmlEscape(str) {
     });
 }
 
-// Wersja aplikacji do weryfikacji cache'u
-window.EAA_APP_VERSION = 'v16';
+// Wersja aplikacji (window.APP_VERSION) pochodzi z js/version.js — jedyne źródło prawdy.
 
 /**
  * Wyświetla monit o odświeżenie strony po wykryciu nowej wersji aplikacji.
@@ -1230,7 +1229,7 @@ function protectAssistiveHelpers(root = document) {
 // Inicjalizacja motywu przy załadowaniu strony
 document.addEventListener('DOMContentLoaded', () => {
     // Wymuś odświeżenie, jeśli wersja się zmieniła — zapobiega utknięciu PWA
-    const currentVersion = window.EAA_APP_VERSION;
+    const currentVersion = window.APP_VERSION;
     const storedVersion = localStorage.getItem('eaa_app_version');
     if (storedVersion && storedVersion !== currentVersion) {
         localStorage.setItem('eaa_app_version', currentVersion);

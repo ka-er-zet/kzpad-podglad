@@ -1,6 +1,6 @@
 # Zestawienie komponentów open source — OZ-PAD
 
-Poniższe zestawienie obejmuje wszystkie komponenty oprogramowania open source (OSS) wykorzystane w aplikacji **OZ-PAD** (Konfigurator Arkusza Oceny, wersja 1.4.1, kwiecień 2026).
+Poniższe zestawienie obejmuje wszystkie komponenty oprogramowania open source (OSS) wykorzystane w aplikacji **OZ-PAD** (Konfigurator Arkusza Oceny, wersja 1.4.2, wrzesień 2026).
 
 Wykonawca oświadcza, że żadna z poniższych licencji nie nakłada na Zamawiającego obowiązku ujawnienia kodu źródłowego Utworu, nie ogranicza praw Zamawiającego wynikających z Umowy ani nie stoi w sprzeczności z warunkami korzystania, modyfikowania i rozpowszechniania Utworu.
 

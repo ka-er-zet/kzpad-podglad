@@ -1,4 +1,5 @@
-const CACHE_NAME = 'OZ-PAD-v2';
+importScripts('./js/version.js'); // definiuje self.APP_VERSION
+const CACHE_NAME = `OZ-PAD-v${self.APP_VERSION}`;
 const ASSETS_TO_CACHE = [
     './',
     './index.html',
@@ -14,6 +15,7 @@ const ASSETS_TO_CACHE = [
     './js/lucide.min.js',
     './js/exceljs.min.js',
     './js/jszip.min.js',
+    './js/version.js',
     './js/utils.js',
     './js/exporter.js',
     './js/wizard.js',

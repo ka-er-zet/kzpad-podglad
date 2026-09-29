@@ -1,7 +1,7 @@
 # Dokumentacja techniczna — OZ-PAD (Konfigurator Arkusza Oceny)
 
-**Wersja:** 1.4.1  
-**Data:** kwiecień 2026
+**Wersja:** 1.4.2  
+**Data:** wrzesień 2026
 
 ---
 
@@ -17,6 +17,7 @@ OZ-PAD to aplikacja webowa typu **Single Page Application (SPA)**, w całości o
 | `editor.html` + `js/editor.js` | Moduł edycji danych (administracyjny) |
 | `js/exporter.js` | Współdzielona logika eksportu (ODT) |
 | `js/utils.js` | Funkcje pomocnicze współdzielone między modułami |
+| `js/version.js` | Jedyne źródło prawdy o wersji aplikacji (`APP_VERSION`); używany przez stronę i Service Worker |
 | `service-worker.js` | Obsługa PWA i trybu offline |
 | `clauses_json/` | Baza danych aplikacji (pliki JSON) |
 
@@ -187,7 +188,7 @@ Plik `service-worker.js` implementuje strategię **Network First z fallbackiem n
 
 ### Cache
 
-- Nazwa cache: `OZ-PAD-v2`
+- Nazwa cache: `OZ-PAD-v<wersja>` (np. `OZ-PAD-v1.4.2`) — wersja pochodzi z `js/version.js`
 - Przy instalacji SW pre-cachowane są wszystkie zasoby statyczne: HTML, CSS, JS, obrazy oraz pliki JSON bazy danych.
 - Przy aktualizacji SW stary cache jest automatycznie usuwany i zastępowany nowym.
 
@@ -206,7 +207,7 @@ Moduł edytora (`editor.html` i `js/editor.js`) jest **celowo wyłączony z Serv
 
 ### Aktualizacja wdrożenia
 
-Po podmianie plików na serwerze należy zaktualizować stałą `CACHE_NAME` w `service-worker.js` (np. zmienić `OZ-PAD-v2` na `OZ-PAD-v3`). Wymusi to pobranie nowej wersji przez wszystkich użytkowników przy następnym odwiedzeniu strony.
+Po podmianie plików na serwerze należy podnieść `APP_VERSION` w `js/version.js` (np. `1.4.2` → `1.4.3`) — to jedyne miejsce z numerem wersji; z niego powstaje nazwa cache'u Service Workera. Wymusi to pobranie nowej wersji przez wszystkich użytkowników przy następnym odwiedzeniu strony.
 
 ---
 

@@ -1,6 +1,6 @@
 # Protokół przekazania Utworu — OZ-PAD (Konfigurator Arkusza Oceny)
 
-**Wersja:** 1.4.1
+**Wersja:** 1.4.2
 
 ---
 
