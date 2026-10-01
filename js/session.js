@@ -179,6 +179,23 @@
     }
 
     /**
+     * Pytanie przed opuszczeniem widoku arkusza (przeglądarka wymagań, strona główna), gdy są
+     * niezapisane zmiany. Nie odrzuca arkusza: kopia robocza zostaje, ale użytkownik ma wiedzieć, co robi.
+     * @returns {Promise<boolean>} true, gdy można wyjść.
+     */
+    async function confirmLeave(consequence, confirmText, cancelText) {
+        if (!hasUnsavedChanges()) return true;
+        flush();
+        return askConfirm(
+            `Masz niezapisane zmiany w arkuszu oceny. ${consequence} Zmiany nie są zapisane w pliku JSON; na razie trzyma je tylko kopia robocza w tej przeglądarce. Aby je zachować, zapisz plik JSON (Ctrl+S).`,
+            'Niezapisane zmiany',
+            confirmText,
+            cancelText,
+            'cancel'
+        );
+    }
+
+    /**
      * "Wróć do arkusza" ma realnie przenieść do arkusza: gdy użytkownik jest w przeglądarce wymagań,
      * zamykamy ją i pokazujemy arkusz. W pozostałych widokach nie przewijamy strony.
      */
@@ -288,6 +305,17 @@
         });
         window.addEventListener('pagehide', flush);
 
+        // Ikona aplikacji przeładowuje stronę: najpierw pytamy, jeśli są niezapisane zmiany.
+        const logo = document.getElementById('app-logo');
+        if (logo) {
+            logo.addEventListener('click', async (e) => {
+                if (!hasUnsavedChanges()) return;
+                e.preventDefault();
+                const ok = await confirmLeave('Przejście na stronę główną zamknie arkusz.', 'Przejdź na stronę główną', 'Zostań w arkuszu');
+                if (ok) window.location.href = logo.getAttribute('href') || 'index.html';
+            });
+        }
+
         // Droga powrotna z przeglądarki wymagań do istniejącego arkusza.
         const backBtn = document.getElementById('browser-back-to-sheet');
         if (backBtn) {
@@ -321,6 +349,7 @@
         flush,
         runSilently,
         confirmDiscard,
+        confirmLeave,
         replaceWith,
         hasUnsavedChanges,
         hasSheet

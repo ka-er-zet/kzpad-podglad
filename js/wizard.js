@@ -339,8 +339,9 @@ function setupHero() {
     }
 
     if (heroBrowse) {
-        heroBrowse.addEventListener('click', (e) => {
+        heroBrowse.addEventListener('click', async (e) => {
             e.preventDefault();
+            if (window.Session && !(await Session.confirmLeave('Przejście do przeglądarki wymagań zamknie widok arkusza.', 'Przejdź do przeglądarki', 'Zostań w arkuszu'))) return;
             // Ukryj sekcję setup jeśli otwarta
             if (setupSection) setupSection.classList.add('hidden');
             
