@@ -17,6 +17,7 @@ const ASSETS_TO_CACHE = [
     './js/jszip.min.js',
     './js/version.js',
     './js/utils.js',
+    './js/session.js',
     './js/exporter.js',
     './js/wizard.js',
     './clauses_json/clauses.json',

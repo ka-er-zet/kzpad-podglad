@@ -19,6 +19,7 @@
     <script src="js/version.js"></script>
     <script src="js/utils.js"></script>
     <script src="js/exporter.js"></script>
+    <script src="js/session.js"></script>
     <link rel="stylesheet" href="css/wizard.css">
     <style>
         /* Stylizacja przycisku zamknięcia (x) na wzór Edytora */
@@ -254,6 +255,10 @@
         <section id="resultsArea" class="hidden" aria-label="Arkusz oceny">
             <div id="status-message" role="status" aria-live="polite" class="sr-only"></div>
             <div id="generation-announcement" class="sr-only" aria-live="polite"></div>
+            <div id="autosave-info" class="autosave-info hidden">
+                <p id="autosave-status"></p>
+                <button type="button" id="btn-clear-autosave" class="outline secondary">Usuń kopię roboczą z tej przeglądarki</button>
+            </div>
             <hr aria-hidden="true">
             <div id="resultsContent"></div>
         </section>

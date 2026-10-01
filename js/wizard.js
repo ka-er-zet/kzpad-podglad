@@ -239,6 +239,8 @@ async function init() {
         setupHero();
         initBrowser();
         setupHeaderScrollHandler();
+        // Kopia robocza: obsługa niezapisanych zmian i przywracania (pyta użytkownika)
+        if (window.Session) Session.init();
     } catch (err) {
         console.error("Błąd podczas inicjalizacji:", err);
     }
@@ -257,8 +259,12 @@ function setupHero() {
     const fileInput = document.getElementById('wizard-file-input');
 
     if (heroNew) {
-        heroNew.addEventListener('click', (e) => {
+        heroNew.addEventListener('click', async (e) => {
             e.preventDefault();
+            if (window.Session) {
+                if (!(await Session.confirmDiscard('Rozpoczęcie nowej oceny usunie bieżący arkusz.'))) return;
+                Session.reset();
+            }
             // Ukryj inne sekcje jeśli otwarte
             if (browserSection) browserSection.classList.add('hidden');
             
@@ -2412,6 +2418,9 @@ function downloadWizardAssessment() {
     downloadAnchorNode.click();
     downloadAnchorNode.remove();
 
+    // Plik zapisany: nie ma już niezapisanych zmian, kopia robocza w przeglądarce jest zbędna
+    if (window.Session) Session.markSaved();
+
     // Feedback
     let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');
     if (!liveRegion) {
@@ -2549,6 +2558,23 @@ function restoreAssessment(data) {
 }
 
 /**
+ * Przewija do wczytanego arkusza i ustawia fokus na jego nagłówku
+ * (po wczytaniu pliku JSON lub przywróceniu kopii roboczej).
+ */
+function scrollToLoadedAssessment() {
+    setTimeout(() => {
+        const resultsHeader = document.getElementById('selectedProductName');
+        if (resultsHeader) {
+            const header = document.querySelector('.app-header');
+            const headerOffset = header ? header.getBoundingClientRect().height : 0;
+            const top = resultsHeader.getBoundingClientRect().top + window.pageYOffset - headerOffset - 20;
+            window.scrollTo({ top, behavior: 'smooth' });
+            resultsHeader.focus({ preventScroll: true });
+        }
+    }, 150);
+}
+
+/**
  * Obsługuje wczytywanie pliku JSON ze stanem oceny
  */
 async function handleWizardFileLoad(event) {
@@ -2560,19 +2586,12 @@ async function handleWizardFileLoad(event) {
         try {
             const data = JSON.parse(e.target.result);
 
-            restoreAssessment(data);
+            const replaced = window.Session
+                ? await Session.replaceWith(data, 'Wczytanie pliku zastąpi bieżący arkusz.')
+                : (restoreAssessment(data), true);
+            if (!replaced) return;
 
-            // 9. Przewiń do wyników (aby użytkownik widział wczytany arkusz)
-            setTimeout(() => {
-                const resultsHeader = document.getElementById('selectedProductName');
-                if (resultsHeader) {
-                    const header = document.querySelector('.app-header');
-                    const headerOffset = header ? header.getBoundingClientRect().height : 0;
-                    const top = resultsHeader.getBoundingClientRect().top + window.pageYOffset - headerOffset - 20;
-                    window.scrollTo({ top, behavior: 'smooth' });
-                    resultsHeader.focus({ preventScroll: true });
-                }
-            }, 150);
+            scrollToLoadedAssessment();
 
             // Powiadomienie
             let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');

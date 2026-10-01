@@ -383,13 +383,16 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
             dialog.setAttribute('aria-labelledby', 'dialog-title');
             dialog.setAttribute('aria-modal', 'true');
             // aria-describedby usunięte, by uniknąć powtórnego odczytywania przez VoiceOver przy focusie na elemencie potomnym
+            // Struktura <article> jest wymagana przez style okien dialogowych (Pico + wizard.css)
             dialog.innerHTML = `
-                <h3 id="dialog-title" style="margin-top: 0;"></h3>
-                <p id="dialog-message"></p>
-                <div class="dialog-actions">
-                    <button id="dialog-cancel" class="outline secondary"></button>
-                    <button id="dialog-confirm"></button>
-                </div>
+                <article>
+                    <header><h3 id="dialog-title"></h3></header>
+                    <p id="dialog-message"></p>
+                    <footer class="dialog-actions">
+                        <button id="dialog-cancel" class="outline secondary"></button>
+                        <button id="dialog-confirm"></button>
+                    </footer>
+                </article>
             `;
             document.body.appendChild(dialog);
         }

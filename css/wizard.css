@@ -2859,3 +2859,85 @@ dialog article header {
 dialog .modal-body {
     padding-top: 1rem;
 }
+
+/* ==========================================================================
+   Okno potwierdzenia (utils.confirmModal) i informacja o kopii roboczej
+   ========================================================================== */
+#app-confirm-dialog[open] {
+    align-items: center;
+}
+
+#app-confirm-dialog article {
+    width: 100%;
+    max-width: 34rem;
+}
+
+#app-confirm-dialog h3 {
+    margin: 0;
+}
+
+#app-confirm-dialog p {
+    margin-bottom: 0;
+}
+
+#app-confirm-dialog .dialog-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* Przycisk bezpieczny (anuluj) po prawej i na pierwszym miejscu w kolejności fokusu */
+#app-confirm-dialog .dialog-actions.reverse-buttons {
+    flex-direction: row-reverse;
+    justify-content: flex-start;
+}
+
+#app-confirm-dialog .dialog-actions button {
+    width: auto;
+    margin: 0;
+}
+
+@media (max-width: 640px) {
+    #app-confirm-dialog article {
+        height: auto;
+        max-height: 100dvh;
+        margin: 0 1rem;
+        width: auto;
+        border-radius: var(--border-radius);
+    }
+
+    #app-confirm-dialog .dialog-actions {
+        flex-direction: column-reverse;
+    }
+
+    #app-confirm-dialog .dialog-actions.reverse-buttons {
+        flex-direction: column;
+    }
+
+    #app-confirm-dialog .dialog-actions button {
+        width: 100%;
+    }
+}
+
+.autosave-info {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+}
+
+.autosave-info p {
+    margin: 0;
+    flex: 1 1 20rem;
+}
+
+.autosave-info button {
+    width: auto;
+    margin: 0;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.85rem;
+}
