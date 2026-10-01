@@ -24,3 +24,7 @@ compare_mappings.py
 clauses_json/clauses_old.json
 mapping.md
 przyklad.txt
+
+# Testy developerskie
+node_modules/
+tests/.tmp-*.json
