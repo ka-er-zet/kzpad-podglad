@@ -374,7 +374,7 @@ function updateThemeToggleButtons(theme) {
  * @param {string} cancelText Tekst przycisku anulowania (anuluje akcję)
  * @param {string} focusOn Which button should be focused and placed on the right by default: 'confirm' or 'cancel'
  */
-function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierdź", cancelText = "Anuluj", focusOn = 'confirm') {
+function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierdź", cancelText = "Anuluj", focusOn = 'confirm', options = {}) {
     return new Promise((resolve) => {
         let dialog = document.getElementById('app-confirm-dialog');
         if (!dialog) {
@@ -415,10 +415,11 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
         cancelBtn.onclick = () => close(false);
         confirmBtn.onclick = () => close(true);
 
-        // Obsługa ESC
+        // Obsługa ESC: domyślnie jak "Anuluj" (false); options.escapeResult pozwala zwrócić inną wartość,
+        // np. null, gdy zamknięcie okna bez wyboru nie oznacza jawnej odpowiedzi
         dialog.oncancel = (e) => {
             e.preventDefault();
-            close(false);
+            close(options.escapeResult !== undefined ? options.escapeResult : false);
         };
 
         const actions = dialog.querySelector('.dialog-actions');

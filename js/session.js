@@ -3,8 +3,12 @@
  * i ochrona przed przypadkową utratą pracy.
  *
  * Zasada nadrzędna: kopia robocza w przeglądarce (localStorage, jeden slot) istnieje
- * wtedy i tylko wtedy, gdy są zmiany niezapisane w pliku JSON. Dlatego:
- *  - zapis pliku JSON, wczytanie pliku i rozpoczęcie nowej oceny usuwają kopię roboczą,
+ * wtedy i tylko wtedy, gdy są zmiany niezapisane w pliku JSON. Kopia jest usuwana
+ * WYŁĄCZNIE gdy:
+ *  - użytkownik jawnie odpowie "Odrzuć" na pytanie o przywrócenie (Esc go nie usuwa),
+ *  - zapisze plik JSON (każda kolejna zmiana znów tworzy kopię),
+ *  - jawnie potwierdzi odrzucenie zmian przy wczytaniu pliku / nowej ocenie / ponownym generowaniu.
+ * Pozostałe zasady:
  *  - przy starcie strony, jeśli kopia istnieje, aplikacja PYTA, czy ją przywrócić,
  *  - zamknięcie karty, odświeżenie czy wejście w inny link nie kasują pracy, więc ich
  *    nie blokujemy; pytamy tylko przed akcjami, które zastępują bieżący arkusz.
@@ -68,10 +72,10 @@
         }
     }
 
-    function askConfirm(message, title, confirmText, cancelText, focusOn) {
+    function askConfirm(message, title, confirmText, cancelText, focusOn, options) {
         const confirmFn = window.utils && window.utils.confirm;
         if (typeof confirmFn !== 'function') return Promise.resolve(window.confirm(message));
-        return confirmFn(message, title, confirmText, cancelText, focusOn);
+        return confirmFn(message, title, confirmText, cancelText, focusOn, options);
     }
 
     // ---- Informacja o kopii roboczej w interfejsie ----
@@ -163,13 +167,32 @@
      */
     async function confirmDiscard(consequence) {
         if (!hasUnsavedChanges()) return true;
-        return askConfirm(
+        const ok = await askConfirm(
             `Masz niezapisane zmiany w arkuszu oceny. ${consequence} Jeśli chcesz je zachować, wróć do arkusza i zapisz plik JSON (Ctrl+S).`,
             'Niezapisane zmiany',
             'Odrzuć zmiany i kontynuuj',
             'Wróć do arkusza',
             'cancel'
         );
+        if (!ok) returnToSheet();
+        return ok;
+    }
+
+    /**
+     * "Wróć do arkusza" ma realnie przenieść do arkusza: gdy użytkownik jest w przeglądarce wymagań,
+     * zamykamy ją i pokazujemy arkusz. W pozostałych widokach nie przewijamy strony.
+     */
+    function returnToSheet() {
+        const browserSection = document.getElementById('browser-section');
+        if (!browserSection || browserSection.classList.contains('hidden')) return;
+        browserSection.classList.add('hidden');
+        const setup = document.getElementById('setup-section');
+        if (setup) setup.classList.remove('hidden');
+        const area = resultsArea();
+        if (typeof Browser !== 'undefined' && Browser.updateTitle && area) {
+            Browser.updateTitle(`Arkusz oceny: ${area.getAttribute('data-product-name') || ''}`.trim());
+        }
+        if (typeof scrollToLoadedAssessment === 'function') scrollToLoadedAssessment();
     }
 
     /**
@@ -201,21 +224,25 @@
         const when = isNaN(savedAt) ? '' : ` z ${savedAt.toLocaleString('pl-PL', { dateStyle: 'long', timeStyle: 'short' })}`;
         const label = slot.label ? `„${slot.label}”` : 'bez nazwy';
 
+        // true = Przywróć, false = jawne "Odrzuć", null = zamknięto bez wyboru (Esc): kopię zostawiamy
         const restore = await askConfirm(
-            `Znaleziono niezapisaną kopię roboczą oceny ${label}${when}. Czy chcesz ją przywrócić? Odrzucenie usunie kopię z tej przeglądarki.`,
+            `Znaleziono niezapisaną kopię roboczą oceny ${label}${when}. Czy chcesz ją przywrócić? Wybranie "Odrzuć" usunie kopię z tej przeglądarki.`,
             'Przywrócić niezapisaną pracę?',
             'Przywróć',
             'Odrzuć',
-            'confirm'
+            'confirm',
+            { escapeResult: null }
         );
 
-        if (!restore) {
+        if (restore === false) {
             storageRemove();
             return;
         }
+        if (restore !== true) return;
 
         try {
             runSilently(() => restoreAssessment(slot.earl));
+            if (!hasSheet()) throw new Error('Po przywróceniu arkusz nie jest widoczny (np. brak wymaganych pól w kopii).');
             dirty = true; // przywrócona praca nie jest zapisana w pliku
             if (typeof scrollToLoadedAssessment === 'function') scrollToLoadedAssessment();
             showStatus(`Przywrócono kopię roboczą${when}. Aby zachować pracę na stałe, zapisz plik JSON (Ctrl+S).`);
@@ -269,23 +296,6 @@
             e.preventDefault();
             e.returnValue = '';
         });
-
-        const clearBtn = document.getElementById('btn-clear-autosave');
-        if (clearBtn) {
-            clearBtn.addEventListener('click', async () => {
-                const ok = await askConfirm(
-                    'Usunąć kopię roboczą z tej przeglądarki? Bieżący arkusz pozostanie na ekranie, ale po zamknięciu strony niezapisane zmiany przepadną. Kopia utworzy się ponownie przy kolejnej zmianie.',
-                    'Usunąć kopię roboczą?',
-                    'Usuń kopię',
-                    'Anuluj',
-                    'cancel'
-                );
-                if (!ok) return;
-                storageRemove();
-                showStatus('Kopia robocza została usunięta z tej przeglądarki.');
-                announce('Kopia robocza została usunięta z tej przeglądarki.');
-            });
-        }
     }
 
     /** Wywoływane po zakończeniu inicjalizacji wizarda (dane wczytane, arkusz możliwy do przywrócenia). */

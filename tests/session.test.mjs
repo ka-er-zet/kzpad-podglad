@@ -62,6 +62,74 @@ test('odrzucenie usuwa kopię i nie przywraca arkusza', async () => {
     await ctx.close();
 });
 
+test('Esc na pytaniu o przywrócenie NIE usuwa kopii; pytanie wraca przy następnym wejściu', async () => {
+    const ctx = await newContext();
+    const p1 = await ctx.newPage();
+    await dirtySheet(p1);
+    await p1.close();
+
+    const p2 = await ctx.newPage();
+    await p2.goto(url);
+    await dialogOpen(p2).waitFor({ timeout: 5000 });
+    await p2.keyboard.press('Escape');
+    await p2.waitForTimeout(300);
+    assert.equal(await dialogOpen(p2).count(), 0);
+    assert.ok(await readSlot(p2), 'kopia nie została usunięta bez jawnej odpowiedzi');
+    assert.equal(await p2.locator('#resultsArea').isVisible(), false, 'bez odpowiedzi nic nie jest przywracane');
+    await p2.close();
+
+    const p3 = await ctx.newPage();
+    await p3.goto(url);
+    await dialogOpen(p3).waitFor({ timeout: 5000 });
+    await ctx.close();
+});
+
+test('po zapisie pliku JSON każda kolejna zmiana znów tworzy kopię roboczą', async () => {
+    const ctx = await newContext();
+    const p = await ctx.newPage();
+    await dirtySheet(p);
+    await saveJson(p);
+    assert.equal(await readSlot(p), null);
+
+    await p.locator('textarea[name^="comment-"]').first().fill('zmiana po zapisie');
+    await waitForSlot(p);
+    assert.equal(await p.evaluate(() => Session.hasUnsavedChanges()), true);
+    await p.close();
+
+    const p2 = await ctx.newPage();
+    await p2.goto(url);
+    await dialogOpen(p2).waitFor({ timeout: 5000 });
+    await p2.click('#dialog-confirm');
+    await p2.waitForSelector('#resultsArea:not(.hidden) .requirement-row', { state: 'attached' });
+    assert.equal(await p2.locator('textarea[name^="comment-"]').first().inputValue(), 'zmiana po zapisie');
+    await ctx.close();
+});
+
+test('nie ma przycisku ani pytania o ręczne usuwanie kopii roboczej', async () => {
+    const ctx = await newContext();
+    const p = await ctx.newPage();
+    await dirtySheet(p);
+    assert.equal(await p.locator('#btn-clear-autosave').count(), 0);
+    await ctx.close();
+});
+
+test('"Wróć do arkusza" z przeglądarki wymagań faktycznie przenosi do arkusza', async () => {
+    const ctx = await newContext();
+    const p = await ctx.newPage();
+    await dirtySheet(p);
+    await p.evaluate(() => window.scrollTo(0, 0));
+    await p.click('#hero-browse-requirements');
+    await p.waitForSelector('#browser-section:not(.hidden)');
+    await p.click('#hero-new-audit');
+    await dialogOpen(p).waitFor();
+    await p.click('#dialog-cancel'); // "Wróć do arkusza"
+    await p.waitForTimeout(400);
+    assert.equal(await p.locator('#browser-section').isVisible(), false, 'przeglądarka wymagań zamknięta');
+    assert.equal(await p.locator('#resultsArea').isVisible(), true, 'arkusz widoczny');
+    assert.ok(await readSlot(p), 'kopia zostaje');
+    await ctx.close();
+});
+
 test('zapis pliku JSON usuwa kopię roboczą i przy następnym wejściu nie ma pytania', async () => {
     const ctx = await newContext();
     const p1 = await ctx.newPage();
