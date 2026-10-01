@@ -2218,23 +2218,14 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
 }
 
 /**
- * Zbiera dane z formularza wizard'a i pobiera je jako JSON w formacie EARL
+ * Buduje raport EARL (JSON-LD) z aktualnego stanu arkusza w DOM.
+ * Nie ma skutków ubocznych (nic nie pobiera ani nie wyświetla), więc nadaje się
+ * zarówno do zapisu pliku, jak i do autozapisu.
+ * @returns {object|null} Obiekt EARL lub null, gdy arkusz nie został wygenerowany.
  */
-function downloadWizardAssessment() {
-    // 1. Sprawdź, czy są dane do zapisania. Pobierz aktualne rzędy wymagań
+function buildAssessmentEARL() {
     const rows = document.querySelectorAll('.requirement-row');
-    if (rows.length === 0) {
-        console.warn('Brak wymagań do zapisania.');
-        showToast('Nie można zapisać: brak wygenerowanego arkusza oceny.', 'warning');
-        
-        // Komunikat dla screen readerów
-        let liveRegion = document.getElementById('status-message');
-        if (liveRegion) {
-            liveRegion.innerText = 'Nie można zapisać: brak wygenerowanego arkusza oceny.';
-        }
-        
-        return;
-    }
+    if (rows.length === 0) return null;
 
     // Zbierz dane produktu
     const productName = document.getElementById('wizard-product-name')?.value || '';
@@ -2390,6 +2381,26 @@ function downloadWizardAssessment() {
         "@context": context,
         "@graph": graph
     };
+    return earlReport;
+}
+
+/**
+ * Zbiera dane z formularza wizard'a i pobiera je jako JSON w formacie EARL
+ */
+function downloadWizardAssessment() {
+    const earlReport = buildAssessmentEARL();
+    if (!earlReport) {
+        console.warn('Brak wymagań do zapisania.');
+        showToast('Nie można zapisać: brak wygenerowanego arkusza oceny.', 'warning');
+        
+        // Komunikat dla screen readerów
+        let liveRegion = document.getElementById('status-message');
+        if (liveRegion) {
+            liveRegion.innerText = 'Nie można zapisać: brak wygenerowanego arkusza oceny.';
+        }
+        
+        return;
+    }
 
     // Pobierz jako JSON
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(earlReport, null, 2));
@@ -2415,6 +2426,129 @@ function downloadWizardAssessment() {
 }
 
 /**
+ * Przywraca stan oceny z obiektu EARL (kreator + arkusz + oceny + podsumowanie).
+ * Rzuca wyjątek, gdy dane są nieprawidłowe. Nie przewija strony i nie ogłasza nic czytnikom ekranu.
+ * @param {object} data Obiekt EARL (zawartość pliku JSON zapisanego przez aplikację).
+ */
+function restoreAssessment(data) {
+    // Pokaż sekcję setup, ukryj browser
+    const setupSection = document.getElementById('setup-section');
+    const browserSection = document.getElementById('browser-section');
+    if (setupSection) setupSection.classList.remove('hidden');
+    if (browserSection) browserSection.classList.add('hidden');
+
+    // Sprawdzamy czy to format EARL (generowany przez Konfigurator)
+    const graph = data['@graph'] || [];
+    
+    // 1. Znajdź TestSubject aby pobrać kategorię produktu i podstawowe info
+    const subject = graph.find(it => it['@type'] && it['@type'].includes('earl:TestSubject'));
+    const productCategory = subject?.['eaa:productCategory'] || '';
+    const productName = subject?.['dct:title'] || '';
+    const productDesc = subject?.['dct:description'] || '';
+    const isArt19Enabled = subject?.['eaa:art19Enabled'] || false;
+
+    // 2. Znajdź Assertor aby pobrać nazwisko osoby
+    const humanAssertor = graph.find(it => it['@type'] && it['@type'].includes('foaf:Person'));
+    const auditorName = humanAssertor?.['foaf:name'] || '';
+
+    // 3. Wybierz odpowiedni radio button kategorii
+    if (productCategory) {
+        const radio = document.querySelector(`input[name="product_choice"][value="${productCategory}"]`);
+        if (radio) {
+            radio.checked = true;
+        }
+    }
+
+    // 4. Wypełnij pola tekstowe
+    if (document.getElementById('wizard-product-name')) {
+        document.getElementById('wizard-product-name').value = (productName === 'Nieznany produkt') ? '' : productName;
+    }
+    if (document.getElementById('wizard-product-desc')) document.getElementById('wizard-product-desc').value = productDesc;
+    if (document.getElementById('wizard-auditor-name')) document.getElementById('wizard-auditor-name').value = auditorName;
+
+    // 5. Wywołaj submit formularza aby wygenerować wiersze wymagań
+    const form = document.getElementById('auditForm');
+    if (form) {
+        // Wywołujemy onsubmit bezpośrednio — dispatchEvent nie zawsze wyzwala onsubmit z atrybutu elementu
+        if (typeof form.onsubmit === 'function') {
+            form.onsubmit(new Event('submit'));
+        }
+    }
+
+    // 6. Obsłuż przełącznik Art. 19 jeśli był włączony
+    if (isArt19Enabled) {
+        // Szukamy switcha (jest generowany dynamicznie w kroku 5)
+        const art19Switch = document.querySelector('input[role="switch"]');
+        if (art19Switch && !art19Switch.checked) {
+            art19Switch.click(); // To wyzwoli całą logikę przełączania
+        }
+    }
+
+    // 7. Wypełnianie wyników
+    const assertions = graph.filter(it => it['@type'] === 'earl:Assertion');
+    assertions.forEach(assertion => {
+        const articleId = assertion['earl:test']?.['dct:identifier'];
+        const outcome = assertion['earl:result']?.['earl:outcome']?.['@id'];
+        const comment = assertion['earl:result']?.['dct:description'] || '';
+
+        if (!articleId) return;
+
+        // Asercje kart testów mają "#test-N" w identyfikatorze
+        if (articleId.includes('#test-')) {
+            // Konwertuj "U.7.1.1.a#test-0" → "U.7.1.1.a--test--0" → safeTestId
+            const testDataId = articleId.replace(/#test-(\d+)$/, '--test--$1');
+            const safeTestId = testDataId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+
+            let testVal = '';
+            if (outcome === 'earl:passed') testVal = 'pass';
+            else if (outcome === 'earl:failed') testVal = 'fail';
+            else if (outcome === 'earl:inapplicable') testVal = 'na';
+
+            if (testVal) {
+                const radio = document.querySelector(`input[name="test-status-${safeTestId}"][value="${testVal}"]`);
+                if (radio) {
+                    radio.checked = true;
+                    // Wyzwól aktualizację stanu wizualnego i otwórz kartę
+                    const card = radio.closest('.checklist-test-item');
+                    if (card) {
+                        card.classList.remove('is-pass', 'is-fail', 'is-na');
+                        card.classList.add('is-' + testVal);
+                        card.open = true;
+                    }
+                }
+            }
+
+            const testTextarea = document.querySelector(`textarea[name="test-comment-${safeTestId}"]`);
+            if (testTextarea) testTextarea.value = comment;
+            return;
+        }
+
+        // Regular requirement-row assertion
+        {
+            // Obliczyć safeArticleId tak samo jak w generateAssessmentRows()
+            const safeArticleId = articleId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+            
+            // Mapowanie EARL outcome na wartości radio
+            let val = '';
+            if (outcome === 'earl:passed') val = 'compliant';
+            else if (outcome === 'earl:failed') val = 'non-compliant';
+            else if (outcome === 'earl:inapplicable') val = 'not-applicable';
+
+            if (val) {
+                const radio = document.querySelector(`input[name="status-${safeArticleId}"][value="${val}"]`);
+                if (radio) radio.checked = true;
+            }
+
+            const textarea = document.querySelector(`textarea[name="comment-${safeArticleId}"]`);
+            if (textarea) textarea.value = comment;
+        }
+    });
+
+    // 8. Odśwież podsumowanie
+    generateDescriptiveSummary();
+}
+
+/**
  * Obsługuje wczytywanie pliku JSON ze stanem oceny
  */
 async function handleWizardFileLoad(event) {
@@ -2426,121 +2560,7 @@ async function handleWizardFileLoad(event) {
         try {
             const data = JSON.parse(e.target.result);
 
-            // Pokaż sekcję setup, ukryj browser
-            const setupSection = document.getElementById('setup-section');
-            const browserSection = document.getElementById('browser-section');
-            if (setupSection) setupSection.classList.remove('hidden');
-            if (browserSection) browserSection.classList.add('hidden');
-
-            // Sprawdzamy czy to format EARL (generowany przez Konfigurator)
-            const graph = data['@graph'] || [];
-            
-            // 1. Znajdź TestSubject aby pobrać kategorię produktu i podstawowe info
-            const subject = graph.find(it => it['@type'] && it['@type'].includes('earl:TestSubject'));
-            const productCategory = subject?.['eaa:productCategory'] || '';
-            const productName = subject?.['dct:title'] || '';
-            const productDesc = subject?.['dct:description'] || '';
-            const isArt19Enabled = subject?.['eaa:art19Enabled'] || false;
-
-            // 2. Znajdź Assertor aby pobrać nazwisko osoby
-            const humanAssertor = graph.find(it => it['@type'] && it['@type'].includes('foaf:Person'));
-            const auditorName = humanAssertor?.['foaf:name'] || '';
-
-            // 3. Wybierz odpowiedni radio button kategorii
-            if (productCategory) {
-                const radio = document.querySelector(`input[name="product_choice"][value="${productCategory}"]`);
-                if (radio) {
-                    radio.checked = true;
-                }
-            }
-
-            // 4. Wypełnij pola tekstowe
-            if (document.getElementById('wizard-product-name')) {
-                document.getElementById('wizard-product-name').value = (productName === 'Nieznany produkt') ? '' : productName;
-            }
-            if (document.getElementById('wizard-product-desc')) document.getElementById('wizard-product-desc').value = productDesc;
-            if (document.getElementById('wizard-auditor-name')) document.getElementById('wizard-auditor-name').value = auditorName;
-
-            // 5. Wywołaj submit formularza aby wygenerować wiersze wymagań
-            const form = document.getElementById('auditForm');
-            if (form) {
-                // Wywołujemy onsubmit bezpośrednio — dispatchEvent nie zawsze wyzwala onsubmit z atrybutu elementu
-                if (typeof form.onsubmit === 'function') {
-                    form.onsubmit(new Event('submit'));
-                }
-            }
-
-            // 6. Obsłuż przełącznik Art. 19 jeśli był włączony
-            if (isArt19Enabled) {
-                // Szukamy switcha (jest generowany dynamicznie w kroku 5)
-                const art19Switch = document.querySelector('input[role="switch"]');
-                if (art19Switch && !art19Switch.checked) {
-                    art19Switch.click(); // To wyzwoli całą logikę przełączania
-                }
-            }
-
-            // 7. Wypełnianie wyników
-            const assertions = graph.filter(it => it['@type'] === 'earl:Assertion');
-            assertions.forEach(assertion => {
-                const articleId = assertion['earl:test']?.['dct:identifier'];
-                const outcome = assertion['earl:result']?.['earl:outcome']?.['@id'];
-                const comment = assertion['earl:result']?.['dct:description'] || '';
-
-                if (!articleId) return;
-
-                // Asercje kart testów mają "#test-N" w identyfikatorze
-                if (articleId.includes('#test-')) {
-                    // Konwertuj "U.7.1.1.a#test-0" → "U.7.1.1.a--test--0" → safeTestId
-                    const testDataId = articleId.replace(/#test-(\d+)$/, '--test--$1');
-                    const safeTestId = testDataId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-
-                    let testVal = '';
-                    if (outcome === 'earl:passed') testVal = 'pass';
-                    else if (outcome === 'earl:failed') testVal = 'fail';
-                    else if (outcome === 'earl:inapplicable') testVal = 'na';
-
-                    if (testVal) {
-                        const radio = document.querySelector(`input[name="test-status-${safeTestId}"][value="${testVal}"]`);
-                        if (radio) {
-                            radio.checked = true;
-                            // Wyzwól aktualizację stanu wizualnego i otwórz kartę
-                            const card = radio.closest('.checklist-test-item');
-                            if (card) {
-                                card.classList.remove('is-pass', 'is-fail', 'is-na');
-                                card.classList.add('is-' + testVal);
-                                card.open = true;
-                            }
-                        }
-                    }
-
-                    const testTextarea = document.querySelector(`textarea[name="test-comment-${safeTestId}"]`);
-                    if (testTextarea) testTextarea.value = comment;
-                    return;
-                }
-
-                // Regular requirement-row assertion
-                {
-                    // Obliczyć safeArticleId tak samo jak w generateAssessmentRows()
-                    const safeArticleId = articleId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-                    
-                    // Mapowanie EARL outcome na wartości radio
-                    let val = '';
-                    if (outcome === 'earl:passed') val = 'compliant';
-                    else if (outcome === 'earl:failed') val = 'non-compliant';
-                    else if (outcome === 'earl:inapplicable') val = 'not-applicable';
-
-                    if (val) {
-                        const radio = document.querySelector(`input[name="status-${safeArticleId}"][value="${val}"]`);
-                        if (radio) radio.checked = true;
-                    }
-
-                    const textarea = document.querySelector(`textarea[name="comment-${safeArticleId}"]`);
-                    if (textarea) textarea.value = comment;
-                }
-            });
-
-            // 8. Odśwież podsumowanie
-            generateDescriptiveSummary();
+            restoreAssessment(data);
 
             // 9. Przewiń do wyników (aby użytkownik widział wczytany arkusz)
             setTimeout(() => {
