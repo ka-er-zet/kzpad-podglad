@@ -2248,7 +2248,7 @@ function buildAssessmentEARL() {
         "@type": ["earl:Software", "earl:Assertor"],
         "dct:title": "Konfigurator Arkusza EAA",
         "dct:description": "Narzędzie do tworzenia arkuszy oceny dostępności cyfrowej wg EN 301 549",
-        "dct:hasVersion": "1.0.0"
+        "dct:hasVersion": self.APP_VERSION
     };
 
     // Human Assertor (jeśli podany)

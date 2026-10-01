@@ -107,6 +107,7 @@ test('zapis -> wczytanie -> zapis daje identyczny plik JSON', async (t) => {
 
     // 3. Pierwszy zapis
     const first = await saveJson(page);
+    assert.match(JSON.stringify(first), /"dct:hasVersion":"\d+\.\d+\.\d+"/, 'wersja narzędzia w pliku');
 
     // 4. Czysta sesja: wczytaj plik, zapisz ponownie
     const page2 = await (await browser.newContext({ acceptDownloads: true, serviceWorkers: 'block' })).newPage();
