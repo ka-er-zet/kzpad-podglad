@@ -346,6 +346,10 @@ function setupHero() {
             
             // Pokaż przeglądarkę
             browserSection.classList.remove('hidden');
+
+            // Jeśli istnieje arkusz oceny, daj drogę powrotną do niego (bez gubienia pracy)
+            const backBtn = document.getElementById('browser-back-to-sheet');
+            if (backBtn) backBtn.classList.toggle('hidden', !(window.Session && Session.hasSheet()));
             
             // Inicjalizacja widoku jeśli pusta
             if (typeof Browser !== 'undefined' && !Browser.initialized) {

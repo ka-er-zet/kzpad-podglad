@@ -288,6 +288,15 @@
         });
         window.addEventListener('pagehide', flush);
 
+        // Droga powrotna z przeglądarki wymagań do istniejącego arkusza.
+        const backBtn = document.getElementById('browser-back-to-sheet');
+        if (backBtn) {
+            backBtn.addEventListener('click', () => {
+                returnToSheet();
+                backBtn.classList.add('hidden');
+            });
+        }
+
         // Ostatnia siatka bezpieczeństwa: tylko gdy autozapis nie działa.
         window.addEventListener('beforeunload', (e) => {
             if (!hasUnsavedChanges()) return;
@@ -313,6 +322,7 @@
         runSilently,
         confirmDiscard,
         replaceWith,
-        hasUnsavedChanges
+        hasUnsavedChanges,
+        hasSheet
     };
 })();

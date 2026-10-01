@@ -256,3 +256,27 @@ test('ostrzeżenie przy zamykaniu karty (beforeunload) tylko gdy autozapis nie d
         await ctx.close();
     }
 });
+
+test('w przeglądarce wymagań jest przycisk powrotu do arkusza, który zachowuje oceny', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await dirtySheet(p);
+    const before = stripTimes(await snapshot(p));
+    await p.click('#hero-browse-requirements');
+    await p.waitForSelector('#browser-section:not(.hidden)');
+    assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), true, 'przycisk powrotu widoczny, gdy jest arkusz');
+    await p.click('#browser-back-to-sheet');
+    assert.equal(await p.locator('#browser-section').isVisible(), false);
+    assert.equal(await p.locator('#resultsArea .requirement-row').first().isVisible(), true, 'arkusz widoczny');
+    assert.deepEqual(stripTimes(await snapshot(p)), before, 'oceny bez zmian');
+    assert.equal(await dialogOpen(p).count(), 0, 'bez żadnych pytań');
+    await ctx.close();
+});
+
+test('bez arkusza przycisk powrotu w przeglądarce wymagań jest ukryty', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await p.goto(url);
+    await p.click('#hero-browse-requirements');
+    await p.waitForSelector('#browser-section:not(.hidden)');
+    assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), false);
+    await ctx.close();
+});
