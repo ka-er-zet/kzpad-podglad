@@ -913,12 +913,20 @@ function parseMarkdown(text) {
                     listStack.push({ type: currentType, indent: indent });
                 } else if (indent < top.indent) {
                     // Zamknij zagnieżdżone listy do pasującego lub niższego wcięcia
-                    while (listStack.length > 0 && indent < listStack[listStack.length - 1].indent) {
+                    // Najbardziej zewnętrznej listy nie zamykamy: mniejsze wcięcie w obrębie jednej listy
+                    // (np. dane z " - (a)" i "- (b)") oznacza po prostu kolejny jej element.
+                    while (listStack.length > 1 && indent < listStack[listStack.length - 1].indent) {
                         result += `</${listStack.pop().type}>`;
                     }
+                    if (listStack.length === 1 && indent < listStack[0].indent) listStack[0].indent = indent;
                     // Jeśli typ na tym poziomie jest inny, zmień go
                     top = listStack[listStack.length - 1];
-                    if (top && top.type !== currentType) {
+                    if (!top) {
+                        // Wszystkie listy zamknięte (np. pierwszy element miał większe wcięcie niż kolejne):
+                        // zaczynamy nową listę, żeby element nie wylądował poza <ul>/<ol>
+                        result += `<${currentType}${getStartAttr()} class="markdown-list">`;
+                        listStack.push({ type: currentType, indent: indent });
+                    } else if (top.type !== currentType) {
                         result += `</${listStack.pop().type}><${currentType}${getStartAttr()} class="markdown-list">`;
                         listStack.push({ type: currentType, indent: indent });
                     }
