@@ -3,9 +3,7 @@ let dictionaryData = {};
 let productDictionary = {};
 let summaryTemplates = {};
 let glossaryData = {};
-let lastModalTrigger = null;
 let wizardSaveBound = false;
-let activeModalTrapCleanup = null;
 
 // Lokalny akcesor pomocniczy Wizarda. Ewaluowany przy ładowaniu.
 const W = window.utils || {};
@@ -3323,80 +3321,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
 // --- Blokada otwierania modalu ---
 let isModalOpening = false;
 
-function getFocusableElements(modal) {
-    if (!modal) return [];
-    const selector = [
-        'a[href]',
-        'button:not([disabled])',
-        'input:not([disabled]):not([type="hidden"])',
-        'summary',
-        'select:not([disabled])',
-        'textarea:not([disabled])',
-        '[tabindex]:not([tabindex="-1"])'
-    ].join(',');
-
-    return Array.from(modal.querySelectorAll(selector)).filter(el => {
-        if (el.hasAttribute('hidden')) return false;
-        if (el.getAttribute('aria-hidden') === 'true') return false;
-        return el.getClientRects().length > 0;
-    });
-}
-
-function deactivateModalFocusTrap() {
-    if (activeModalTrapCleanup) {
-        activeModalTrapCleanup();
-        activeModalTrapCleanup = null;
-    }
-}
-
-function activateModalFocusTrap(modal) {
-    deactivateModalFocusTrap();
-    if (!modal) return;
-
-    const onKeyDown = (e) => {
-        if (e.key !== 'Tab' || !modal.open) return;
-
-        const focusable = getFocusableElements(modal);
-        if (focusable.length === 0) {
-            e.preventDefault();
-            if (modal.tabIndex < 0) modal.tabIndex = -1;
-            modal.focus();
-            return;
-        }
-
-        const first = focusable[0];
-        const last = focusable[focusable.length - 1];
-        const active = document.activeElement;
-
-        if (e.shiftKey) {
-            if (active === first || !modal.contains(active)) {
-                e.preventDefault();
-                last.focus();
-            }
-        } else if (active === last || !modal.contains(active)) {
-            e.preventDefault();
-            first.focus();
-        }
-    };
-
-    const onFocusIn = (e) => {
-        if (!modal.open) return;
-        if (modal.contains(e.target)) return;
-
-        const focusable = getFocusableElements(modal);
-        const target = focusable[0] || modal;
-        if (target === modal && modal.tabIndex < 0) modal.tabIndex = -1;
-        target.focus();
-    };
-
-    modal.addEventListener('keydown', onKeyDown);
-    document.addEventListener('focusin', onFocusIn);
-
-    activeModalTrapCleanup = () => {
-        modal.removeEventListener('keydown', onKeyDown);
-        document.removeEventListener('focusin', onFocusIn);
-    };
-}
+// Fokus, blokadę przewijania i powrót fokusu obsługuje wspólny menedżer modali (utils.js: W.modal).
 
 window.showGlossary = (triggerEl = null) => {
     if (isModalOpening) return;
@@ -3424,12 +3349,8 @@ window.showGlossary = (triggerEl = null) => {
         lucide.createIcons({ root: body });
     }
 
-    lastModalTrigger = triggerEl;
-
     if (!modal.open) {
-        document.documentElement.classList.add('modal-is-open');
-        modal.showModal();
-        activateModalFocusTrap(modal);
+        W.modal.open(modal, { trigger: triggerEl });
     }
     
     const searchInput = body.querySelector('#glossarySearch');
@@ -3500,7 +3421,6 @@ window.showClause = (id, triggerEl = null) => {
     const modal = document.getElementById('clauseModal');
     const body = document.getElementById('clauseBody');
 
-    lastModalTrigger = triggerEl;
     const data = (window.dictionaryData && window.dictionaryData[id.trim()]) ? window.dictionaryData[id.trim()] : (typeof dictionaryData !== 'undefined' ? dictionaryData[id.trim()] : null);
 
     if (data) {
@@ -3618,16 +3538,13 @@ window.showClause = (id, triggerEl = null) => {
     }
 
     if (!modal.open) {
-        document.documentElement.classList.add('modal-is-open');
-        modal.showModal();
-        activateModalFocusTrap(modal);
+        W.modal.open(modal, { trigger: triggerEl });
     }
     body.scrollTop = 0;
 };
 
 const handleCloseModal = (modalId) => {
     const modal = document.getElementById(modalId || 'clauseModal');
-    deactivateModalFocusTrap();
     if (modal) {
         if (modal.id === 'clauseModal') {
             const visualIdEl = document.getElementById('clauseModalVisualId');
@@ -3635,12 +3552,7 @@ const handleCloseModal = (modalId) => {
             if (visualIdEl) visualIdEl.textContent = '';
             if (visualTextEl) visualTextEl.textContent = '';
         }
-        modal.close();
-        document.documentElement.classList.remove('modal-is-open');
-    }
-    if (lastModalTrigger) {
-        lastModalTrigger.focus();
-        lastModalTrigger = null;
+        W.modal.close(modal);
     }
 };
 
@@ -3836,13 +3748,6 @@ function enhanceClauseTagsWizard(container = document) {
         }
     } catch (e) { /* ignore */ }
 })();
-
-document.getElementById('clauseModal').onclose = () => {
-    document.documentElement.classList.remove('modal-is-open');
-};
-document.getElementById('glossaryModal').onclose = () => {
-    document.documentElement.classList.remove('modal-is-open');
-};
 
 // Initialize
 init();
