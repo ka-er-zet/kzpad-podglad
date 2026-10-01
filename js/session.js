@@ -10,10 +10,9 @@
  *  - jawnie potwierdzi odrzucenie zmian przy wczytaniu pliku / nowej ocenie / ponownym generowaniu.
  * Pozostałe zasady:
  *  - przy starcie strony, jeśli kopia istnieje, aplikacja PYTA, czy ją przywrócić,
- *  - zamknięcie karty, odświeżenie czy wejście w inny link nie kasują pracy, więc ich
- *    nie blokujemy; pytamy tylko przed akcjami, które zastępują bieżący arkusz.
- *  - gdy zapis do localStorage się nie uda (tryb prywatny, limit), włącza się ostrzeżenie
- *    przeglądarki przy zamykaniu karty (beforeunload) jako ostatnia siatka bezpieczeństwa.
+ *  - przed każdym opuszczeniem arkusza przy niezapisanych zmianach (nowa ocena, wczytanie pliku,
+ *    przeglądarka wymagań, ikona aplikacji, przeładowanie lub zamknięcie karty) użytkownik
+ *    dostaje pytanie; przeładowanie i zamknięcie karty obsługuje natywne beforeunload.
  *
  * Zależności (globalne, z wizard.js / utils.js): buildAssessmentEARL, restoreAssessment,
  * scrollToLoadedAssessment, showToast, window.utils.confirm.
@@ -325,11 +324,11 @@
             });
         }
 
-        // Ostatnia siatka bezpieczeństwa: tylko gdy autozapis nie działa.
+        // Przeładowanie, zamknięcie karty lub wyjście ze strony przy niezapisanych zmianach:
+        // natywne ostrzeżenie przeglądarki (kopia robocza i tak jest zapisywana).
         window.addEventListener('beforeunload', (e) => {
             if (!hasUnsavedChanges()) return;
             flush();
-            if (!storageFailed) return;
             e.preventDefault();
             e.returnValue = '';
         });

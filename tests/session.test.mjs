@@ -10,7 +10,12 @@ let server, browser, url;
 before(async () => { server = await startServer(); browser = await chromium.launch(); url = baseUrl(server); });
 after(async () => { await browser.close(); server.close(); });
 
-const newContext = () => browser.newContext({ acceptDownloads: true, serviceWorkers: 'block' });
+// Domyślnie natywne ostrzeżenie beforeunload jest akceptowane, żeby testy mogły przeładowywać stronę.
+const newContext = async ({ autoAccept = true } = {}) => {
+    const ctx = await browser.newContext({ acceptDownloads: true, serviceWorkers: 'block' });
+    if (autoAccept) ctx.on('page', (pg) => pg.on('dialog', (d) => { if (d.type() === 'beforeunload') d.accept().catch(() => {}); }));
+    return ctx;
+};
 const snapshot = (page) => page.evaluate(() => buildAssessmentEARL());
 const waitForSlot = (page) => page.waitForFunction((k) => localStorage.getItem(k) !== null, 'oz-pad:autosave:v1', { timeout: 6000 });
 const dialogOpen = (page) => page.locator('#app-confirm-dialog[open]');
@@ -119,6 +124,8 @@ test('"Wróć do arkusza" z przeglądarki wymagań faktycznie przenosi do arkusz
     await dirtySheet(p);
     await p.evaluate(() => window.scrollTo(0, 0));
     await p.click('#hero-browse-requirements');
+    await dialogOpen(p).waitFor();
+    await p.click('#dialog-confirm');
     await p.waitForSelector('#browser-section:not(.hidden)');
     await p.click('#hero-new-audit');
     await dialogOpen(p).waitFor();
@@ -228,20 +235,30 @@ test('ponowne wygenerowanie arkusza z niezapisanymi zmianami pyta o zgodę', asy
     await ctx.close();
 });
 
-test('ostrzeżenie przy zamykaniu karty (beforeunload) tylko gdy autozapis nie działa', async () => {
-    // a) autozapis działa: zamknięcie karty nie wywołuje natywnego dialogu
+test('ostrzeżenie przy przeładowaniu/zamknięciu karty (beforeunload) tylko przy niezapisanych zmianach', async () => {
+    // a) niezapisane zmiany: natywne ostrzeżenie
     {
-        const ctx = await newContext();
+        const ctx = await newContext({ autoAccept: false });
         const p = await ctx.newPage();
         const dialogs = []; p.on('dialog', (d) => { dialogs.push(d.type()); d.dismiss(); });
         await dirtySheet(p);
-        await p.goto('about:blank'); // opuszczenie strony: bez natywnego ostrzeżenia, bo praca jest w kopii roboczej
+        await p.goto('about:blank').catch(() => {}); // dialog anulowany przez test, więc nawigacja jest przerwana
+        assert.deepEqual(dialogs, ['beforeunload']);
+        await ctx.close();
+    }
+    // a2) bez zmian: bez ostrzeżenia
+    {
+        const ctx = await newContext({ autoAccept: false });
+        const p = await ctx.newPage();
+        const dialogs = []; p.on('dialog', (d) => { dialogs.push(d.type()); d.dismiss(); });
+        await p.goto(url);
+        await p.goto('about:blank');
         assert.deepEqual(dialogs, []);
         await ctx.close();
     }
     // b) localStorage rzuca wyjątek: pojawia się ostrzeżenie i toast
     {
-        const ctx = await newContext();
+        const ctx = await newContext({ autoAccept: false });
         await ctx.addInitScript(() => { Storage.prototype.setItem = () => { throw new Error('quota'); }; });
         const p = await ctx.newPage();
         const dialogs = []; p.on('dialog', (d) => { dialogs.push(d.type()); d.dismiss(); });
@@ -262,6 +279,8 @@ test('w przeglądarce wymagań jest przycisk powrotu do arkusza, który zachowuj
     await dirtySheet(p);
     const before = stripTimes(await snapshot(p));
     await p.click('#hero-browse-requirements');
+    await dialogOpen(p).waitFor();
+    await p.click('#dialog-confirm');
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), true, 'przycisk powrotu widoczny, gdy jest arkusz');
     await p.click('#browser-back-to-sheet');
@@ -278,5 +297,39 @@ test('bez arkusza przycisk powrotu w przeglądarce wymagań jest ukryty', async 
     await p.click('#hero-browse-requirements');
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), false);
+    await ctx.close();
+});
+
+test('wejście do przeglądarki wymagań z niezapisanymi zmianami pyta; "Zostań" zostaje w arkuszu', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await dirtySheet(p);
+    await p.click('#hero-browse-requirements');
+    await dialogOpen(p).waitFor();
+    assert.equal(await dialogTitle(p).textContent(), 'Niezapisane zmiany');
+    await p.click('#dialog-cancel');
+    assert.equal(await p.locator('#browser-section').isVisible(), false);
+    assert.equal(await p.locator('#resultsArea .requirement-row').first().isVisible(), true);
+    await ctx.close();
+});
+
+test('kliknięcie ikony aplikacji z niezapisanymi zmianami pyta; "Zostań" nie przeładowuje', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await dirtySheet(p);
+    await p.click('#app-logo');
+    await dialogOpen(p).waitFor();
+    await p.click('#dialog-cancel');
+    assert.equal(await p.locator('#resultsArea .requirement-row').first().isVisible(), true, 'arkusz nadal na miejscu');
+    await p.click('#app-logo');
+    await dialogOpen(p).waitFor();
+    await Promise.all([p.waitForNavigation(), p.click('#dialog-confirm')]);
+    assert.equal(await p.locator('#resultsArea .requirement-row').count(), 0, 'po potwierdzeniu strona główna');
+    await ctx.close();
+});
+
+test('ikona aplikacji bez zmian nie pyta', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await p.goto(url);
+    await Promise.all([p.waitForNavigation(), p.click('#app-logo')]);
+    assert.equal(await dialogOpen(p).count(), 0);
     await ctx.close();
 });
