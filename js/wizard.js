@@ -1262,7 +1262,7 @@ function generateDescriptiveSummary(isInitial = false) {
                     <ul>
                         ${incompleteAssessments.map(it => `
                         <li>
-                            <a href="#${it.targetId}" onclick="event.preventDefault(); scrollToRequirement('${it.targetId}');">${it.label}</a>
+                            <a href="#${it.targetId}" onclick="event.preventDefault(); scrollToRequirement('${it.targetId}');">${W.escapeHtml(it.label)}</a>
                         </li>`).join('')}
                     </ul>
                 </div>
@@ -1270,9 +1270,12 @@ function generateDescriptiveSummary(isInitial = false) {
 
                 <div class="summary-body">
                     ${(() => {
-                        let text = config.description.replace('{productName}', `**${fullProductName}**`);
+                        // Nazwa produktu pochodzi od użytkownika: wstawiamy ją dopiero po przetworzeniu
+                        // markdownu i zawsze jako tekst (bez interpretowania znaczników HTML/markdown).
+                        const PRODUCT_TOKEN = '@@PRODUCT_NAME@@';
+                        let text = config.description.replace('{productName}', () => `**${PRODUCT_TOKEN}**`);
                         if (W.parseMarkdown) text = W.parseMarkdown(text);
-                        return text;
+                        return text.split(PRODUCT_TOKEN).join(W.escapeHtml(fullProductName));
                     })()}
                 </div>
     `;
@@ -1300,9 +1303,9 @@ function generateDescriptiveSummary(isInitial = false) {
                         <a href="#${item.targetId}" 
                            class="summary-anchor"
                            onclick="event.preventDefault(); scrollToRequirement('${item.targetId}');">
-                            ${item.label}
+                            ${W.escapeHtml(item.label)}
                         </a>
-                        ${item.comment ? `<p class="summary-item-comment">Komentarz: ${item.comment}</p>` : ''}
+                        ${item.comment ? `<p class="summary-item-comment">Komentarz: ${W.escapeHtml(item.comment)}</p>` : ''}
                         ${showFailedTests && item.failedTests && item.failedTests.length > 0 ? `
                         ${(() => {
                             const failed = item.failedTests.filter(t => t.status === 'fail');
@@ -1313,19 +1316,19 @@ function generateDescriptiveSummary(isInitial = false) {
                             if (failed.length > 0) {
                                 html += `<p class="summary-failed-tests-label">Niespełnione testy jednostkowe:</p>
                                 <ul class="summary-failed-tests">
-                                    ${failed.map(t => `<li><strong>${t.title}</strong>${t.comment ? ` — ${t.comment}` : ''}</li>`).join('')}
+                                    ${failed.map(t => `<li><strong>${W.escapeHtml(t.title)}</strong>${t.comment ? ` — ${W.escapeHtml(t.comment)}` : ''}</li>`).join('')}
                                 </ul>`;
                             }
                             if (passed.length > 0) {
                                 html += `<p class="summary-failed-tests-label">Spełnione testy jednostkowe (z komentarzem):</p>
                                 <ul class="summary-failed-tests">
-                                    ${passed.map(t => `<li><strong>${t.title}</strong>${t.comment ? ` — ${t.comment}` : ''}</li>`).join('')}
+                                    ${passed.map(t => `<li><strong>${W.escapeHtml(t.title)}</strong>${t.comment ? ` — ${W.escapeHtml(t.comment)}` : ''}</li>`).join('')}
                                 </ul>`;
                             }
                             if (na.length > 0) {
                                 html += `<p class="summary-failed-tests-label">Wykluczone testy jednostkowe (z opisem przyczyny):</p>
                                 <ul class="summary-failed-tests">
-                                    ${na.map(t => `<li><strong>${t.title}</strong>${t.comment ? ` — ${t.comment}` : ''}</li>`).join('')}
+                                    ${na.map(t => `<li><strong>${W.escapeHtml(t.title)}</strong>${t.comment ? ` — ${W.escapeHtml(t.comment)}` : ''}</li>`).join('')}
                                 </ul>`;
                             }
                             return html;
@@ -1606,7 +1609,7 @@ async function downloadSummaryODT() {
     if (templateKey !== 'no_assessment') {
          const config = summaryTemplates.compliance_summaries[templateKey];
          const fullProductName = getFullProductNameWizard();
-         descText = config.description.replace('{productName}', fullProductName).replace(/<[^>]*>/g, '');
+         descText = config.description.replace(/<[^>]*>/g, '').replace('{productName}', () => fullProductName);
     }
     customSections.push({ type: 'text', text: descText });
     customSections.push({ type: 'separator' });
@@ -1836,7 +1839,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         }
         
         const fullProductName = getFullProductNameWizard();
-        const descText = config.description.replace('{productName}', fullProductName).replace(/<[^>]*>/g, '');
+        const descText = config.description.replace(/<[^>]*>/g, '').replace('{productName}', () => fullProductName);
         // Dodaj description jako zwykły tekst
         const descRow = summarySheet.addRow([descText]);
         descRow.getCell(1).alignment = { wrapText: true };

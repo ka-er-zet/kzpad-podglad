@@ -52,6 +52,17 @@ function clearState() {
  * @param {string} str Tekst do zamiany.
  * @returns {string} Tekst z zamienionymi znakami.
  */
+/**
+ * Zamienia znaki specjalne HTML na encje. Używać dla każdego tekstu wpisanego przez użytkownika
+ * (komentarze, nazwy, opisy) przed wstawieniem go do innerHTML.
+ * @param {*} str Tekst do zabezpieczenia.
+ * @returns {string} Tekst bezpieczny do wstawienia jako treść HTML.
+ */
+function escapeHtml(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+}
+
 function xmlEscape(str) {
     if (!str) return '';
     // Zamień spacje niełamliwe (encje HTML) na encję numeryczną XML lub znak Unicode
@@ -1140,6 +1151,7 @@ window.utils = {
     saveState,
     clearState,
     xmlEscape,
+    escapeHtml,
     initTheme,
     toggleTheme,
     confirm: confirmModal,
