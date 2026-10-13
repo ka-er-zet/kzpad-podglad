@@ -359,6 +359,101 @@ function updateThemeToggleButtons(theme) {
 }
 
 /**
+ * Wspólny menedżer okien modalnych (<dialog>): klauzula, słownik, potwierdzenia.
+ * Daje każdemu oknu to samo zachowanie: blokadę przewijania tła, pułapkę fokusu (Tab/Shift+Tab
+ * i próba wyjścia fokusu poza okno), ustawienie fokusu na starcie i powrót fokusu po zamknięciu.
+ * Okna można zagnieżdżać: pułapka działa tylko dla najwyższego okna na stosie.
+ */
+const ModalManager = (function () {
+    const stack = []; // { dialog, trigger, onKeyDown, onFocusIn }
+
+    function focusable(dialog) {
+        const selector = [
+            'a[href]', 'button:not([disabled])', 'input:not([disabled]):not([type="hidden"])',
+            'summary', 'select:not([disabled])', 'textarea:not([disabled])', '[tabindex]:not([tabindex="-1"])'
+        ].join(',');
+        return Array.from(dialog.querySelectorAll(selector)).filter((el) => {
+            if (el.hasAttribute('hidden')) return false;
+            if (el.getAttribute('aria-hidden') === 'true') return false;
+            return el.getClientRects().length > 0;
+        });
+    }
+
+    function isTop(entry) { return stack[stack.length - 1] === entry; }
+
+    /**
+     * Otwiera okno modalne.
+     * @param {HTMLDialogElement} dialog
+     * @param {{trigger?: Element|null, initialFocus?: Element|null}} [opts]
+     *   trigger: element, któremu oddamy fokus po zamknięciu (domyślnie: aktywny element w chwili otwarcia);
+     *   initialFocus: element, który dostaje fokus po otwarciu (domyślnie pierwszy fokusowalny).
+     */
+    function open(dialog, opts) {
+        if (!dialog || dialog.open) return;
+        const o = opts || {};
+        const entry = { dialog, trigger: o.trigger || document.activeElement };
+
+        entry.onKeyDown = (e) => {
+            if (e.key !== 'Tab' || !dialog.open || !isTop(entry)) return;
+            const items = focusable(dialog);
+            if (items.length === 0) {
+                e.preventDefault();
+                if (dialog.tabIndex < 0) dialog.tabIndex = -1;
+                dialog.focus();
+                return;
+            }
+            const first = items[0];
+            const last = items[items.length - 1];
+            const active = document.activeElement;
+            if (e.shiftKey) {
+                if (active === first || !dialog.contains(active)) { e.preventDefault(); last.focus(); }
+            } else if (active === last || !dialog.contains(active)) {
+                e.preventDefault(); first.focus();
+            }
+        };
+        entry.onFocusIn = (e) => {
+            if (!dialog.open || !isTop(entry) || dialog.contains(e.target)) return;
+            const target = focusable(dialog)[0] || dialog;
+            if (target === dialog && dialog.tabIndex < 0) dialog.tabIndex = -1;
+            target.focus();
+        };
+
+        dialog.addEventListener('keydown', entry.onKeyDown);
+        document.addEventListener('focusin', entry.onFocusIn);
+        // Zamknięcie dowolną drogą (Esc obsłużone w oncancel, dialog.close() itd.) sprząta po oknie
+        entry.onClose = () => release(entry);
+        dialog.addEventListener('close', entry.onClose, { once: true });
+
+        stack.push(entry);
+        document.documentElement.classList.add('modal-is-open');
+        dialog.showModal();
+        if (o.initialFocus && typeof o.initialFocus.focus === 'function') o.initialFocus.focus();
+    }
+
+    /** Sprząta po oknie: zdejmuje nasłuchiwanie, odblokowuje przewijanie i oddaje fokus. Idempotentne. */
+    function release(entry) {
+        const idx = stack.indexOf(entry);
+        if (idx === -1) return;
+        stack.splice(idx, 1);
+        entry.dialog.removeEventListener('keydown', entry.onKeyDown);
+        entry.dialog.removeEventListener('close', entry.onClose);
+        document.removeEventListener('focusin', entry.onFocusIn);
+        if (stack.length === 0) document.documentElement.classList.remove('modal-is-open');
+        const t = entry.trigger;
+        if (t && typeof t.focus === 'function' && document.contains(t)) t.focus();
+    }
+
+    /** Zamyka okno (jeśli otwarte) i sprząta po nim. */
+    function close(dialog) {
+        const entry = stack.find((e) => e.dialog === dialog);
+        if (dialog && dialog.open) dialog.close();
+        if (entry) release(entry);
+    }
+
+    return { open, close };
+})();
+
+/**
  * Wyświetla niestandardowe okno potwierdzenia.
  * @param {string} message Wiadomość do wyświetlenia.
  * @param {string} title Tytuł okna.
@@ -408,7 +503,7 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
         cancelBtn.textContent = cancelText;
 
         const close = (result) => {
-            dialog.close();
+            ModalManager.close(dialog);
             resolve(result);
         };
 
@@ -429,132 +524,14 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
             // Zamień style wizualne: anuluj jako główny, potwierdź jako drugorzędny
             cancelBtn.classList.remove('outline', 'secondary');
             confirmBtn.classList.add('outline', 'secondary');
-            cancelBtn.focus();
         } else {
             actions.classList.remove('reverse-buttons');
             // Upewnij się, że domyślny styl: potwierdź jest główny
             confirmBtn.classList.remove('outline', 'secondary');
             cancelBtn.classList.add('outline', 'secondary');
-            confirmBtn.focus();
         }
 
-        dialog.showModal();
-    });
-}
-
-/**
- * Wyświetla prosty dialog informacyjny z przyciskiem OK.
- * @param {string} message Treść wiadomości
- * @param {string} [title] Tytuł dialogu
- * @returns {Promise<void>} Promise rozwiązujący się po zamknięciu dialogu
- */
-async function alertModal(message, title = 'Informacja') {
-    return new Promise((resolve) => {
-        let dialog = document.getElementById('app-alert-dialog');
-        if (!dialog) {
-            dialog = document.createElement('dialog');
-            dialog.id = 'app-alert-dialog';
-            dialog.setAttribute('aria-labelledby', 'alert-dialog-title');
-            dialog.setAttribute('aria-modal', 'true');
-            dialog.innerHTML = `
-                <h3 id="alert-dialog-title" style="margin-top:0;"></h3>
-                <p id="alert-dialog-message"></p>
-                <div class="dialog-actions">
-                    <button id="alert-ok"></button>
-                </div>
-            `;
-            document.body.appendChild(dialog);
-        }
-
-        const titleEl = dialog.querySelector('#alert-dialog-title');
-        const msgEl = dialog.querySelector('#alert-dialog-message');
-        const okBtn = dialog.querySelector('#alert-ok');
-
-        titleEl.textContent = title;
-        msgEl.textContent = message;
-        okBtn.textContent = (window.M && window.M.utils && window.M.utils.ok) || 'OK';
-
-        const close = () => {
-            dialog.close();
-            resolve();
-        };
-
-        okBtn.onclick = close;
-
-        dialog.oncancel = (e) => {
-            e.preventDefault();
-            close();
-        };
-
-        // Domyślnie fokus na przycisku OK
-        okBtn.focus();
-
-        dialog.showModal();
-    });
-}
-
-/**
- * Wyświetla dialog z polem wprowadzania tekstu.
- * @param {string} message Treść zachęty
- * @param {string} [title] Tytuł dialogu
- * @param {string} [defaultValue] Domyślna wartość pola
- * @returns {Promise<string|null>} Wprowadzona wartość lub null jeśli anulowano
- */
-async function promptModal(message, title = 'Wprowadź dane', defaultValue = '') {
-    return new Promise((resolve) => {
-        let dialog = document.getElementById('app-prompt-dialog');
-        if (!dialog) {
-            dialog = document.createElement('dialog');
-            dialog.id = 'app-prompt-dialog';
-            dialog.setAttribute('aria-modal', 'true');
-            dialog.innerHTML = `
-                <article>
-                    <header>
-                        <button aria-label="Zamknij" class="close" id="prompt-close"></button>
-                        <h3 id="prompt-dialog-title" style="margin: 0;"></h3>
-                    </header>
-                    <p id="prompt-dialog-message" style="margin-bottom: 1rem;"></p>
-                    <input type="text" id="prompt-input" style="margin-bottom: 1.5rem;">
-                    <footer>
-                        <button id="prompt-cancel" class="outline secondary">Anuluj</button>
-                        <button id="prompt-ok" class="primary">OK</button>
-                    </footer>
-                </article>
-            `;
-            document.body.appendChild(dialog);
-        }
-
-        const titleEl = dialog.querySelector('#prompt-dialog-title');
-        const msgEl = dialog.querySelector('#prompt-dialog-message');
-        const inputEl = dialog.querySelector('#prompt-input');
-        const cancelBtn = dialog.querySelector('#prompt-cancel');
-        const okBtn = dialog.querySelector('#prompt-ok');
-        const closeBtn = dialog.querySelector('#prompt-close');
-
-        titleEl.textContent = title;
-        msgEl.textContent = message;
-        inputEl.value = defaultValue;
-
-        const close = (result) => {
-            dialog.close();
-            resolve(result);
-        };
-
-        okBtn.onclick = () => close(inputEl.value);
-        cancelBtn.onclick = () => close(null);
-        closeBtn.onclick = () => close(null);
-
-        inputEl.onkeydown = (e) => {
-            if (e.key === 'Enter') {
-                e.preventDefault();
-                close(inputEl.value);
-            }
-        };
-
-        dialog.oncancel = () => resolve(null);
-
-        dialog.showModal();
-        setTimeout(() => inputEl.focus(), 50);
+        ModalManager.open(dialog, { initialFocus: focusOn === 'cancel' ? cancelBtn : confirmBtn });
     });
 }
 
@@ -1166,7 +1143,7 @@ window.utils = {
     initTheme,
     toggleTheme,
     confirm: confirmModal,
-    alert: alertModal,
+    modal: ModalManager,
     setStatusMessage,
     generateEARL,
     parseEARL,
