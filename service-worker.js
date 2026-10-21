@@ -23,6 +23,7 @@ const ASSETS_TO_CACHE = [
     './clauses_json/clauses.json',
     './clauses_json/mapping.json',
     './clauses_json/summaries.json',
+    './clauses_json/glossary.json',
     './img/eaa.svg',
     './img/EU1.svg',
     './img/EU2.svg',
@@ -42,6 +43,28 @@ const ASSETS_TO_CACHE = [
     './img/8_3_4_3_2.png',
     './img/8_3_4_3_3.png'
 ];
+
+// Klucz w pamięci podręcznej bez parametrów zapytania (?…), żeby jeden plik miał jedną kopię
+// i żeby kopia offline pasowała niezależnie od dopisków w adresie.
+function cacheKey(request) {
+    const url = new URL(request.url);
+    url.search = '';
+    return url.href;
+}
+
+// Network First: świeża wersja z sieci (i aktualizacja kopii), a bez sieci — kopia z pamięci podręcznej
+function networkFirst(event) {
+    const key = cacheKey(event.request);
+    return fetch(event.request)
+        .then((response) => {
+            if (response.ok) {
+                const responseClone = response.clone();
+                caches.open(CACHE_NAME).then((cache) => cache.put(key, responseClone));
+            }
+            return response;
+        })
+        .catch(() => caches.match(key, { ignoreSearch: true }));
+}
 
 // Zdarzenie instalacji — wstępne cachowanie zasobów
 self.addEventListener('install', (event) => {
@@ -64,6 +87,10 @@ self.addEventListener('activate', (event) => {
                     console.log('[Service Worker] Removing old cache', key);
                     return caches.delete(key);
                 }
+                // Sprzątanie bieżącej pamięci: kopie zapisane pod adresami z parametrami (?t=… z wcześniejszych
+                // wersji aplikacji) — każdy start dokładał nową kopię plików danych.
+                return caches.open(key).then((cache) => cache.keys().then((requests) =>
+                    Promise.all(requests.filter((r) => new URL(r.url).search).map((r) => cache.delete(r)))));
             }));
         })
     );
@@ -97,45 +124,10 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
-    // Pliki JSON (clauses, mapping, summaries) — Network First, zawsze świeża wersja
-    if (event.request.url.includes('.json')) {
-        event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    // Zaktualizuj cache świeżą odpowiedzią
-                    if (response.ok) {
-                        const responseClone = response.clone();
-                        caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(event.request, responseClone);
-                        });
-                    }
-                    return response;
-                })
-                .catch(() => {
-                    // Brak sieci — serwuj z cache
-                    return caches.match(event.request);
-                })
-        );
-        return;
-    }
-
-    // Pliki CSS i JS — Network First
-    if (event.request.url.includes('.css') || event.request.url.includes('.js')) {
-        event.respondWith(
-            fetch(event.request)
-                .then((response) => {
-                    if (response.ok) {
-                        const responseClone = response.clone();
-                        caches.open(CACHE_NAME).then((cache) => {
-                            cache.put(event.request, responseClone);
-                        });
-                    }
-                    return response;
-                })
-                .catch(() => {
-                    return caches.match(event.request);
-                })
-        );
+    // Pliki JSON (clauses, mapping, summaries, glossary), CSS i JS — Network First
+    const url = event.request.url;
+    if (url.includes('.json') || url.includes('.css') || url.includes('.js')) {
+        event.respondWith(networkFirst(event));
         return;
     }
 

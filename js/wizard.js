@@ -173,13 +173,15 @@ function getFullProductNameWizard() {
 
 async function init() {
     try {
-        // Wymuś odświeżenie plików słownikowych przy ładowaniu, by mieć najnowsze dane
-        const ts = new Date().getTime();
+        // Świeże dane bez zmiany adresu: cache: 'no-cache' wymusza sprawdzenie u serwera (z pominięciem
+        // pamięci HTTP przeglądarki), a stały adres pozwala Service Workerowi podać kopię offline.
+        // (Wcześniej dopisek ?t=<czas> zmieniał adres przy każdym starcie, przez co offline nic nie pasowało.)
+        const fresh = { cache: 'no-cache' };
         const [dictResp, mappingResp, summaryResp, glossaryResp] = await Promise.all([
-            fetch(`clauses_json/clauses.json?t=${ts}`),
-            fetch(`clauses_json/mapping.json?t=${ts}`),
-            fetch(`clauses_json/summaries.json?t=${ts}`),
-            fetch(`clauses_json/glossary.json?t=${ts}`)
+            fetch('clauses_json/clauses.json', fresh),
+            fetch('clauses_json/mapping.json', fresh),
+            fetch('clauses_json/summaries.json', fresh),
+            fetch('clauses_json/glossary.json', fresh)
         ]);
         
         dictionaryData = await dictResp.json();
