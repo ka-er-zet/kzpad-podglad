@@ -27,6 +27,7 @@
     const LEGACY_KEY = 'oz-pad:autosave:v1';      // dawny autozapis (jeden slot)
     const PENDING_PREFIX = 'oz-pad:pending:';      // awaryjny zapis przy zamykaniu karty
     const INFO_SEEN_KEY = 'oz-pad:drafts-info-seen';
+    const COLLAPSED_KEY = 'oz-pad:drafts-collapsed';
     const LOCK_PREFIX = 'oz-pad:assessment:';
     const DEBOUNCE_MS = 1500;
     const KEPT_TOAST_MS = 10000;
@@ -42,6 +43,7 @@
     let pendingKeptToast = false;
     let releaseLock = null;
     let channel = null;
+    let lastPos = null;         // ostatnio edytowane miejsce arkusza: { name } pola formularza
 
     // ---------------------------------------------------------------------------------------
     // Magazyn kopii roboczych (IndexedDB)
@@ -272,6 +274,7 @@
             label: productLabel(),
             profile: (area && area.getAttribute('data-product-name')) || '',
             progress: progress(),
+            lastPos,
             earl
         };
     }
@@ -342,6 +345,62 @@
     }
 
     // ---------------------------------------------------------------------------------------
+    // Ostatnio edytowane miejsce arkusza (powrót z przeglądarki wymagań, otwarcie kopii roboczej)
+    // ---------------------------------------------------------------------------------------
+    function rememberPosition(el) {
+        if (!el || !el.name || !el.closest || !el.closest('#resultsArea')) return;
+        if (!/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName)) return;
+        lastPos = { name: el.name };
+    }
+
+    function findPositionElement(pos) {
+        if (!pos || !pos.name) return null;
+        const area = resultsArea();
+        if (!area) return null;
+        const sel = `[name="${(window.CSS && CSS.escape) ? CSS.escape(pos.name) : pos.name.replace(/"/g, '\\"')}"]`;
+        const all = Array.from(area.querySelectorAll(sel));
+        if (!all.length) return null;
+        return all.find((x) => x.checked) || all[0];
+    }
+
+    /** Krótki opis miejsca do komunikatu dla czytników ekranu, np. "Art. 9 ust. 2 — komentarz". */
+    function describePosition(el) {
+        const row = el.closest('.requirement-row');
+        const article = row && row.querySelector('.requirement-id span[aria-hidden="true"]');
+        const where = article ? article.textContent.trim() : '';
+        let what = '';
+        const test = el.closest('.checklist-test-item');
+        if (test) {
+            const sum = test.querySelector('summary');
+            const title = sum ? sum.textContent.replace(/\s+/g, ' ').trim() : '';
+            what = el.tagName === 'TEXTAREA' ? `komentarz do testu ${title}` : `ocena testu ${title}`;
+        } else {
+            what = el.tagName === 'TEXTAREA' ? 'komentarz' : 'ocena wymagania';
+        }
+        return [where, what].filter(Boolean).join(' — ');
+    }
+
+    /**
+     * Przenosi do ostatnio edytowanego miejsca: rozwija zwinięte sekcje, przewija (z uwzględnieniem
+     * nagłówka) i ustawia fokus. Zwraca false, gdy takiego miejsca nie ma.
+     */
+    function goToLastPosition() {
+        const el = findPositionElement(lastPos);
+        if (!el) return false;
+        for (let d = el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+        setTimeout(() => {
+            const header = document.querySelector('.app-header');
+            const headerOffset = header && getComputedStyle(header).position !== 'relative' ? header.getBoundingClientRect().height : 0;
+            const target = el.closest('fieldset') || el;
+            const top = target.getBoundingClientRect().top + window.pageYOffset - headerOffset - 20;
+            window.scrollTo({ top, behavior: 'auto' });
+            el.focus({ preventScroll: true });
+            announce(`Powrót do ostatnio edytowanego miejsca: ${describePosition(el)}.`);
+        }, 150);
+        return true;
+    }
+
+    // ---------------------------------------------------------------------------------------
     // Przełączanie ocen (nowa ocena, wczytanie pliku, otwarcie kopii, ponowne generowanie)
     // ---------------------------------------------------------------------------------------
     function infoSeen() { return lsGet(INFO_SEEN_KEY) === '1'; }
@@ -390,6 +449,7 @@
         clearTimeout(timer);
         timer = null;
         dirty = false;
+        lastPos = null;
         hideStatus();
         await setCurrent(null);
     }
@@ -447,6 +507,7 @@
         await setCurrent(id);
         if (useDraft) {
             dirty = true;
+            lastPos = draft.lastPos || null;
             showStatus(`Otwarto kopię roboczą z ${formatWhen(draft.savedAt)}. Aby zachować ocenę na stałe, zapisz plik JSON (Ctrl+S).`);
         } else if (draft) {
             lsRemove(PENDING_PREFIX + id);
@@ -483,7 +544,8 @@
         }
         await setCurrent(id);
         dirty = true;
-        if (typeof scrollToLoadedAssessment === 'function') scrollToLoadedAssessment();
+        lastPos = rec.lastPos || null;
+        if (!goToLastPosition() && typeof scrollToLoadedAssessment === 'function') scrollToLoadedAssessment();
         showStatus(`Otwarto kopię roboczą z ${formatWhen(rec.savedAt)}. Aby zachować ocenę na stałe, zapisz plik JSON (Ctrl+S).`);
         announce('Otwarto kopię roboczą oceny.');
         if (r.kept) keptToast();
@@ -505,9 +567,9 @@
         notifyOthers();
         await renderList();
         announce('Kopia robocza została usunięta.');
-        const heading = document.getElementById('drafts-title');
+        const toggle = document.getElementById('drafts-toggle');
         const section = document.getElementById('drafts-section');
-        if (heading && section && !section.classList.contains('hidden')) heading.focus({ preventScroll: true });
+        if (toggle && section && !section.classList.contains('hidden')) toggle.focus({ preventScroll: true });
     }
 
     /**
@@ -524,7 +586,7 @@
         if (typeof Browser !== 'undefined' && Browser.updateTitle && area) {
             Browser.updateTitle(`Arkusz oceny: ${area.getAttribute('data-product-name') || ''}`.trim());
         }
-        if (typeof scrollToLoadedAssessment === 'function') scrollToLoadedAssessment();
+        if (!goToLastPosition() && typeof scrollToLoadedAssessment === 'function') scrollToLoadedAssessment();
     }
 
     /**
@@ -547,11 +609,21 @@
     // ---------------------------------------------------------------------------------------
     // Lista „Niezapisane oceny” na stronie startowej
     // ---------------------------------------------------------------------------------------
+    /** Sekcja rozwijana (wzorzec „disclosure”: przycisk w nagłówku + aria-expanded). */
+    function applyCollapsed(collapsed) {
+        const toggle = document.getElementById('drafts-toggle');
+        const body = document.getElementById('drafts-body');
+        if (!toggle || !body) return;
+        toggle.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        body.hidden = collapsed;
+    }
+
     let renderSeq = 0;
     async function renderList() {
         const section = document.getElementById('drafts-section');
         const list = document.getElementById('drafts-list');
         const count = document.getElementById('drafts-count');
+        const toggle = document.getElementById('drafts-toggle');
         if (!section || !list) return;
         const seq = ++renderSeq;
 
@@ -564,6 +636,7 @@
         list.textContent = '';
         section.classList.toggle('hidden', drafts.length === 0);
         if (count) count.textContent = drafts.length ? `(${drafts.length})` : '';
+        if (toggle) applyCollapsed(lsGet(COLLAPSED_KEY) === '1');
 
         drafts.forEach((d) => {
             const name = d.label || '(bez nazwy)';
@@ -675,6 +748,9 @@
         };
         document.addEventListener('input', onEdit, true);
         document.addEventListener('change', onEdit, true);
+        // Ostatnio edytowane miejsce (do powrotu z przeglądarki wymagań i przy otwieraniu kopii).
+        document.addEventListener('change', (e) => { if (suspended === 0) rememberPosition(e.target); }, true);
+        document.addEventListener('input', (e) => { if (suspended === 0) rememberPosition(e.target); }, true);
 
         // Wygenerowanie arkusza tworzy nową ocenę (nowy identyfikator i kopię roboczą).
         // Ponowne wygenerowanie przy niezapisanych zmianach zachowuje poprzednią ocenę jako kopię.
@@ -722,6 +798,16 @@
                 e.preventDefault();
                 const ok = await confirmLeave('Przejście na stronę główną zamknie arkusz i zmiany przepadną.', 'Przejdź na stronę główną', 'Zostań w arkuszu');
                 if (ok) window.location.href = logo.getAttribute('href') || 'index.html';
+            });
+        }
+
+        // Zwijanie/rozwijanie listy kopii roboczych (stan zapamiętany w tej przeglądarce).
+        const draftsToggle = document.getElementById('drafts-toggle');
+        if (draftsToggle) {
+            draftsToggle.addEventListener('click', () => {
+                const collapse = draftsToggle.getAttribute('aria-expanded') === 'true';
+                if (collapse) lsSet(COLLAPSED_KEY, '1'); else lsRemove(COLLAPSED_KEY);
+                applyCollapsed(collapse);
             });
         }
 

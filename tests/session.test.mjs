@@ -318,3 +318,51 @@ test('bez arkusza przycisk powrotu w przeglądarce wymagań jest ukryty', async 
     assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), false);
     await ctx.close();
 });
+
+test('sekcję „Niezapisane oceny” można zwinąć; stan jest zapamiętany', async () => {
+    const ctx = await newContext(); const p1 = await ctx.newPage();
+    await dirtySheet(p1, { name: 'Zwijanie' });
+    await p1.close();
+    const p = await ctx.newPage();
+    await p.goto(url);
+    await p.waitForSelector('#drafts-section:not(.hidden)');
+    const toggle = p.getByRole('button', { name: /Niezapisane oceny/ });
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'true', 'domyślnie rozwinięta');
+    await toggle.click();
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
+    assert.equal(await p.locator('#drafts-list').isVisible(), false);
+    await p.reload();
+    await p.waitForSelector('#drafts-section:not(.hidden)');
+    assert.equal(await p.locator('#drafts-toggle').getAttribute('aria-expanded'), 'false', 'stan zapamiętany');
+    await p.click('#drafts-toggle');
+    assert.equal(await p.locator('#drafts-list').isVisible(), true);
+    await ctx.close();
+});
+
+test('powrót z przeglądarki wymagań i otwarcie kopii przenoszą do ostatnio edytowanego miejsca', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await dirtySheet(p, { name: 'Miejsce' });
+    // komentarz do testu w zwiniętej sekcji, daleko w arkuszu
+    const target = p.locator('#resultsArea .checklist-test-item textarea').nth(20);
+    const name = await target.getAttribute('name');
+    await target.evaluate((ta) => { let d = ta.closest('details'); while (d) { d.open = true; d = d.parentElement.closest('details'); } });
+    await target.fill('tu skończyłem');
+    await target.evaluate((ta) => { let d = ta.closest('details'); while (d) { d.open = false; d = d.parentElement.closest('details'); } });
+    await p.evaluate(() => window.scrollTo(0, 0));
+
+    await p.click('#hero-browse-requirements');
+    await p.waitForSelector('#browser-section:not(.hidden)');
+    await p.click('#browser-back-to-sheet');
+    await p.waitForFunction((n) => document.activeElement && document.activeElement.name === n, name);
+    assert.equal(await target.isVisible(), true, 'zwinięte sekcje rozwinięte, pole widoczne');
+    assert.equal(await p.evaluate(() => { const r = document.activeElement.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), true, 'pole w widocznym obszarze');
+
+    await p.evaluate(() => Session.flush());
+    await p.goto('about:blank');
+    const q = await ctx.newPage();
+    await q.goto(url);
+    await q.getByRole('button', { name: 'Otwórz kopię roboczą: Miejsce' }).click();
+    await q.waitForFunction((n) => document.activeElement && document.activeElement.name === n, name);
+    assert.equal(await q.evaluate(() => document.activeElement.value), 'tu skończyłem');
+    await ctx.close();
+});

@@ -2947,13 +2947,48 @@ dialog .modal-body {
     margin-bottom: 0.25rem;
 }
 
-.drafts h2:focus {
-    outline: none;
+.drafts-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: auto;
+    margin: 0;
+    padding: 0.25rem 0.5rem 0.25rem 0;
+    background: none;
+    border: none;
+    color: inherit;
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
 }
 
-.drafts h2:focus-visible {
+.drafts-toggle:hover,
+.drafts-toggle:focus {
+    background: none;
+    color: inherit;
+}
+
+.drafts-toggle:focus:not(:focus-visible) {
+    box-shadow: none;
+}
+
+.drafts-toggle:focus-visible {
     outline: 2px solid var(--primary);
     outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.drafts-chevron {
+    flex: none;
+    transition: transform 0.15s ease-in-out;
+}
+
+.drafts-toggle[aria-expanded="false"] .drafts-chevron {
+    transform: rotate(-90deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .drafts-chevron { transition: none; }
 }
 
 .drafts-count {
