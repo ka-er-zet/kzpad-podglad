@@ -261,10 +261,8 @@ function setupHero() {
     if (heroNew) {
         heroNew.addEventListener('click', async (e) => {
             e.preventDefault();
-            if (window.Session) {
-                if (!(await Session.confirmDiscard('Rozpoczęcie nowej oceny usunie bieżący arkusz.'))) return;
-                Session.reset();
-            }
+            // Bieżąca ocena zostaje jako kopia robocza (session.js); pytamy tylko, gdy autozapis nie działa
+            if (window.Session && !(await Session.startNew())) return;
             // Ukryj inne sekcje jeśli otwarte
             if (browserSection) browserSection.classList.add('hidden');
             
@@ -2298,6 +2296,8 @@ function buildAssessmentEARL() {
         "dct:title": productName || "Nieznany produkt",
         "dct:description": productDesc || '',
         "dct:date": new Date().toISOString(),
+        // Identyfikator oceny: łączy plik JSON z jego kopią roboczą w przeglądarce (session.js)
+        "eaa:assessmentId": (window.Session && Session.currentId && Session.currentId()) || undefined,
         "eaa:art19Enabled": isArt19Enabled,
         "eaa:productCategory": selectedProduct
     };

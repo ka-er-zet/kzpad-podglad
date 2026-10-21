@@ -80,5 +80,18 @@ export async function fillAssessments(page, n = 9) {
     }, n);
 }
 
-export const AUTOSAVE_KEY = 'oz-pad:autosave:v1';
-export const readSlot = (page) => page.evaluate((k) => localStorage.getItem(k), AUTOSAVE_KEY);
+/** Dawny klucz autozapisu (jeden slot w localStorage) — używany do testu przeniesienia danych. */
+export const LEGACY_AUTOSAVE_KEY = 'oz-pad:autosave:v1';
+
+/** Kopie robocze z IndexedDB (baza „oz-pad”, magazyn „drafts”). */
+export const readDrafts = (page) => page.evaluate(() => new Promise((resolve) => {
+    const req = indexedDB.open('oz-pad', 1);
+    req.onupgradeneeded = () => { if (!req.result.objectStoreNames.contains('drafts')) req.result.createObjectStore('drafts', { keyPath: 'id' }); };
+    req.onsuccess = () => {
+        const t = req.result.transaction('drafts', 'readonly');
+        const g = t.objectStore('drafts').getAll();
+        g.onsuccess = () => { req.result.close(); resolve(g.result); };
+        g.onerror = () => { req.result.close(); resolve([]); };
+    };
+    req.onerror = () => resolve([]);
+}));
