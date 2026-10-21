@@ -312,12 +312,25 @@ a[target="_blank"]:focus {
     transform: translateY(-100%);
 }
 
-/* Naprawa dla 400% zoom i mobilnego układu — Reflow i zarządzanie sticky */
+/* Rezerwa miejsca na przyklejony nagłówek przy przewijaniu do elementu z fokusem (WCAG 2.4.11).
+   --app-header-height ustawia skrypt (setupHeaderScrollHandler) tylko, gdy nagłówek jest przyklejony. */
+html {
+    scroll-padding-top: var(--app-header-height, 0px);
+}
+
+/* Mała wysokość ekranu (telefon poziomo, duże powiększenie, np. 400%): nagłówek nie jest przyklejony,
+   żeby nie zabierał miejsca. Na wąskich, ale wysokich ekranach (telefon w pionie) zostaje przyklejony
+   i chowa się/pokazuje przy przewijaniu tak jak na komputerze. */
+@media (max-height: 500px) {
+    .app-header {
+        position: relative;
+    }
+}
+
+/* Układ nagłówka na wąskich ekranach i przy małej wysokości (Reflow) */
 @media (max-width: 600px),
 (max-height: 500px) {
     .app-header {
-        position: relative;
-        /* Usuń sticky przy małej wysokości/zoomie dla lepszego miejsca */
         flex-wrap: wrap;
         padding: 0.5rem;
     }

@@ -3761,27 +3761,51 @@ init();
  * Obsługa automatycznego ukrywania/pokazywania belki przy przewijaniu (WCAG scroll-hide technique)
  */
 function setupHeaderScrollHandler() {
-    let lastScrollY = window.pageYOffset;
     const header = document.querySelector('.app-header');
     if (!header) return;
 
+    // Progi w pikselach: chowamy po przewinięciu w dół o kilka pikseli, pokazujemy dopiero po wyraźnym
+    // przewinięciu w górę — przy czytaniu palcem kierunek zmienia się co chwilę, a iOS „odbija” stronę.
+    const TOP_ZONE = 100;
+    const HIDE_AFTER = 10;
+    const SHOW_AFTER = 40;
+    let lastY = window.pageYOffset;
+    let travel = 0; // droga w bieżącym kierunku (+ w dół, - w górę)
+
+    const isSticky = () => getComputedStyle(header).position === 'sticky';
+    const show = () => header.classList.remove('header-hidden');
+    const hide = () => header.classList.add('header-hidden');
+
+    // Rezerwa miejsca dla elementów z fokusem (scroll-padding-top w CSS), tylko gdy nagłówek jest przyklejony
+    const updateHeaderHeight = () => {
+        const h = isSticky() ? Math.ceil(header.getBoundingClientRect().height) : 0;
+        document.documentElement.style.setProperty('--app-header-height', h + 'px');
+        if (!isSticky()) show();
+    };
+    updateHeaderHeight();
+    window.addEventListener('resize', updateHeaderHeight);
+
+    // Fokus w schowanym nagłówku (np. Shift+Tab) — pokaż go, żeby fokus był widoczny
+    header.addEventListener('focusin', show);
+
     window.addEventListener('scroll', () => {
-        const currentScrollY = window.pageYOffset;
-        
-        // Nie ukrywaj na samej górze lub gdy przewijanie jest minimalne
-        if (currentScrollY < 100) {
-            header.classList.remove('header-hidden');
-            lastScrollY = currentScrollY;
+        const y = window.pageYOffset;
+        const maxY = document.documentElement.scrollHeight - window.innerHeight;
+        if (!isSticky() || y < TOP_ZONE) {
+            show();
+            lastY = y;
+            travel = 0;
             return;
         }
+        if (y < 0 || y > maxY) { lastY = y; return; } // „odbijanie” na krańcach strony (iOS)
 
-        // Ukryj przy przewijaniu w dół, pokaż przy przewijaniu w górę
-        if (currentScrollY > lastScrollY && !header.classList.contains('header-hidden')) {
-            header.classList.add('header-hidden');
-        } else if (currentScrollY < lastScrollY && header.classList.contains('header-hidden')) {
-            header.classList.remove('header-hidden');
-        }
-        
-        lastScrollY = currentScrollY;
+        const delta = y - lastY;
+        lastY = y;
+        if (delta === 0) return;
+        if ((delta > 0) !== (travel > 0)) travel = 0; // zmiana kierunku
+        travel += delta;
+
+        if (travel > HIDE_AFTER && !header.contains(document.activeElement)) hide();
+        else if (travel < -SHOW_AFTER) show();
     }, { passive: true });
 }
