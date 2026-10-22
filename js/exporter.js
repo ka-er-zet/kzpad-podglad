@@ -147,6 +147,10 @@
                     contentXml += `<text:list text:style-name="L1">`;
                     section.items.forEach(item => {
                         contentXml += `<text:list-item><text:p text:style-name="P1">${window.utils.xmlEscape(item.label)}</text:p>`;
+                        if (item.flag) {
+                            // Rozbieżność oceny wymagania z oceną proponowaną na podstawie testów
+                            contentXml += `<text:p text:style-name="P_Comment">${window.utils.xmlEscape(item.flag)}</text:p>`;
+                        }
                         if (item.note) {
                             // "nie notatka, a komentarz i jeśli się da, komentarz będzie w następnej linii pod wymaganiem, ale niech ma wcięcie"
                             contentXml += `<text:p text:style-name="P_Comment">Komentarz: ${window.utils.xmlEscape(item.note)}</text:p>`;

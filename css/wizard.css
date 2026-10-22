@@ -3070,3 +3070,142 @@ dialog .modal-body {
     width: auto;
     padding: 0.5rem 1rem;
 }
+
+/* ===== Ocena wymagania: badge oceny i rozbieżność z oceną proponowaną (uwagi PFRON 3 i 9) ===== */
+.assessment-section fieldset legend.assessment-legend {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem 1rem;
+    width: 100%;
+}
+
+.requirement-status-badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.6;
+    padding: 0 0.55rem;
+    border-radius: 999px;
+    white-space: nowrap;
+    flex-shrink: 0;
+    border: 1px solid var(--contrast);
+    background: transparent;
+    color: var(--contrast);
+}
+
+.requirement-status-badge[data-status="compliant"] {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--form-element-valid-border-color) 15%, transparent);
+    color: var(--form-element-valid-border-color);
+}
+
+.requirement-status-badge[data-status="non-compliant"] {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--form-element-invalid-border-color) 15%, transparent);
+    color: var(--form-element-invalid-border-color);
+}
+
+.requirement-status-badge[data-status="not-applicable"] {
+    border-color: transparent;
+    background: color-mix(in srgb, var(--contrast) 15%, transparent);
+    color: var(--contrast);
+}
+
+[data-theme="dark"] .requirement-status-badge[data-status="compliant"] {
+    background: color-mix(in srgb, #66BB6A 15%, transparent);
+    color: #66BB6A;
+}
+[data-theme="light"] .requirement-status-badge[data-status="compliant"] {
+    background: color-mix(in srgb, #2E7D32 15%, transparent);
+    color: #2E7D32;
+}
+[data-theme="dark"] .requirement-status-badge[data-status="non-compliant"] {
+    background: color-mix(in srgb, #EF5350 15%, transparent);
+    color: #EF5350;
+}
+[data-theme="light"] .requirement-status-badge[data-status="non-compliant"] {
+    background: color-mix(in srgb, #C62828 15%, transparent);
+    color: #C62828;
+}
+
+.assessment-discrepancy {
+    display: flex;
+    gap: 0.6rem;
+    align-items: flex-start;
+    margin: 0 0 1rem 0;
+    padding: 0.75rem 1rem;
+    border: 1px solid #B45309;
+    border-left-width: 4px;
+    border-radius: 8px;
+    background: color-mix(in srgb, #B45309 8%, transparent);
+    font-size: 0.9rem;
+}
+
+.assessment-discrepancy[hidden] {
+    display: none;
+}
+
+.assessment-discrepancy-icon {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    color: #B45309;
+}
+
+.assessment-discrepancy p {
+    margin: 0;
+}
+
+.assessment-discrepancy-missing {
+    margin-top: 0.25rem !important;
+    font-weight: 600;
+}
+
+[data-theme="dark"] .assessment-discrepancy {
+    border-color: #F0B45A;
+    background: color-mix(in srgb, #F0B45A 10%, transparent);
+}
+[data-theme="dark"] .assessment-discrepancy-icon {
+    color: #F0B45A;
+}
+
+.summary-discrepancy-warning {
+    margin: 1.25rem 0;
+    padding: 1rem 1.25rem;
+    border: 1px solid #B45309;
+    border-left: 4px solid #B45309;
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+.summary-discrepancy-warning h3 {
+    font-size: 1rem;
+    margin: 0 0 0.4rem 0;
+}
+
+.summary-discrepancy-warning p {
+    margin-bottom: 0.5rem;
+}
+
+.summary-discrepancy-warning ul {
+    margin: 0;
+    padding-left: 1.25rem;
+}
+
+.summary-discrepancy-warning li {
+    margin-bottom: 0.2rem;
+}
+
+[data-theme="dark"] .summary-discrepancy-warning {
+    border-color: #F0B45A;
+}
+
+@media (forced-colors: active) {
+    .requirement-status-badge,
+    .assessment-discrepancy,
+    .summary-discrepancy-warning {
+        border-color: CanvasText;
+    }
+}

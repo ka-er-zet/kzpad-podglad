@@ -1032,39 +1032,189 @@ function scrollToRequirement(targetId) {
     }, 2000);
 }
 
-function updateTestSummaryForRow(row) {
-    const summaryDiv = row.querySelector('.test-summary-assessment');
-    if (!summaryDiv) return;
+// --- Ocena wymagania a ocena proponowana na podstawie testów (uwagi PFRON 3 i 9) ---
 
+const REQUIREMENT_STATUS_LABELS = {
+    'compliant': 'Spełnione',
+    'non-compliant': 'Niespełnione',
+    'not-applicable': 'Nie dotyczy'
+};
+
+const DISCREPANCY_ICON = '<svg class="assessment-discrepancy-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
+
+function getRowSafeArticleId(row) {
+    const article = row.querySelector('.requirement-id span[aria-hidden="true"]')?.textContent?.trim() || '';
+    return article.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
+}
+
+/**
+ * Ocena wymagania proponowana na podstawie ocenionych testów:
+ * niespełniony test → Niespełnione; wszystkie ocenione „Nie dotyczy” → Nie dotyczy; w pozostałych → Spełnione.
+ * @returns {null|{value:string,label:string,evaluated:number,total:number,failed:number,passed:number,na:number}}
+ *          null, gdy żaden test nie jest oceniony (brak propozycji).
+ */
+function getProposedRequirementStatus(row) {
     const testCards = Array.from(row.querySelectorAll('.checklist-test-item[data-test-id]'));
-    const total = testCards.length;
     const evaluated = testCards.filter(card => card.querySelector('input[type="radio"]:checked'));
-
-    if (evaluated.length === 0) {
-        summaryDiv.innerHTML = '';
-        return;
-    }
+    if (evaluated.length === 0) return null;
 
     const failed = evaluated.filter(card => card.querySelector('input[value="fail"]:checked')).length;
     const passed = evaluated.filter(card => card.querySelector('input[value="pass"]:checked')).length;
     const na     = evaluated.filter(card => card.querySelector('input[value="na"]:checked')).length;
 
-    const pluralTest = n => n === 1 ? 'test' : (n >= 2 && n <= 4) ? 'testy' : 'testów';
+    let value;
+    if (failed > 0) value = 'non-compliant';
+    else if (na === evaluated.length) value = 'not-applicable';
+    else value = 'compliant';
 
-    let proposal;
-    if (failed > 0) proposal = 'Niespełnione';
-    else if (na === evaluated.length) proposal = 'Nie dotyczy';
-    else proposal = 'Spełnione';
+    return { value, label: REQUIREMENT_STATUS_LABELS[value], evaluated: evaluated.length, total: testCards.length, failed, passed, na };
+}
 
-    const parts = [];
-    if (failed > 0) parts.push(`${failed} ${pluralTest(failed)} niespełnione`);
-    if (passed > 0) parts.push(`${passed} ${pluralTest(passed)} spełnione`);
-    if (na     > 0) parts.push(`${na} ${pluralTest(na)} wykluczone`);
+/**
+ * Stan oceny wymagania: wybrana ocena, propozycja z testów, rozbieżność i uzasadnienie.
+ */
+function getRequirementAssessmentState(row) {
+    const safeArticleId = getRowSafeArticleId(row);
+    const selectedEl = row.querySelector(`input[type="radio"][name="status-${safeArticleId}"]:checked`);
+    const selected = selectedEl ? selectedEl.value : null;
+    const proposal = getProposedRequirementStatus(row);
+    const commentEl = row.querySelector(`textarea[name="comment-${safeArticleId}"]`);
+    const comment = commentEl ? commentEl.value : '';
+    const discrepancy = !!(proposal && selected && selected !== proposal.value);
+    return {
+        safeArticleId,
+        selected,
+        selectedLabel: selected ? REQUIREMENT_STATUS_LABELS[selected] : null,
+        proposal,
+        commentEl,
+        discrepancy,
+        justified: comment.trim() !== ''
+    };
+}
 
-    let html = `<p>Proponowana ocena klauzuli: <strong>${proposal}</strong></p>`;
-    html += `<p>Sprawdzono ${evaluated.length} z ${total} ${pluralTest(total)}: ${parts.join(', ')}.</p>`;
+function getDiscrepancyText(state) {
+    return `Wybrana ocena (${state.selectedLabel}) jest inna niż proponowana na podstawie testów (${state.proposal.label}). Uzasadnij ją w komentarzu.`;
+}
 
-    summaryDiv.innerHTML = html;
+function announceAssessment(text) {
+    const announcement = document.getElementById('generation-announcement');
+    if (!announcement || !text) return;
+    announcement.textContent = '';
+    requestAnimationFrame(() => { announcement.textContent = text; });
+}
+
+/**
+ * Oznacza pole komentarza jako błędne, gdy jest rozbieżność bez uzasadnienia
+ * (wywoływane po opuszczeniu pola i przy generowaniu podsumowania).
+ */
+function validateRequirementJustification(row) {
+    const state = getRequirementAssessmentState(row);
+    if (!state.commentEl) return state;
+    const invalid = state.discrepancy && !state.justified;
+    if (invalid) state.commentEl.setAttribute('aria-invalid', 'true');
+    else state.commentEl.removeAttribute('aria-invalid');
+    const missing = row.querySelector('.assessment-discrepancy-missing');
+    if (missing) missing.hidden = !invalid;
+    return state;
+}
+
+/**
+ * Odświeża blok propozycji, badge oceny, komunikat o rozbieżności i pole komentarza wymagania.
+ * @param {HTMLElement} row - .requirement-row
+ * @param {{announce?: boolean}} [opts] - announce: ogłoś zmianę rozbieżności czytnikom ekranu (tylko po działaniu użytkownika)
+ */
+function updateRequirementAssessmentUI(row, opts = {}) {
+    const state = getRequirementAssessmentState(row);
+    const { safeArticleId, proposal } = state;
+
+    // 1. Propozycja z testów
+    const summaryDiv = row.querySelector('.test-summary-assessment');
+    if (summaryDiv) {
+        if (!proposal) {
+            summaryDiv.innerHTML = '';
+        } else {
+            const pluralTest = n => n === 1 ? 'test' : (n >= 2 && n <= 4) ? 'testy' : 'testów';
+            const parts = [];
+            if (proposal.failed > 0) parts.push(`${proposal.failed} ${pluralTest(proposal.failed)} niespełnione`);
+            if (proposal.passed > 0) parts.push(`${proposal.passed} ${pluralTest(proposal.passed)} spełnione`);
+            if (proposal.na     > 0) parts.push(`${proposal.na} ${pluralTest(proposal.na)} wykluczone`);
+            summaryDiv.innerHTML =
+                `<p>Proponowana ocena wymagania: <strong>${proposal.label}</strong></p>` +
+                `<p>Sprawdzono ${proposal.evaluated} z ${proposal.total} ${pluralTest(proposal.total)}: ${parts.join(', ')}.</p>`;
+        }
+    }
+
+    // 2. Badge wybranej oceny (tylko wizualny — stan odczytują czytniki z przycisków oceny)
+    const badge = row.querySelector('.requirement-status-badge');
+    if (badge) {
+        badge.dataset.status = state.selected || 'none';
+        badge.textContent = state.selectedLabel || 'Brak oceny';
+    }
+
+    // 3. Rozbieżność z propozycją
+    const box = row.querySelector('.assessment-discrepancy');
+    const wasDiscrepancy = box ? !box.hidden : false;
+    if (box) {
+        const textEl = box.querySelector('.assessment-discrepancy-text');
+        if (state.discrepancy) {
+            if (textEl) textEl.textContent = getDiscrepancyText(state);
+            box.hidden = false;
+        } else {
+            if (textEl) textEl.textContent = '';
+            box.hidden = true;
+        }
+    }
+
+    // 4. Pole komentarza: przy rozbieżności — uzasadnienie wymagane
+    const commentEl = state.commentEl;
+    const labelText = row.querySelector(`label[for="comment-${safeArticleId}"] .comment-label-text`);
+    if (commentEl) {
+        if (state.discrepancy) {
+            commentEl.setAttribute('aria-required', 'true');
+            commentEl.setAttribute('aria-describedby', `discrepancy-${safeArticleId}`);
+            if (labelText) labelText.textContent = 'Komentarz — uzasadnienie oceny (wymagane)';
+            // Błąd znika, gdy pole uzupełniono; nowy błąd pokazujemy dopiero po opuszczeniu pola / przy podsumowaniu
+            if (state.justified) commentEl.removeAttribute('aria-invalid');
+        } else {
+            commentEl.removeAttribute('aria-required');
+            commentEl.removeAttribute('aria-describedby');
+            commentEl.removeAttribute('aria-invalid');
+            if (labelText) labelText.textContent = 'Komentarz';
+        }
+    }
+    const missing = row.querySelector('.assessment-discrepancy-missing');
+    if (missing) missing.hidden = !(commentEl && commentEl.getAttribute('aria-invalid') === 'true');
+
+    if (opts.announce) {
+        if (state.discrepancy && !wasDiscrepancy) announceAssessment(getDiscrepancyText(state));
+        else if (!state.discrepancy && wasDiscrepancy) announceAssessment('Wybrana ocena jest zgodna z proponowaną.');
+    }
+    return state;
+}
+
+// Zgodność wsteczna — dawna nazwa
+function updateTestSummaryForRow(row) {
+    return updateRequirementAssessmentUI(row);
+}
+
+/** Lista wymagań, których ocena różni się od proponowanej (z podanych wierszy). */
+function getAssessmentDiscrepancies(activeRows) {
+    const out = [];
+    activeRows.forEach(row => {
+        const state = getRequirementAssessmentState(row);
+        if (!state.discrepancy) return;
+        const article = row.querySelector('.requirement-id span[aria-hidden="true"]')?.textContent?.trim() || '';
+        const requirementText = row.querySelector('.requirement-text')?.textContent?.trim() || '';
+        out.push({
+            label: `${article} - ${requirementText}`,
+            article,
+            targetId: row.id,
+            selected: state.selectedLabel,
+            proposed: state.proposal.label,
+            justified: state.justified
+        });
+    });
+    return out;
 }
 
 function getAssessmentSummaryData() {
@@ -1186,8 +1336,11 @@ function getAssessmentSummaryData() {
         }
     }
 
+    // Oceny inne niż proponowane na podstawie testów (uwaga 9)
+    const discrepancies = getAssessmentDiscrepancies(activeRows);
+
     return {
-        passed, failures, untested, inapplicable, incompleteAssessments,
+        passed, failures, untested, inapplicable, incompleteAssessments, discrepancies,
         passedCount, failedCount, untestedCount, inapplicableCount, totalCount,
         templateKey, isArt19Enabled
     };
@@ -1217,8 +1370,10 @@ function generateDescriptiveSummary(isInitial = false) {
     }
 
     const fullProductName = getFullProductNameWizard();
+    // Przy generowaniu podsumowania pokaż błąd w polach z rozbieżnością bez uzasadnienia (uwaga 9)
+    document.querySelectorAll('.requirement-row').forEach(row => validateRequirementJustification(row));
     const summaryData = getAssessmentSummaryData();
-    const { failures, passed, untested, inapplicable, incompleteAssessments, templateKey, untestedCount } = summaryData;
+    const { failures, passed, untested, inapplicable, incompleteAssessments, discrepancies, templateKey, untestedCount } = summaryData;
 
     const config = summaryTemplates.compliance_summaries[templateKey];
     const currentDate = new Date().toLocaleDateString('pl-PL');
@@ -1266,6 +1421,20 @@ function generateDescriptiveSummary(isInitial = false) {
                         </li>`).join('')}
                     </ul>
                 </div>
+                ` : ''}
+
+                ${discrepancies.length > 0 ? `
+                <section class="summary-discrepancy-warning" aria-labelledby="summary-discrepancy-title">
+                    <h3 id="summary-discrepancy-title">Oceny inne niż proponowane na podstawie testów</h3>
+                    <p>Wybrana ocena tych wymagań różni się od oceny proponowanej na podstawie testów. Każda taka ocena wymaga uzasadnienia w komentarzu.</p>
+                    <ul>
+                        ${discrepancies.map(it => `
+                        <li>
+                            <a href="#${it.targetId}" onclick="event.preventDefault(); scrollToRequirement('${it.targetId}');">${W.escapeHtml(it.label)}</a>
+                            <span class="summary-discrepancy-detail">— wybrana: ${it.selected}, proponowana: ${it.proposed}${it.justified ? '' : '; <strong>brak uzasadnienia</strong>'}</span>
+                        </li>`).join('')}
+                    </ul>
+                </section>
                 ` : ''}
 
                 <div class="summary-body">
@@ -1604,6 +1773,18 @@ async function downloadSummaryODT() {
         customSections.push({ type: 'list', items: summaryData.incompleteAssessments.map(item => ({ label: item.label })) });
     }
 
+    // Oceny inne niż proponowane na podstawie testów (uwaga 9)
+    const discrepancyById = new Map(summaryData.discrepancies.map(d => [d.targetId, d]));
+    const discrepancyFlag = d => d
+        ? `Ocena inna niż proponowana na podstawie testów (proponowana: ${d.proposed})${d.justified ? '' : ' — brak uzasadnienia'}.`
+        : '';
+    if (summaryData.discrepancies.length > 0) {
+        customSections.push({ type: 'title', level: 3, text: 'Oceny inne niż proponowane na podstawie testów' });
+        customSections.push({ type: 'list', items: summaryData.discrepancies.map(d => ({
+            label: `${d.label} — wybrana: ${d.selected}, proponowana: ${d.proposed}${d.justified ? '' : '; brak uzasadnienia'}`
+        })) });
+    }
+
     // 3. Tekst główny (z szablonu)
     let descText = 'Raport wygenerowany z Konfiguratora.';
     if (templateKey !== 'no_assessment') {
@@ -1620,10 +1801,11 @@ async function downloadSummaryODT() {
          const sections = config.sections || {};
          
          // Podział na dwie kategorie artykułów
-         const toItems = list => list.map(f => ({ label: f.label, note: f.comment, tests: f.failedTests }));
+         const toItems = list => list.map(f => ({ label: f.label, flag: discrepancyFlag(discrepancyById.get(f.targetId)), note: f.comment, tests: f.failedTests }));
          // Dla spełnionych kryteriów - tylko testy z komentarzem
          const toItemsWithCommentedTests = list => list.map(f => ({ 
              label: f.label, 
+             flag: discrepancyFlag(discrepancyById.get(f.targetId)),
              note: f.comment, 
              tests: f.failedTests.filter(t => t.comment) 
          }));
@@ -1837,6 +2019,18 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             });
             summarySheet.addRow([]); // Separator po ostrzeżeniu
         }
+
+        // Oceny inne niż proponowane na podstawie testów (uwaga 9)
+        if (summaryData.discrepancies.length > 0) {
+            const discTitle = summarySheet.addRow(['⚠️ Oceny inne niż proponowane na podstawie testów']);
+            discTitle.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFF6600' } };
+            summaryData.discrepancies.forEach(d => {
+                const r = summarySheet.addRow([`• ${d.label} — wybrana: ${d.selected}, proponowana: ${d.proposed}${d.justified ? '' : '; brak uzasadnienia'}`]);
+                r.getCell(1).alignment = { wrapText: true };
+            });
+            summarySheet.addRow([]);
+        }
+        const discrepancyById = new Map(summaryData.discrepancies.map(d => [d.targetId, d]));
         
         const fullProductName = getFullProductNameWizard();
         const descText = config.description.replace(/<[^>]*>/g, '').replace('{productName}', () => fullProductName);
@@ -1850,6 +2044,12 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
              items.forEach(item => {
                 const r = summarySheet.addRow([`• ${item.label}`]);
                 r.getCell(1).alignment = { wrapText: true };
+                const disc = discrepancyById.get(item.targetId);
+                if (disc) {
+                    const rd = summarySheet.addRow([`Ocena inna niż proponowana na podstawie testów (proponowana: ${disc.proposed})${disc.justified ? '' : ' — brak uzasadnienia'}.`]);
+                    rd.getCell(1).font = { size: 10 };
+                    rd.getCell(1).alignment = { wrapText: true, indent: 2 };
+                }
                 if (item.comment) {
                     // Komentarz w nowej linii, wcięty
                     const rc = summarySheet.addRow([`Komentarz: ${item.comment}`]);
@@ -1997,13 +2197,14 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         { key: 'article', width: 22 },
         { key: 'requirement', width: 75 },
         { key: 'status', width: 25 },
+        { key: 'proposed', width: 28 },
         { key: 'comment', width: 55 }
     ];
 
     // 1. Nagłówek główny
     const titleCell = worksheet.getCell('A1');
     titleCell.value = 'ARKUSZ OCENY ZGODNOŚCI Z PAD';
-    worksheet.mergeCells('A1:D1');
+    worksheet.mergeCells('A1:E1');
     titleCell.font = { bold: true, size: 16 };
     titleCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: false };
     worksheet.getRow(1).height = 35;
@@ -2029,7 +2230,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     worksheet.addRow([]); // Pusty wiersz
 
     // 3. Nagłówek tabeli (Kolumny)
-    const headerRow = worksheet.addRow(['Artykuł', 'Wymaganie', 'Ocena spełnienia', 'Komentarz']);
+    const headerRow = worksheet.addRow(['Artykuł', 'Wymaganie', 'Ocena spełnienia', 'Ocena proponowana (na podstawie testów)', 'Komentarz']);
     headerRow.eachCell((cell) => {
         cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
         cell.fill = {
@@ -2092,7 +2293,14 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             return { testDataId, testTitle, testStatus, testComment };
         });
 
-        const rowData = { article, requirementText, currentStatus, currentComment, unitTests };
+        // Ocena proponowana na podstawie testów i rozbieżność z wybraną oceną (uwaga 9)
+        const assessState = getRequirementAssessmentState(rowEl);
+        let proposedText = assessState.proposal ? assessState.proposal.label : '';
+        if (assessState.discrepancy) {
+            proposedText += `\nInna niż wybrana ocena${assessState.justified ? '' : ' — brak uzasadnienia'}`;
+        }
+
+        const rowData = { article, requirementText, currentStatus, proposedText, discrepancy: assessState.discrepancy, currentComment, unitTests };
 
         if (article.includes('Art. 19')) {
             art19RowsData.push(rowData);
@@ -2104,13 +2312,18 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     // Funkcja pomocnicza do dodawania i formatowania wierszy danych (z testami jednostkowymi)
     const addDataRows = (ws, dataArray) => {
         dataArray.forEach(rowData => {
-            const { article, requirementText, currentStatus, currentComment, unitTests } = rowData;
-            const newRow = ws.addRow([article, requirementText, currentStatus, currentComment]);
+            const { article, requirementText, currentStatus, proposedText, discrepancy, currentComment, unitTests } = rowData;
+            const newRow = ws.addRow([article, requirementText, currentStatus, proposedText, currentComment]);
 
             newRow.getCell(1).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
             newRow.getCell(2).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
             newRow.getCell(3).alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
-            newRow.getCell(4).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+            newRow.getCell(4).alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
+            newRow.getCell(5).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+            if (discrepancy) {
+                newRow.getCell(4).font = { bold: true, color: { argb: 'FFB45309' } };
+                newRow.getCell(4).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFFF4DC' } };
+            }
 
             newRow.eachCell((cell) => {
                 cell.border = {
@@ -2133,14 +2346,14 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             // Testy jednostkowe – wiersze wcięte pod klauzulą
             if (unitTests && unitTests.length > 0) {
                 unitTests.forEach(test => {
-                    const testRow = ws.addRow(['', `  ↳ ${test.testTitle}`, test.testStatus, test.testComment]);
+                    const testRow = ws.addRow(['', `  ↳ ${test.testTitle}`, test.testStatus, '', test.testComment]);
                     testRow.getCell(1).alignment = { vertical: 'top', horizontal: 'left' };
                     testRow.getCell(2).alignment = { vertical: 'top', horizontal: 'left', wrapText: true, indent: 2 };
                     testRow.getCell(3).alignment = { vertical: 'top', horizontal: 'center', wrapText: true };
-                    testRow.getCell(4).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
+                    testRow.getCell(5).alignment = { vertical: 'top', horizontal: 'left', wrapText: true };
                     testRow.getCell(2).font = { size: 9 };
                     testRow.getCell(3).font = { size: 9 };
-                    testRow.getCell(4).font = { size: 9 };
+                    testRow.getCell(5).font = { size: 9 };
                     testRow.eachCell((cell) => {
                         cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF5F5F5' } };
                         cell.border = {
@@ -2175,13 +2388,13 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         // Opis Art. 19
         const descRow = worksheet.addRow([art19Description]);
         const currentRowNum = descRow.number;
-        worksheet.mergeCells(`A${currentRowNum}:D${currentRowNum}`);
+        worksheet.mergeCells(`A${currentRowNum}:E${currentRowNum}`);
         descRow.getCell(1).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true };
         descRow.getCell(1).font = { italic: true, color: { argb: 'FF555555' } };
         descRow.height = 60;
 
         // Nagłówek tabeli dla Art. 19
-        const art19Header = worksheet.addRow(['Artykuł', 'Wymaganie', 'Ocena spełnienia', 'Komentarz']);
+        const art19Header = worksheet.addRow(['Artykuł', 'Wymaganie', 'Ocena spełnienia', 'Ocena proponowana (na podstawie testów)', 'Komentarz']);
         art19Header.eachCell((cell) => {
             cell.font = { bold: true, color: { argb: 'FFFFFFFF' } };
             cell.fill = {
@@ -2561,7 +2774,8 @@ function restoreAssessment(data) {
         }
     });
 
-    // 8. Odśwież podsumowanie
+    // 8. Odśwież propozycje, badge i rozbieżności wymagań, potem podsumowanie
+    document.querySelectorAll('.requirement-row').forEach(row => updateRequirementAssessmentUI(row));
     generateDescriptiveSummary();
 }
 
@@ -3257,7 +3471,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                 
                 <section class="assessment-section">
                     <fieldset aria-describedby="test-summary-${safeArticleId}">
-                        <legend>Ocena spełnienia wymagania dla ${item.article}</legend>
+                        <legend class="assessment-legend"><span>Ocena spełnienia wymagania dla ${item.article}</span><span class="requirement-status-badge" data-status="none" aria-hidden="true">Brak oceny</span></legend>
                         <div class="test-summary-assessment" id="test-summary-${safeArticleId}"></div>
                         
                         <label for="status-compliant-${safeArticleId}">
@@ -3275,8 +3489,16 @@ document.getElementById('auditForm').onsubmit = (e) => {
                             Nie dotyczy
                         </label>
                     </fieldset>
-                    
-                    <label for="comment-${safeArticleId}">Komentarz</label>
+
+                    <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
+                        ${DISCREPANCY_ICON}
+                        <div>
+                            <p class="assessment-discrepancy-text"></p>
+                            <p class="assessment-discrepancy-missing" hidden>Brak uzasadnienia.</p>
+                        </div>
+                    </div>
+
+                    <label for="comment-${safeArticleId}"><span class="comment-label-text">Komentarz</span></label>
                     <textarea id="comment-${safeArticleId}" name="comment-${safeArticleId}"></textarea>
                 </section>
             `;
@@ -3296,9 +3518,24 @@ document.getElementById('auditForm').onsubmit = (e) => {
     
     // Event delegation: aktualizuj podsumowanie testów przy każdej zmianie oceny testu
     list.addEventListener('change', (e) => {
-        if (e.target.type === 'radio' && e.target.name && e.target.name.startsWith('test-status-')) {
+        if (e.target.type === 'radio' && e.target.name &&
+            (e.target.name.startsWith('test-status-') || e.target.name.startsWith('status-'))) {
             const row = e.target.closest('.requirement-row');
-            if (row) updateTestSummaryForRow(row);
+            if (row) updateRequirementAssessmentUI(row, { announce: true });
+        }
+    });
+    // Uzasadnienie oceny: błąd po opuszczeniu pustego pola, zdjęcie błędu po uzupełnieniu
+    list.addEventListener('focusout', (e) => {
+        if (e.target.matches && e.target.matches('.assessment-section textarea[name^="comment-"]')) {
+            const row = e.target.closest('.requirement-row');
+            if (row && e.target.getAttribute('aria-required') === 'true') validateRequirementJustification(row);
+        }
+    });
+    list.addEventListener('input', (e) => {
+        if (e.target.matches && e.target.matches('.assessment-section textarea[name^="comment-"]') &&
+            e.target.getAttribute('aria-invalid') === 'true' && e.target.value.trim() !== '') {
+            const row = e.target.closest('.requirement-row');
+            if (row) validateRequirementJustification(row);
         }
     });
     
