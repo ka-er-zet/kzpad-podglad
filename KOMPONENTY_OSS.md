@@ -14,6 +14,7 @@ Wykonawca oświadcza, że żadna z poniższych licencji nie nakłada na Zamawiaj
 | **ExcelJS** | build 19-10-2023 | MIT | https://github.com/exceljs/exceljs | `js/exceljs.min.js` | Generowanie arkuszy .xlsx |
 | **JSZip** | 3.10.1 | MIT lub GPLv3 | https://github.com/Stuk/jszip | `js/jszip.min.js` | Kompresja ZIP dla formatu .odt; stosowana licencja MIT |
 | **Lucide** | 0.554.0 | ISC | https://github.com/lucide-icons/lucide | `js/lucide.min.js` | System ikon SVG |
+| **MiniSearch** | 7.2.0 | MIT | https://github.com/lucaong/minisearch | `js/minisearch.js` (tekst licencji: `js/minisearch.LICENSE.txt`) | Wyszukiwanie w przeglądarce wymagań (indeks, prefiksy, literówki, ranking); build UMD bez zmian |
 
 ---
 
@@ -21,11 +22,13 @@ Wykonawca oświadcza, że żadna z poniższych licencji nie nakłada na Zamawiaj
 
 Teksty pełnych licencji dla powyższych komponentów dostępne są pod adresami:
 
-- **MIT** (Pico CSS, ExcelJS, JSZip): https://opensource.org/licenses/MIT
+- **MIT** (Pico CSS, ExcelJS, JSZip, MiniSearch): https://opensource.org/licenses/MIT
 - **ISC** (Lucide): https://opensource.org/licenses/ISC
 - **GPLv3** (JSZip — wariant alternatywny, nieużywany): https://www.gnu.org/licenses/gpl-3.0.html
 
 Wykonawca stosuje licencję **MIT** dla JSZip (nie GPLv3), co nie nakłada na Zamawiającego żadnych obowiązków dotyczących publikacji kodu źródłowego Utworu.
+
+**Własny kod wyszukiwarki:** `js/search.js` (tokenizacja, prosty polski stemmer — obcinanie końcówek, podświetlanie) jest kodem własnym projektu; nie zawiera kodu stemmerów ani słowników z zewnętrznych bibliotek (w szczególności nie korzysta z `lunr.pl.js` / `lunr-languages` na licencji MPL-1.1).
 
 ---
 

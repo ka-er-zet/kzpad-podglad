@@ -422,7 +422,7 @@ const Browser = {
         });
 
         searchInput?.addEventListener('input', (e) => {
-            this.searchQuery = e.target.value.toLowerCase();
+            this.searchQuery = e.target.value;
             this.search();
         });
     },
@@ -649,7 +649,12 @@ const Browser = {
         window.scrollTo({ top: list.getBoundingClientRect().top + window.pageYOffset - 150, behavior: 'smooth' });
     },
 
-    createRequirementCard(req) {
+    /**
+     * @param {object} req - wymaganie/klauzula
+     * @param {{terms:Set<string>, headMatch:boolean}} [match] - wynik wyszukiwania: trafione termy do podświetlenia
+     *        i informacja, czy trafienie jest w kodzie/tytule (a nie tylko w treści klauzuli)
+     */
+    createRequirementCard(req, match) {
         if (!req || !req.id) return document.createElement('div');
         const div = document.createElement('div');
         div.className = 'browser-card';
@@ -809,11 +814,18 @@ const Browser = {
             cleanTitle = cleanTitle.replace(/\s*\([^)]+\)$/, '').trim();
         }
 
+        // Podświetlenie trafień z wyszukiwarki (tylko kod i tytuł; tekst z ucieczką znaków HTML)
+        const idHtml = match ? OZSearch.highlight(displayId, match.terms) : displayId;
+        const titleHtml = match ? OZSearch.highlight(cleanTitle, match.terms) : cleanTitle;
+        const matchNote = (match && !match.headMatch)
+            ? '<p class="browser-card-match-note">Znaleziono w opisie klauzuli</p>' : '';
+
         div.innerHTML = `
             <div class="browser-card-header">
                 <div style="width: 100%;">
-                    <div class="browser-card-id">${displayId}</div>
-                    <h3 style="margin: 0.5rem 0;">${cleanTitle}</h3>
+                    <div class="browser-card-id">${idHtml}</div>
+                    <h3 style="margin: 0.5rem 0;">${titleHtml}</h3>
+                    ${matchNote}
                     <div class="browser-card-labels">
                         ${labelsHtml}
                     </div>
@@ -831,10 +843,46 @@ const Browser = {
         return div;
     },
 
+    /**
+     * Indeks wyszukiwania dla widoku (budowany przy pierwszym użyciu; dane są stałe po init()).
+     * Dokumenty: kod, tytuł, kategoria, kody normy z mapowania i pełna treść klauzuli (OZSearch.clauseBody).
+     */
+    getSearchIndex(view) {
+        this._searchIndexes = this._searchIndexes || {};
+        if (this._searchIndexes[view]) return this._searchIndexes[view];
+
+        const docs = [];
+        const reqs = new Map();
+        if (view === 'legal') {
+            matrixData.forEach((m, i) => {
+                const dictEntry = (m.legal_id ? dictionaryData[m.legal_id] : null) || (m.id ? dictionaryData[m.id] : null);
+                const id = 'L' + i;
+                docs.push({
+                    id,
+                    ids: [m.article, m.legal_id, m.id].filter(Boolean).join(' '),
+                    title: m.requirement || '',
+                    category: m.category || '',
+                    codes: Object.values(m.product_mappings || {}).join(' '),
+                    body: OZSearch.clauseBody(dictEntry)
+                });
+                reqs.set(id, m);
+            });
+        } else {
+            // Klauzule techniczne C.* (nie U.*)
+            Object.values(dictionaryData).forEach(req => {
+                if (!req || !req.id || !req.id.startsWith('C.')) return;
+                docs.push({ id: req.id, ids: req.id, title: req.title || '', category: '', codes: '', body: OZSearch.clauseBody(req) });
+                reqs.set(req.id, req);
+            });
+        }
+        return (this._searchIndexes[view] = { index: OZSearch.createIndex(docs), reqs });
+    },
+
     search() {
         const searchStatus = document.getElementById('browser-search-status');
-        
-        if (!this.searchQuery) {
+        const query = (this.searchQuery || '').trim();
+
+        if (!query) {
             if (searchStatus) searchStatus.innerText = '';
             if (this.currentCategory) this.renderRequirements();
             else this.renderCategories();
@@ -850,120 +898,27 @@ const Browser = {
         breadcrumbs.classList.add('hidden');
         list.innerHTML = '';
 
-        let results = [];
-        if (this.view === 'legal') {
-            // Wyszukiwanie w wymaganiach prawnych (mapping.json + powiązane klauzule U.*)
-            // Szukamy w pełnej treści klauzul U.* dla każdego artykułu
-            results = matrixData
-                .filter(m => {
-                    let searchContent = (m.article + ' ' + (m.requirement || '') + ' ' + (m.category || '') + ' ' + (m.legal_id || '')).toLowerCase();
-                    
-                    // Dodaj kody techniczne z mapowania
-                    if (m.product_mappings) {
-                        searchContent += ' ' + Object.values(m.product_mappings).join(' ').toLowerCase();
-                    }
-                    
-                    // Przeszukaj pełną treść powiązanej klauzuli U.*
-                    const uId = m.legal_id;
-                    const dictEntry = (uId ? dictionaryData[uId] : null) || (m.id ? dictionaryData[m.id] : null);
-                    if (dictEntry) {
-                        searchContent += ' ' + (dictEntry.id || '') + ' ' + (dictEntry.title || '');
-                        if (dictEntry.procedure && Array.isArray(dictEntry.procedure)) {
-                            searchContent += ' ' + dictEntry.procedure.join(' ');
-                        } else if (dictEntry.procedure) {
-                            searchContent += ' ' + dictEntry.procedure;
-                        }
-                        if (dictEntry.checklist && Array.isArray(dictEntry.checklist)) {
-                            searchContent += ' ' + dictEntry.checklist.join(' ');
-                        } else if (dictEntry.checklist) {
-                            searchContent += ' ' + dictEntry.checklist;
-                        }
-                        if (dictEntry.notes && Array.isArray(dictEntry.notes)) {
-                            searchContent += ' ' + dictEntry.notes.join(' ');
-                        } else if (dictEntry.notes) {
-                            searchContent += ' ' + dictEntry.notes;
-                        }
-                        if (dictEntry.preconditions && Array.isArray(dictEntry.preconditions)) {
-                            searchContent += ' ' + dictEntry.preconditions.join(' ');
-                        } else if (dictEntry.preconditions) {
-                            searchContent += ' ' + dictEntry.preconditions;
-                        }
-                        if (dictEntry.evaluation) {
-                            searchContent += ' ' + dictEntry.evaluation;
-                        }
-                        if (dictEntry.form && dictEntry.form.inputs) {
-                            searchContent += ' ' + dictEntry.form.inputs.map(i => i.label + ' ' + i.value).join(' ');
-                        }
-                    }
-
-                    return searchContent.toLowerCase().includes(this.searchQuery);
-                })
-                .map(m => this.transformLegalRequirement(m));
-        } else {
-            // Wyszukiwanie w klauzulach technicznych (clauses.json) - tylko C.* (normy techniczne)
-            results = Object.values(dictionaryData).filter(req => {
-                // Filtruj tylko klauzule C.* (normy techniczne), nie U.* (prawne)
-                if (!req || !req.id || !req.id.startsWith('C.')) return false;
-                
-                // Buduj tekst do przeszukania ze wszystkich pól
-                let searchContent = (req.id || '') + ' ' + (req.title || '');
-                
-                // Procedura
-                if (req.procedure && Array.isArray(req.procedure)) {
-                    searchContent += ' ' + req.procedure.join(' ');
-                } else if (req.procedure) {
-                    searchContent += ' ' + req.procedure;
-                }
-                
-                // Lista kontrolna (checklist)
-                if (req.checklist && Array.isArray(req.checklist)) {
-                    searchContent += ' ' + req.checklist.join(' ');
-                } else if (req.checklist) {
-                    searchContent += ' ' + req.checklist;
-                }
-                
-                // Notes
-                if (req.notes && Array.isArray(req.notes)) {
-                    searchContent += ' ' + req.notes.join(' ');
-                } else if (req.notes) {
-                    searchContent += ' ' + req.notes;
-                }
-                
-                // Preconditions
-                if (req.preconditions && Array.isArray(req.preconditions)) {
-                    searchContent += ' ' + req.preconditions.join(' ');
-                } else if (req.preconditions) {
-                    searchContent += ' ' + req.preconditions;
-                }
-                
-                // Evaluation
-                if (req.evaluation) {
-                    searchContent += ' ' + req.evaluation;
-                }
-                
-                // Form criteria
-                if (req.form && req.form.inputs) {
-                    searchContent += ' ' + req.form.inputs.map(i => i.label + ' ' + i.value).join(' ');
-                }
-                
-                return searchContent.toLowerCase().includes(this.searchQuery);
-            });
-        }
+        const { index, reqs } = this.getSearchIndex(this.view);
+        const found = index.search(query);
+        const LIMIT = 50;
+        const shown = found.ids.slice(0, LIMIT);
+        const n = found.ids.length;
 
         if (searchStatus) {
-            searchStatus.innerText = results.length > 0 
-                ? `Znaleziono ${results.length} wyników.` 
-                : 'Brak wyników dla podanej frazy.';
+            if (n === 0) searchStatus.innerText = 'Brak wyników dla podanej frazy.';
+            else if (n > LIMIT) searchStatus.innerText = `Znaleziono ${n} ${OZSearch.pluralResults(n)}, wyświetlono ${LIMIT} najlepiej dopasowanych.`;
+            else searchStatus.innerText = `Znaleziono ${n} ${OZSearch.pluralResults(n)}.`;
         }
 
-        if (results.length === 0) {
+        if (n === 0) {
             list.innerHTML = '<p style="text-align: center; padding: 2rem;">Brak wyników dla podanej frazy.</p>';
             return;
         }
 
-        results.slice(0, 50).forEach(req => {
-            const card = this.createRequirementCard(req);
-            list.appendChild(card);
+        shown.forEach(id => {
+            const item = reqs.get(id);
+            const req = this.view === 'legal' ? this.transformLegalRequirement(item) : item;
+            list.appendChild(this.createRequirementCard(req, found.matches.get(id)));
         });
 
         if (typeof lucide !== 'undefined') lucide.createIcons();

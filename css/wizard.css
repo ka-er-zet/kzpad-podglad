@@ -3204,3 +3204,33 @@ dialog .modal-body {
         border-color: CanvasText;
     }
 }
+
+/* ===== Wyszukiwarka przeglądarki wymagań: podświetlenie trafień i informacja o miejscu trafienia (uwaga PFRON 7) ===== */
+.browser-card mark {
+    background: color-mix(in srgb, #F5C518 45%, transparent);
+    color: inherit;
+    font-weight: 700;
+    border-radius: 2px;
+    padding: 0 0.1em;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 2px;
+}
+
+[data-theme="dark"] .browser-card mark {
+    background: color-mix(in srgb, #F5C518 30%, transparent);
+}
+
+.browser-card-match-note {
+    margin: 0 0 0.5rem 0;
+    font-size: 0.85rem;
+    color: var(--secondary-text-color, var(--muted-color));
+}
+
+@media (forced-colors: active) {
+    .browser-card mark {
+        background: Mark;
+        color: MarkText;
+        forced-color-adjust: none;
+    }
+}

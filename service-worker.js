@@ -18,6 +18,8 @@ const ASSETS_TO_CACHE = [
     './js/version.js',
     './js/utils.js',
     './js/session.js',
+    './js/minisearch.js',
+    './js/search.js',
     './js/exporter.js',
     './js/wizard.js',
     './clauses_json/clauses.json',
