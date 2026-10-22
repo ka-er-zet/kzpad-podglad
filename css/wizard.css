@@ -3158,11 +3158,6 @@ dialog .modal-body {
     margin: 0;
 }
 
-.assessment-discrepancy-missing {
-    margin-top: 0.25rem !important;
-    font-weight: 600;
-}
-
 [data-theme="dark"] .assessment-discrepancy {
     border-color: #F0B45A;
     background: color-mix(in srgb, #F0B45A 10%, transparent);

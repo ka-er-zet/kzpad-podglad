@@ -43,7 +43,8 @@ const rowState = (p, idx) => p.evaluate((idx) => {
         proposal: row.querySelector('.test-summary-assessment').textContent.replace(/\s+/g, ' ').trim(),
         boxVisible: !box.hidden && box.getBoundingClientRect().height > 0,
         boxText: box.querySelector('.assessment-discrepancy-text').textContent,
-        missingVisible: !row.querySelector('.assessment-discrepancy-missing').hidden,
+        missingVisible: box.querySelector('.assessment-discrepancy-text').textContent.endsWith('Brak uzasadnienia — uzupełnij komentarz.'),
+        missingCount: (box.textContent.match(/uzasadni/gi) || []).length,
         badge: badge.textContent, badgeStatus: badge.dataset.status, badgeHidden: badge.getAttribute('aria-hidden'),
         label: label.textContent.trim(),
         required: ta.getAttribute('aria-required'), invalid: ta.getAttribute('aria-invalid'),
@@ -93,6 +94,8 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     s = await rowState(p, idx);
     assert.equal(s.invalid, 'true');
     assert.equal(s.missingVisible, true);
+    assert.equal(s.boxText, 'Wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Brak uzasadnienia — uzupełnij komentarz.');
+    assert.equal(s.missingCount, 1, 'jedno zdanie o uzasadnieniu, bez dublowania');
 
     // Same spacje to wciąż brak uzasadnienia
     await ta.fill('   ');

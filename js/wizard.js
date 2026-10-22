@@ -1092,8 +1092,17 @@ function getRequirementAssessmentState(row) {
     };
 }
 
-function getDiscrepancyText(state) {
-    return `Wybrana ocena (${state.selectedLabel}) jest inna niż proponowana na podstawie testów (${state.proposal.label}). Uzasadnij ją w komentarzu.`;
+/** Tekst komunikatu o rozbieżności; w stanie błędu (brak uzasadnienia) końcówka opisuje błąd. */
+function getDiscrepancyText(state, invalid = false) {
+    const end = invalid ? 'Brak uzasadnienia — uzupełnij komentarz.' : 'Uzasadnij ją w komentarzu.';
+    return `Wybrana ocena (${state.selectedLabel}) jest inna niż proponowana na podstawie testów (${state.proposal.label}). ${end}`;
+}
+
+function setDiscrepancyText(row, state) {
+    const textEl = row.querySelector('.assessment-discrepancy-text');
+    if (!textEl) return;
+    const invalid = !!(state.commentEl && state.commentEl.getAttribute('aria-invalid') === 'true');
+    textEl.textContent = state.discrepancy ? getDiscrepancyText(state, invalid) : '';
 }
 
 function announceAssessment(text) {
@@ -1113,8 +1122,7 @@ function validateRequirementJustification(row) {
     const invalid = state.discrepancy && !state.justified;
     if (invalid) state.commentEl.setAttribute('aria-invalid', 'true');
     else state.commentEl.removeAttribute('aria-invalid');
-    const missing = row.querySelector('.assessment-discrepancy-missing');
-    if (missing) missing.hidden = !invalid;
+    setDiscrepancyText(row, state);
     return state;
 }
 
@@ -1154,16 +1162,7 @@ function updateRequirementAssessmentUI(row, opts = {}) {
     // 3. Rozbieżność z propozycją
     const box = row.querySelector('.assessment-discrepancy');
     const wasDiscrepancy = box ? !box.hidden : false;
-    if (box) {
-        const textEl = box.querySelector('.assessment-discrepancy-text');
-        if (state.discrepancy) {
-            if (textEl) textEl.textContent = getDiscrepancyText(state);
-            box.hidden = false;
-        } else {
-            if (textEl) textEl.textContent = '';
-            box.hidden = true;
-        }
-    }
+    if (box) box.hidden = !state.discrepancy;
 
     // 4. Pole komentarza: przy rozbieżności — uzasadnienie wymagane
     const commentEl = state.commentEl;
@@ -1182,8 +1181,7 @@ function updateRequirementAssessmentUI(row, opts = {}) {
             if (labelText) labelText.textContent = 'Komentarz';
         }
     }
-    const missing = row.querySelector('.assessment-discrepancy-missing');
-    if (missing) missing.hidden = !(commentEl && commentEl.getAttribute('aria-invalid') === 'true');
+    setDiscrepancyText(row, state);
 
     if (opts.announce) {
         if (state.discrepancy && !wasDiscrepancy) announceAssessment(getDiscrepancyText(state));
@@ -3492,10 +3490,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
 
                     <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
                         ${DISCREPANCY_ICON}
-                        <div>
-                            <p class="assessment-discrepancy-text"></p>
-                            <p class="assessment-discrepancy-missing" hidden>Brak uzasadnienia.</p>
-                        </div>
+                        <p class="assessment-discrepancy-text"></p>
                     </div>
 
                     <label for="comment-${safeArticleId}"><span class="comment-label-text">Komentarz</span></label>
