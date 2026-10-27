@@ -193,8 +193,8 @@
                 if (!q) return { ids: [], matches: new Map(), terms: [] };
                 const hits = ms.search(q, {
                     prefix: true,
-                    // literówki tylko dla dłuższych słów bez cyfr
-                    fuzzy: (term) => (/\d/.test(term) || term.length < 5) ? false : 0.2,
+                    // literówki: tylko słowa ≥ 5 liter bez cyfr, najwyżej 1 edycja (przy 2 edycjach „kontrast” łapało „kontekst”)
+                    fuzzy: (term) => (/\d/.test(term) || term.length < 5) ? false : 1,
                     combineWith: 'AND',
                     boost: BOOST,
                     tokenize: tokenizeQuery,
@@ -245,6 +245,38 @@
         return out + escapeHtml(src.slice(last));
     }
 
+    /**
+     * Fragment treści z trafieniem (bezpieczny HTML, trafione słowa w <mark>). Okno ±`radius` znaków
+     * wybierane tak, by obejmowało jak najwięcej trafień; zwraca '' gdy w treści nic nie trafiono.
+     */
+    function snippet(body, terms, radius) {
+        const src = String(body == null ? '' : body).replace(/\s+/g, ' ').trim();
+        if (!src || !terms || terms.size === 0) return '';
+        const r = radius || 80;
+        const hits = [];
+        TOKEN_RE.lastIndex = 0;
+        let m;
+        while ((m = TOKEN_RE.exec(src)) !== null) {
+            const raw = m[0];
+            if (tokenVariants(raw).some((v) => { const p = processTerm(v); return p && terms.has(p); })) {
+                hits.push({ start: m.index, end: m.index + raw.length });
+            }
+        }
+        if (!hits.length) return '';
+        let best = hits[0], bestCount = 0;
+        for (const h of hits) {
+            const c = hits.filter((x) => x.start >= h.start - r && x.end <= h.start + r).length;
+            if (c > bestCount) { best = h; bestCount = c; }
+        }
+        let from = Math.max(0, best.start - r);
+        let to = Math.min(src.length, best.start + r);
+        // nie tnij słów w połowie
+        if (from > 0) { const sp = src.indexOf(' ', from); if (sp !== -1 && sp < best.start) from = sp + 1; }
+        if (to < src.length) { const sp = src.lastIndexOf(' ', to); if (sp > best.end) to = sp; }
+        const piece = src.slice(from, to);
+        return (from > 0 ? '\u2026' : '') + highlight(piece, terms) + (to < src.length ? '\u2026' : '');
+    }
+
     /** Odmiana: 1 wynik, 2–4 wyniki, 5+ wyników. */
     function pluralResults(n) {
         if (n === 1) return 'wynik';
@@ -253,5 +285,5 @@
         return 'wyników';
     }
 
-    return { fold, stem, tokenize, tokenizeQuery, processTerm, plainText, flatten, clauseBody, createIndex, highlight, escapeHtml, pluralResults };
+    return { fold, stem, tokenize, tokenizeQuery, processTerm, plainText, flatten, clauseBody, createIndex, highlight, snippet, escapeHtml, pluralResults };
 }));

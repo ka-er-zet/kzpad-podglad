@@ -3234,3 +3234,7 @@ dialog .modal-body {
         forced-color-adjust: none;
     }
 }
+
+.browser-card-match-label {
+    font-weight: 600;
+}

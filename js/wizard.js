@@ -817,8 +817,15 @@ const Browser = {
         // Podświetlenie trafień z wyszukiwarki (tylko kod i tytuł; tekst z ucieczką znaków HTML)
         const idHtml = match ? OZSearch.highlight(displayId, match.terms) : displayId;
         const titleHtml = match ? OZSearch.highlight(cleanTitle, match.terms) : cleanTitle;
-        const matchNote = (match && !match.headMatch)
-            ? '<p class="browser-card-match-note">Znaleziono w opisie klauzuli</p>' : '';
+        // Trafienie tylko w treści: pokaż fragment z podświetleniem (inaczej wynik wygląda na przypadkowy)
+        let matchNote = '';
+        if (match && !match.headMatch) {
+            const bodyText = OZSearch.clauseBody(req);
+            const snip = OZSearch.snippet(bodyText, match.terms);
+            matchNote = snip
+                ? `<p class="browser-card-match-note"><span class="browser-card-match-label">W treści:</span> ${snip}</p>`
+                : '<p class="browser-card-match-note"><span class="browser-card-match-label">Trafienie w treści poniżej.</span></p>';
+        }
 
         div.innerHTML = `
             <div class="browser-card-header">

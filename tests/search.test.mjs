@@ -81,7 +81,7 @@ test('szukanie: wszystkie słowa muszą wystąpić; słowa pomijane i puste zapy
 });
 
 test('szukanie: literówki (dłuższe słowa), bez literówek dla krótkich i liczb', () => {
-    assert.deepEqual(ids('kontrsat'), ['a', 'b']);
+    assert.deepEqual(ids('kontrasst'), ['a', 'b']);
     assert.deepEqual(ids('klawiatora'), ['b']);
     assert.deepEqual(ids('pdx'), []);
     assert.deepEqual(ids('9.1.4.4'), []);
@@ -142,8 +142,9 @@ const search = async (p, q) => { await p.fill('#browser-search', q); await p.wai
 const cards = (p) => p.evaluate(() => [...document.querySelectorAll('#browser-requirements-list .browser-card')].map((c) => ({
     id: c.querySelector('.browser-card-id').textContent.trim(),
     title: c.querySelector('h3').textContent.trim(),
-    marks: [...c.querySelectorAll('.browser-card-header mark')].map((m) => m.textContent),
+    marks: [...c.querySelectorAll('.browser-card-id mark, h3 mark')].map((m) => m.textContent),
     note: c.querySelector('.browser-card-match-note')?.textContent || null,
+    noteMarks: [...c.querySelectorAll('.browser-card-match-note mark')].map((m) => m.textContent),
 })));
 
 test('przeglądarka: słowa w dowolnej kolejności, odmiana, polskie znaki, literówka; podświetlenie i komunikat', async () => {
@@ -163,7 +164,7 @@ test('przeglądarka: słowa w dowolnej kolejności, odmiana, polskie znaki, lite
 
     await search(p, 'dostepnosc');
     assert.ok((await cards(p)).length >= 20, 'bez polskich znaków i w innej formie');
-    await search(p, 'kontrsat');
+    await search(p, 'kontrst');
     assert.ok((await cards(p)).length >= 5, 'literówka');
 
     await search(p, 'bankomat');
@@ -178,7 +179,7 @@ test('przeglądarka: słowa w dowolnej kolejności, odmiana, polskie znaki, lite
     assert.deepEqual(p.errors, []);
 });
 
-test('przeglądarka: informacja „Znaleziono w opisie klauzuli”, limit 50 wyników i jego komunikat', async () => {
+test('przeglądarka: fragment treści przy trafieniu tylko w treści, limit 50 wyników i jego komunikat', async () => {
     const p = await openBrowser();
     await search(p, 'sprawdzić');
     const r = await cards(p);
@@ -189,9 +190,14 @@ test('przeglądarka: informacja „Znaleziono w opisie klauzuli”, limit 50 wyn
     const withNote = notes.filter((c) => c.note);
     const without = notes.filter((c) => !c.note);
     assert.ok(withNote.length > 0 && without.length > 0, 'część wyników trafiona tylko w opisie');
-    assert.equal(withNote[0].note, 'Znaleziono w opisie klauzuli');
+    withNote.forEach((c) => {
+        assert.match(c.note, /^W treści: /, 'etykieta fragmentu');
+        assert.ok(c.noteMarks.length >= 1, 'fragment treści ma podświetlone trafienie');
+        assert.ok(c.note.length < 260, 'fragment jest krótki');
+        assert.ok(c.noteMarks.some((m) => /^kontrast/i.test(m)), 'podświetlone słowo to szukane: ' + c.noteMarks);
+    });
     assert.ok(notes.indexOf(without[0]) < notes.indexOf(withNote[0]), 'trafienia w tytule przed trafieniami w opisie');
-    withNote.forEach((c) => assert.equal(c.marks.length, 0, 'bez podświetlenia, gdy trafienie tylko w opisie'));
+    withNote.forEach((c) => assert.equal(c.marks.length, 0, 'bez podświetlenia, gdy trafienie tylko w opisie: ' + JSON.stringify(c)));
     assert.deepEqual(p.errors, []);
 });
 
