@@ -218,6 +218,36 @@ test('wczytanie pliku, gdy kopia robocza tej oceny jest nowsza: pytanie, której
     await ctx.close();
 });
 
+test('wczytanie pliku i wybór kopii roboczej: powrót do ostatnio edytowanego pola, nie na początek arkusza', async () => {
+    const ctx = await newContext(); const a = await ctx.newPage();
+    await dirtySheet(a, { name: 'Pozycja' });
+    const json = await saveJson(a);
+    // edycja pola daleko od początku arkusza
+    const last = a.locator('#resultsArea textarea[name^="comment-"]:visible').last();
+    const lastName = await last.getAttribute('name');
+    await last.scrollIntoViewIfNeeded();
+    await last.fill('ostatnia edycja');
+    await a.evaluate(() => Session.flush());
+    await a.goto('about:blank');
+
+    const tmp = path.join(ROOT, 'tests', '.tmp-position.json');
+    fs.writeFileSync(tmp, JSON.stringify(json));
+    try {
+        const p = await ctx.newPage();
+        await p.goto(url);
+        await p.waitForSelector('#wizard-file-input', { state: 'attached' });
+        await p.setInputFiles('#wizard-file-input', tmp);
+        await dialogOpen(p).waitFor();
+        await p.click('#dialog-confirm'); // Kopia robocza
+        await p.waitForSelector('#resultsArea:not(.hidden) .requirement-row', { state: 'attached' });
+        await p.waitForTimeout(1200); // przewijanie smooth z opóźnieniem 150 ms nie może nas cofnąć
+        const state = await p.evaluate(() => ({ name: document.activeElement && document.activeElement.name, y: window.pageYOffset }));
+        assert.equal(state.name, lastName, 'fokus na ostatnio edytowanym polu');
+        assert.ok(state.y > 1000, 'arkusz przewinięty do pola, a nie na początek (y=' + state.y + ')');
+    } finally { fs.rmSync(tmp, { force: true }); }
+    await ctx.close();
+});
+
 test('kopia z dawnego autozapisu (localStorage) trafia na listę', async () => {
     const ctx = await newContext(); const p = await ctx.newPage();
     await dirtySheet(p, { name: 'Stara kopia' });

@@ -2773,7 +2773,8 @@ async function handleWizardFileLoad(event) {
                 : (restoreAssessment(data), true);
             if (!replaced) return;
 
-            scrollToLoadedAssessment();
+            // 'draft' = otwarto kopię roboczą i przeniesiono już do ostatnio edytowanego pola
+            if (replaced !== 'draft') scrollToLoadedAssessment();
 
             // Powiadomienie
             let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');

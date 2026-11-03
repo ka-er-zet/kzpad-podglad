@@ -515,6 +515,9 @@
         }
         if (r.kept && previousId !== id) keptToast();
         renderList();
+        // Kopia robocza: wracamy do ostatnio edytowanego pola (jeśli jest), a nie na początek arkusza.
+        // 'draft' zwracamy tylko, gdy przeniesienie się udało — wtedy wywołujący nie przewija na początek.
+        if (useDraft && goToLastPosition()) return 'draft';
         return true;
     }
 
