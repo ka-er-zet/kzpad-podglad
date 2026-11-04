@@ -72,6 +72,13 @@ test('okno potwierdzenia: blokada przewijania, fokus startowy, pułapka, Esc i p
     await p.waitForSelector('#app-confirm-dialog[open]');
     assert.equal(await locked(p), true);
     assert.equal(await p.evaluate(() => document.activeElement.id), 'dialog-confirm', 'fokus na przycisku potwierdzenia');
+    // czytnik ma usłyszeć pytanie, a nie tylko nazwę przycisku z fokusem: alertdialog z nazwą i opisem
+    const sem = await p.evaluate(() => {
+        const d = document.getElementById('app-confirm-dialog');
+        const text = (attr) => (d.getAttribute(attr) || '').split(/\s+/).map((id) => document.getElementById(id)?.textContent || '').join(' ').trim();
+        return { role: d.getAttribute('role'), name: text('aria-labelledby'), desc: text('aria-describedby') };
+    });
+    assert.deepEqual(sem, { role: 'alertdialog', name: 'Tytuł', desc: 'Na pewno?' });
     await tabCycle(p, '#app-confirm-dialog', 6);
     await p.keyboard.press('Escape');
     await p.waitForFunction(() => window.__r !== undefined);

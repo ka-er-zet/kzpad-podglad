@@ -486,9 +486,12 @@ function confirmModal(message, title = "Potwierdzenie", confirmText = "Potwierd�
         if (!dialog) {
             dialog = document.createElement('dialog');
             dialog.id = 'app-confirm-dialog';
+            // Okno potwierdzenia = alertdialog z opisem (wzorzec APG): czytnik, gdy fokus trafia na przycisk,
+            // odczytuje tytuł i treść pytania, a nie tylko nazwę przycisku.
+            dialog.setAttribute('role', 'alertdialog');
             dialog.setAttribute('aria-labelledby', 'dialog-title');
+            dialog.setAttribute('aria-describedby', 'dialog-message');
             dialog.setAttribute('aria-modal', 'true');
-            // aria-describedby usunięte, by uniknąć powtórnego odczytywania przez VoiceOver przy focusie na elemencie potomnym
             // Struktura <article> jest wymagana przez style okien dialogowych (Pico + wizard.css)
             dialog.innerHTML = `
                 <article>
