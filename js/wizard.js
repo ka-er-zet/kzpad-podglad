@@ -1076,13 +1076,25 @@ function getDiscrepancyText(state, invalid = false) {
 function setDiscrepancyText(row, state) {
     const textEl = row.querySelector('.assessment-discrepancy-text');
     if (!textEl) return;
-    const invalid = !!(state.commentEl && state.commentEl.getAttribute('aria-invalid') === 'true');
-    textEl.textContent = state.discrepancy ? getDiscrepancyText(state, invalid) : '';
-    // Widoczny tylko jako błąd (brak uzasadnienia), jak pozostałe komunikaty błędów formularza.
-    // Ukryty tekst zostaje w DOM: pole komentarza wskazuje go w aria-describedby, więc czytnik podaje
-    // informację o rozbieżności także wtedy, gdy ramki nie widać.
+    const hint = row.querySelector('.assessment-hint');
     const box = textEl.closest('.assessment-discrepancy');
-    if (box) box.hidden = !(state.discrepancy && invalid);
+    const invalid = !!(state.commentEl && state.commentEl.getAttribute('aria-invalid') === 'true');
+    const showError = !!state.discrepancy && invalid;
+    const showHint = !!state.discrepancy && !invalid;
+
+    // Błąd (brak uzasadnienia): ramka pod polem, jak komunikaty błędów formularza
+    textEl.textContent = showError ? getDiscrepancyText(state, true) : '';
+    if (box) box.hidden = !showError;
+    // Podpowiedź o potrzebie uzupełnienia pola: pod polem (helper Pico), znika, gdy pokazuje się błąd
+    if (hint) {
+        hint.textContent = showHint ? getDiscrepancyText(state, false) : '';
+        hint.hidden = !showHint;
+    }
+    // Opis pola dla czytników: podpowiedź albo błąd, zależnie od tego, co jest widoczne
+    if (state.commentEl && state.discrepancy) {
+        const target = showError ? box : hint;
+        if (target && target.id) state.commentEl.setAttribute('aria-describedby', target.id);
+    }
 }
 
 function announceAssessment(text) {
@@ -1150,7 +1162,6 @@ function updateRequirementAssessmentUI(row, opts = {}) {
     if (commentEl) {
         if (state.discrepancy) {
             commentEl.setAttribute('aria-required', 'true');
-            commentEl.setAttribute('aria-describedby', `discrepancy-${safeArticleId}`);
             if (labelText) labelText.textContent = 'Komentarz — uzasadnienie oceny (wymagane)';
             // Błąd znika, gdy pole uzupełniono; nowy błąd pokazujemy dopiero po opuszczeniu pola / przy podsumowaniu
             if (state.justified) commentEl.removeAttribute('aria-invalid');
@@ -1324,7 +1335,7 @@ function getAssessmentSummaryData() {
     };
 }
 
-function generateDescriptiveSummary(isInitial = false) {
+function generateDescriptiveSummary(isInitial = false, userInitiated = false) {
     const resultsArea = document.getElementById('resultsArea');
     const displayArea = document.getElementById('summary-display-area');
     
@@ -1336,7 +1347,7 @@ function generateDescriptiveSummary(isInitial = false) {
             <article class="summary-result-card">
                 <header class="summary-header initial">
                     <h2>Podsumowanie oceny</h2>
-                    <button id="btn-generate-summary" class="primary" onclick="generateDescriptiveSummary()">
+                    <button id="btn-generate-summary" class="primary" onclick="generateDescriptiveSummary(false, true)">
                         <i data-lucide="file-text" aria-hidden="true"></i> Generuj podsumowanie
                     </button>
                 </header>
@@ -1374,7 +1385,7 @@ function generateDescriptiveSummary(isInitial = false) {
         <article class="summary-result-card" data-state="${summaryState}">
             <header class="summary-header">
                 <h2>Podsumowanie oceny</h2>
-                <button id="btn-generate-summary" class="primary" onclick="generateDescriptiveSummary()">
+                <button id="btn-generate-summary" class="primary" onclick="generateDescriptiveSummary(false, true)">
                     <i data-lucide="refresh-cw" aria-hidden="true"></i> Aktualizuj podsumowanie
                 </button>
             </header>
@@ -1559,12 +1570,28 @@ function generateDescriptiveSummary(isInitial = false) {
     html += `</article>`;
 
     displayArea.innerHTML = html;
-    displayArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+    // Po kliknięciu „Generuj/Aktualizuj podsumowanie” przechodzimy do pierwszego pola z błędem
+    // (brak uzasadnienia oceny), zamiast do podsumowania — jak przy błędach formularza startowego.
+    const invalidFields = userInitiated
+        ? Array.from(document.querySelectorAll('.requirement-row textarea[aria-invalid="true"]'))
+            .filter(el => !el.closest('.hidden, [hidden]'))
+        : [];
+    if (invalidFields.length > 0) {
+        const first = invalidFields[0];
+        for (let d = first.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+        scrollToRequirement(first.id);
+    } else {
+        displayArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
     
     // Ogłoś dla czytników ekranu
     const announcement = document.getElementById('generation-announcement');
     if (announcement) {
-        announcement.textContent = `Wygenerowano podsumowanie oceny. Status: ${displayStatus}`;
+        announcement.textContent = `Wygenerowano podsumowanie oceny. Status: ${displayStatus}` +
+            (invalidFields.length > 0
+                ? `. Brak uzasadnienia w polach: ${invalidFields.length}. Przejście do pierwszego z nich.`
+                : '');
         // Wyczyść ogłoszenie po chwili, by można było wyzwolić je ponownie
         setTimeout(() => { if (announcement.textContent.includes('podsumowanie')) announcement.textContent = ""; }, 1000);
     }
@@ -3471,6 +3498,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
 
                     <label for="comment-${safeArticleId}"><span class="comment-label-text">Komentarz</span></label>
                     <textarea id="comment-${safeArticleId}" name="comment-${safeArticleId}"></textarea>
+                    <small class="assessment-hint" id="hint-${safeArticleId}" hidden></small>
 
                     <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
                         ${DISCREPANCY_ICON}

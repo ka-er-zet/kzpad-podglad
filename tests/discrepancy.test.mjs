@@ -43,6 +43,9 @@ const rowState = (p, idx) => p.evaluate((idx) => {
         proposal: row.querySelector('.test-summary-assessment').textContent.replace(/\s+/g, ' ').trim(),
         boxVisible: !box.hidden && box.getBoundingClientRect().height > 0,
         boxText: box.querySelector('.assessment-discrepancy-text').textContent,
+        hintText: row.querySelector('.assessment-hint').textContent,
+        hintVisible: !row.querySelector('.assessment-hint').hidden && row.querySelector('.assessment-hint').getBoundingClientRect().height > 0,
+        hintId: row.querySelector('.assessment-hint').id,
         missingVisible: box.querySelector('.assessment-discrepancy-text').textContent.endsWith('Brak uzasadnienia — uzupełnij komentarz.'),
         missingCount: (box.textContent.match(/uzasadni/gi) || []).length,
         badge: badge.textContent, badgeStatus: badge.dataset.status, badgeHidden: badge.getAttribute('aria-hidden'),
@@ -76,11 +79,12 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     await setRow(p, idx, { test: 'fail' });
     s = await rowState(p, idx);
     assert.match(s.proposal, /^Proponowana ocena wymagania: Niespełnione/);
-    assert.equal(s.boxVisible, false, 'ramka widoczna dopiero jako błąd (brak uzasadnienia), nie od razu');
-    assert.equal(s.boxText, 'Wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Uzasadnij ją w komentarzu.');
+    assert.equal(s.boxVisible, false, 'ramka błędu widoczna dopiero przy braku uzasadnienia, nie od razu');
+    assert.equal(s.hintVisible, true, 'do tego czasu podpowiedź pod polem');
+    assert.equal(s.hintText, 'Wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Uzasadnij ją w komentarzu.');
     assert.equal(s.label, 'Komentarz — uzasadnienie oceny (wymagane)');
     assert.equal(s.required, 'true');
-    assert.equal(s.describedby, s.boxId);
+    assert.equal(s.describedby, s.hintId, 'opis pola = podpowiedź');
     assert.equal(s.invalid, null, 'bez błędu od razu po pojawieniu się rozbieżności');
     assert.equal(s.missingVisible, false);
     await p.waitForTimeout(100);
@@ -96,6 +100,8 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     assert.equal(s.missingVisible, true);
     assert.equal(s.boxText, 'Błąd: wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Brak uzasadnienia — uzupełnij komentarz.');
     assert.equal(s.boxVisible, true, 'brak uzasadnienia: komunikat błędu widoczny');
+    assert.equal(s.hintVisible, false, 'podpowiedź znika, gdy pokazuje się błąd');
+    assert.equal(s.describedby, s.boxId, 'opis pola = błąd');
     assert.equal(s.missingCount, 1, 'jedno zdanie o uzasadnieniu, bez dublowania');
 
     // Same spacje to wciąż brak uzasadnienia
@@ -109,6 +115,7 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     s = await rowState(p, idx);
     assert.equal(s.invalid, null);
     assert.equal(s.boxVisible, false, 'komunikat błędu znika po uzupełnieniu');
+    assert.equal(s.hintVisible, true, 'rozbieżność trwa: wraca podpowiedź');
     assert.equal(s.missingVisible, false);
     assert.equal(s.required, 'true');
 
@@ -219,4 +226,37 @@ print(json.dumps({'hdr': hdr, 'rows': rows, 'summ': summ}, ensure_ascii=False))
 
     assert.deepEqual(p.errors, []);
     assert.deepEqual(p2.errors, []);
+});
+
+test('„Generuj podsumowanie” przenosi do pierwszego pola z błędem uzasadnienia', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await generateSheet(p);
+    const idxs = await p.evaluate(() => [...document.querySelectorAll('.requirement-row')]
+        .map((r, i) => (r.querySelector('.checklist-test-item[data-test-id]') ? i : -1)).filter((i) => i >= 0));
+    await setRow(p, idxs[1], { test: 'fail', status: 'compliant' });
+    await setRow(p, idxs[0], { test: 'fail', status: 'compliant' });
+    await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await p.evaluate(() => document.getElementById('btn-generate-summary').click());
+    // ogłoszenie jest czyszczone po sekundzie, więc sprawdzamy je od razu
+    assert.match(await p.textContent('#generation-announcement'), /Brak uzasadnienia w polach: 2/);
+    await p.waitForTimeout(500);
+    const r = await p.evaluate(() => {
+        const a = document.activeElement;
+        const first = document.querySelector('.requirement-row textarea[aria-invalid="true"]');
+        const rect = first.getBoundingClientRect();
+        return { sameAsFirst: a === first, inView: rect.top >= 0 && rect.top < window.innerHeight, nInvalid: document.querySelectorAll('textarea[aria-invalid="true"]').length };
+    });
+    assert.equal(r.nInvalid, 2);
+    assert.equal(r.sameAsFirst, true, 'fokus na pierwszym polu z błędem');
+    assert.equal(r.inView, true, 'pole widoczne po przewinięciu');
+
+    // po uzupełnieniu wszystkiego generowanie prowadzi do podsumowania, nie do pola
+    await p.evaluate(() => document.querySelectorAll('.requirement-row textarea[aria-invalid="true"]').forEach((t) => {
+        t.value = 'uzasadnienie'; t.dispatchEvent(new Event('input', { bubbles: true }));
+    }));
+    await p.evaluate(() => document.getElementById('btn-generate-summary').click());
+    // przewijanie do podsumowania jest płynne (smooth), więc czekamy aż dojedzie
+    await p.waitForFunction(() => Math.abs(document.getElementById('summary-display-area').getBoundingClientRect().top) < 200, null, { timeout: 8000 });
+    assert.deepEqual(p.errors, []);
 });
