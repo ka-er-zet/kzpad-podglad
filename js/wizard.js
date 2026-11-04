@@ -1417,19 +1417,6 @@ function generateDescriptiveSummary(isInitial = false, userInitiated = false) {
                 </div>
                 ` : ''}
 
-                ${discrepancies.length > 0 ? `
-                <section class="summary-discrepancy-warning" aria-labelledby="summary-discrepancy-title">
-                    <h3 id="summary-discrepancy-title">Oceny inne niż proponowane na podstawie testów</h3>
-                    <p>Wybrana ocena tych wymagań różni się od oceny proponowanej na podstawie testów. Każda taka ocena wymaga uzasadnienia w komentarzu.</p>
-                    <ul>
-                        ${discrepancies.map(it => `
-                        <li>
-                            <a href="#${it.targetId}" onclick="event.preventDefault(); scrollToRequirement('${it.targetId}');">${W.escapeHtml(it.label)}</a>
-                            <span class="summary-discrepancy-detail">— wybrana: ${it.selected}, proponowana: ${it.proposed}${it.justified ? '' : '; <strong>brak uzasadnienia</strong>'}</span>
-                        </li>`).join('')}
-                    </ul>
-                </section>
-                ` : ''}
 
                 <div class="summary-body">
                     ${(() => {
@@ -1459,6 +1446,7 @@ function generateDescriptiveSummary(isInitial = false, userInitiated = false) {
         html += '<div class="summary-sections">';
         
         // Funkcja pomocnicza do budowania listy z linkami
+        const discrepancyByTarget = new Map(discrepancies.map(d => [d.targetId, d]));
         const renderLinkList = (items, showFailedTests = false) => {
             return `<ul class="summary-link-list">${items.map(item => `
                 <li>
@@ -1468,6 +1456,10 @@ function generateDescriptiveSummary(isInitial = false, userInitiated = false) {
                            onclick="event.preventDefault(); scrollToRequirement('${item.targetId}');">
                             ${W.escapeHtml(item.label)}
                         </a>
+                        ${(() => {
+                            const d = discrepancyByTarget.get(item.targetId);
+                            return d ? `<p class="summary-item-comment">Ocena inna niż proponowana na podstawie testów (proponowana: ${d.proposed})${d.justified ? '' : ' — <strong>brak uzasadnienia</strong>'}.</p>` : '';
+                        })()}
                         ${item.comment ? `<p class="summary-item-comment">Komentarz: ${W.escapeHtml(item.comment)}</p>` : ''}
                         ${showFailedTests && item.failedTests && item.failedTests.length > 0 ? `
                         ${(() => {
@@ -1788,12 +1780,6 @@ async function downloadSummaryODT() {
     const discrepancyFlag = d => d
         ? `Ocena inna niż proponowana na podstawie testów (proponowana: ${d.proposed})${d.justified ? '' : ' — brak uzasadnienia'}.`
         : '';
-    if (summaryData.discrepancies.length > 0) {
-        customSections.push({ type: 'title', level: 3, text: 'Oceny inne niż proponowane na podstawie testów' });
-        customSections.push({ type: 'list', items: summaryData.discrepancies.map(d => ({
-            label: `${d.label} — wybrana: ${d.selected}, proponowana: ${d.proposed}${d.justified ? '' : '; brak uzasadnienia'}`
-        })) });
-    }
 
     // 3. Tekst główny (z szablonu)
     let descText = 'Raport wygenerowany z Konfiguratora.';
@@ -2030,16 +2016,6 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             summarySheet.addRow([]); // Separator po ostrzeżeniu
         }
 
-        // Oceny inne niż proponowane na podstawie testów (uwaga 9)
-        if (summaryData.discrepancies.length > 0) {
-            const discTitle = summarySheet.addRow(['⚠️ Oceny inne niż proponowane na podstawie testów']);
-            discTitle.getCell(1).font = { bold: true, size: 11, color: { argb: 'FFFF6600' } };
-            summaryData.discrepancies.forEach(d => {
-                const r = summarySheet.addRow([`• ${d.label} — wybrana: ${d.selected}, proponowana: ${d.proposed}${d.justified ? '' : '; brak uzasadnienia'}`]);
-                r.getCell(1).alignment = { wrapText: true };
-            });
-            summarySheet.addRow([]);
-        }
         const discrepancyById = new Map(summaryData.discrepancies.map(d => [d.targetId, d]));
         
         const fullProductName = getFullProductNameWizard();

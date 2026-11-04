@@ -3149,41 +3149,9 @@ dialog .modal-body {
     display: none;
 }
 
-.summary-discrepancy-warning {
-    margin: 1.25rem 0;
-    padding: 1rem 1.25rem;
-    border: 1px solid #B45309;
-    border-left: 4px solid #B45309;
-    border-radius: 8px;
-    font-size: 0.9rem;
-}
-
-.summary-discrepancy-warning h3 {
-    font-size: 1rem;
-    margin: 0 0 0.4rem 0;
-}
-
-.summary-discrepancy-warning p {
-    margin-bottom: 0.5rem;
-}
-
-.summary-discrepancy-warning ul {
-    margin: 0;
-    padding-left: 1.25rem;
-}
-
-.summary-discrepancy-warning li {
-    margin-bottom: 0.2rem;
-}
-
-[data-theme="dark"] .summary-discrepancy-warning {
-    border-color: #F0B45A;
-}
-
 @media (forced-colors: active) {
     .requirement-status-badge,
-    .assessment-discrepancy,
-    .summary-discrepancy-warning {
+    .assessment-discrepancy {
         border-color: CanvasText;
     }
 }

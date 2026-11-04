@@ -151,15 +151,16 @@ test('podsumowanie i eksporty pokazują rozbieżności; zapis i odczyt JSON odtw
     await setRow(p, idxs[2], { test: 'pass', status: 'compliant' });
 
     await p.evaluate(() => generateDescriptiveSummary());
-    await p.waitForSelector('.summary-discrepancy-warning');
-    const sum = await p.evaluate(() => {
-        const sec = document.querySelector('.summary-discrepancy-warning');
-        return { items: [...sec.querySelectorAll('li')].map((li) => li.textContent.replace(/\s+/g, ' ').trim()),
-                 heading: sec.querySelector('h3').textContent };
-    });
-    assert.equal(sum.items.length, 2);
-    assert.match(sum.items[0], /wybrana: Spełnione, proponowana: Niespełnione; brak uzasadnienia$/);
-    assert.match(sum.items[1], /wybrana: Niespełnione, proponowana: Spełnione$/);
+    await p.waitForSelector('.summary-sections');
+    const sum = await p.evaluate(() => ({
+        separateBlock: !!document.querySelector('.summary-discrepancy-warning'),
+        items: [...document.querySelectorAll('.summary-item-content')].map((c) => c.textContent.replace(/\s+/g, ' ').trim())
+            .filter((t) => t.includes('Ocena inna niż proponowana')),
+    }));
+    assert.equal(sum.separateBlock, false, 'bez osobnego bloku z listą rozbieżności');
+    assert.equal(sum.items.length, 2, 'rozbieżność jako linia przy wymaganiu');
+    assert.match(sum.items.find((t) => t.includes('brak uzasadnienia')), /proponowana: Niespełnione\) — brak uzasadnienia\./);
+    assert.ok(sum.items.some((t) => /proponowana: Spełnione\)\./.test(t)));
     let a = await rowState(p, idxs[0]);
     assert.equal(a.invalid, 'true', 'generowanie podsumowania pokazuje błąd w polu bez uzasadnienia');
     assert.equal((await rowState(p, idxs[1])).invalid, null);
@@ -191,14 +192,14 @@ print(json.dumps({'hdr': hdr, 'rows': rows, 'summ': summ}, ensure_ascii=False))
     assert.equal(byArt(art[1])[3], 'Spełnione\nInna niż wybrana ocena');
     assert.equal(byArt(art[1])[4], 'Uzasadnienie B');
     assert.equal(byArt(art[2])[3], 'Spełnione');
-    assert.ok(x.summ.some((t) => t.includes('Oceny inne niż proponowane na podstawie testów')));
+    assert.ok(!x.summ.some((t) => t.includes('Oceny inne niż proponowane na podstawie testów')), 'bez osobnej listy w arkuszu');
     assert.ok(x.summ.some((t) => t.startsWith('Ocena inna niż proponowana na podstawie testów (proponowana: Niespełnione) — brak uzasadnienia')));
 
     // ODT
     const [dl2] = await Promise.all([p.waitForEvent('download'), p.evaluate(() => downloadSummaryODT())]);
     const odtPath = await dl2.path();
     const content = execFileSync('python3', ['-c', 'import zipfile,sys;print(zipfile.ZipFile(sys.argv[1]).read("content.xml").decode())', odtPath], { encoding: 'utf8' });
-    assert.ok(content.includes('Oceny inne niż proponowane na podstawie testów'));
+    assert.ok(!content.includes('Oceny inne niż proponowane na podstawie testów'), 'bez osobnej listy w ODT');
     assert.ok(content.includes('Ocena inna niż proponowana na podstawie testów (proponowana: Niespełnione) — brak uzasadnienia.'));
     assert.ok(content.includes('Ocena inna niż proponowana na podstawie testów (proponowana: Spełnione).'));
 
