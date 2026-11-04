@@ -614,6 +614,19 @@ dialog .icon-btn:focus-visible {
     --skip-color: var(--primary-inverse);
 }
 
+/* Ciemny motyw: wyciszony tekst (Pico: 4,26–4,48:1) i przyciski „secondary” (Pico: ok. 3:1)
+   podniesione do min. 4,5:1 (WCAG 1.4.3) */
+:root[data-theme="dark"],
+[data-theme="dark"] {
+    --muted-color: #9aa8b2;
+}
+
+[data-theme="dark"] button.outline.secondary,
+[data-theme="dark"] [role="button"].outline.secondary {
+    --secondary: #a9b6bf;
+    --secondary-hover: #c8d2d9;
+}
+
 /* Na urządzeniach dotykowych pokazuj tylko przy fokusu (bez hover) */
 @media (hover: none) {
     button:hover .icon-label {
