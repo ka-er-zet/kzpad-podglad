@@ -1085,7 +1085,8 @@ function setDiscrepancyText(row, state) {
     // Błąd (brak uzasadnienia): ramka pod polem, jak komunikaty błędów formularza
     textEl.textContent = showError ? getDiscrepancyText(state, true) : '';
     if (box) box.hidden = !showError;
-    // Podpowiedź o potrzebie uzupełnienia pola: pod polem (helper Pico), znika, gdy pokazuje się błąd
+    // Podpowiedź o potrzebie uzupełnienia komentarza: pod przyciskami oceny (tam, gdzie zapadła decyzja),
+    // znika, gdy pokazuje się błąd
     if (hint) {
         hint.textContent = showHint ? getDiscrepancyText(state, false) : '';
         hint.hidden = !showHint;
@@ -3494,11 +3495,12 @@ document.getElementById('auditForm').onsubmit = (e) => {
                             <input type="radio" id="status-na-${safeArticleId}" name="status-${safeArticleId}" value="not-applicable">
                             Nie dotyczy
                         </label>
+
+                        <p class="assessment-hint" id="hint-${safeArticleId}" hidden></p>
                     </fieldset>
 
                     <label for="comment-${safeArticleId}"><span class="comment-label-text">Komentarz</span></label>
                     <textarea id="comment-${safeArticleId}" name="comment-${safeArticleId}"></textarea>
-                    <small class="assessment-hint" id="hint-${safeArticleId}" hidden></small>
 
                     <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
                         ${DISCREPANCY_ICON}

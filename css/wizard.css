@@ -3133,7 +3133,11 @@ dialog .modal-body {
     color: #C62828;
 }
 
-/* Podpowiedź pod polem komentarza (helper Pico: textarea + small); atrybut hidden musi wygrać z display:block Pico */
+/* Podpowiedź pod przyciskami oceny wymagania (widoczna, gdy ocena różni się od proponowanej) */
+.assessment-hint {
+    margin: 0.75rem 0 0 0;
+}
+
 .assessment-hint[hidden] {
     display: none;
 }
