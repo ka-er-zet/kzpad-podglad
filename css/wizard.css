@@ -3133,9 +3133,9 @@ dialog .modal-body {
     color: #C62828;
 }
 
-/* Podpowiedź pod przyciskami oceny wymagania (widoczna, gdy ocena różni się od proponowanej) */
+/* Podpowiedź bezpośrednio pod wybranym przyciskiem oceny (widoczna, gdy ocena różni się od proponowanej) */
 .assessment-hint {
-    margin: 0.75rem 0 0 0;
+    margin: 0 0 1rem 0;
 }
 
 .assessment-hint[hidden] {

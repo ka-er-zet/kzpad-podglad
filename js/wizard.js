@@ -1085,11 +1085,15 @@ function setDiscrepancyText(row, state) {
     // Błąd (brak uzasadnienia): ramka pod polem, jak komunikaty błędów formularza
     textEl.textContent = showError ? getDiscrepancyText(state, true) : '';
     if (box) box.hidden = !showError;
-    // Podpowiedź o potrzebie uzupełnienia komentarza: pod przyciskami oceny (tam, gdzie zapadła decyzja),
+    // Podpowiedź o potrzebie uzupełnienia komentarza: pod wybranym przyciskiem oceny (tam, gdzie zapadła decyzja),
     // znika, gdy pokazuje się błąd
     if (hint) {
         hint.textContent = showHint ? getDiscrepancyText(state, false) : '';
         hint.hidden = !showHint;
+        // Podpowiedź stoi bezpośrednio pod wybranym przyciskiem oceny
+        const chosen = row.querySelector('input[type="radio"][name^="status-"]:checked');
+        const chosenLabel = chosen && chosen.closest('label');
+        if (showHint && chosenLabel && chosenLabel.nextElementSibling !== hint) chosenLabel.after(hint);
     }
     // Opis pola dla czytników: podpowiedź albo błąd, zależnie od tego, co jest widoczne
     if (state.commentEl && state.discrepancy) {
