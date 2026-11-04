@@ -1353,7 +1353,8 @@ dialog article section.criteria-section {
 
 #product-name-error,
 #product-desc-error,
-#auditor-name-error {
+#auditor-name-error,
+.assessment-discrepancy {
     display: none;
     align-items: center;
     gap: 0.75rem;
@@ -1367,7 +1368,8 @@ dialog article section.criteria-section {
 
 #product-name-error:not(.hidden),
 #product-desc-error:not(.hidden),
-#auditor-name-error:not(.hidden) {
+#auditor-name-error:not(.hidden),
+.assessment-discrepancy:not([hidden]) {
     display: flex;
 }
 
@@ -3129,38 +3131,6 @@ dialog .modal-body {
 [data-theme="light"] .requirement-status-badge[data-status="non-compliant"] {
     background: color-mix(in srgb, #C62828 15%, transparent);
     color: #C62828;
-}
-
-.assessment-discrepancy {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    margin: 0.5rem 0 1rem 0;
-    padding: 1rem;
-    border: 2px solid var(--error);
-    border-radius: 8px;
-    background: var(--error-bg);
-    color: var(--error);
-}
-
-/* Taki sam wygląd jak komunikaty błędów formularza (#product-name-error); widoczne tylko przy braku uzasadnienia */
-.assessment-discrepancy[hidden] {
-    display: none;
-}
-
-.assessment-discrepancy-icon {
-    flex-shrink: 0;
-}
-
-/* Błąd tuż pod polem (jak w formularzu startowym) */
-.assessment-section textarea[aria-invalid="true"] {
-    margin-bottom: 0;
-}
-
-.assessment-discrepancy p {
-    margin: 0;
-    padding: 0;
-    color: var(--error);
 }
 
 .summary-discrepancy-warning {

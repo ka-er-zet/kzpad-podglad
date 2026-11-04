@@ -1013,8 +1013,8 @@ const REQUIREMENT_STATUS_LABELS = {
     'not-applicable': 'Nie dotyczy'
 };
 
-// Ikona błędu jak w komunikatach formularza (alert-circle)
-const DISCREPANCY_ICON = '<svg class="assessment-discrepancy-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+// Ikona i układ jak w komunikatach błędów formularza (index.html: #product-name-error): alert-circle 24 px
+const DISCREPANCY_ICON = '<svg class="assessment-discrepancy-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 24px; height: 24px; flex-shrink: 0; margin-right: 0.5rem;"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
 
 function getRowSafeArticleId(row) {
     const article = row.querySelector('.requirement-id span[aria-hidden="true"]')?.textContent?.trim() || '';
@@ -3474,7 +3474,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
 
                     <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
                         ${DISCREPANCY_ICON}
-                        <p class="assessment-discrepancy-text"></p>
+                        <span class="assessment-discrepancy-text"></span>
                     </div>
                 </section>
             `;
