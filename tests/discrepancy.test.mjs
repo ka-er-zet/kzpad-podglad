@@ -43,6 +43,8 @@ const rowState = (p, idx) => p.evaluate((idx) => {
         proposal: row.querySelector('.test-summary-assessment').textContent.replace(/\s+/g, ' ').trim(),
         boxVisible: !box.hidden && box.getBoundingClientRect().height > 0,
         boxText: box.querySelector('.assessment-discrepancy-text').textContent,
+        isError: box.classList.contains('is-error'),
+        iconVisible: getComputedStyle(box.querySelector('.assessment-discrepancy-icon-error')).display !== 'none',
         missingVisible: box.querySelector('.assessment-discrepancy-text').textContent.endsWith('Brak uzasadnienia — uzupełnij komentarz.'),
         missingCount: (box.textContent.match(/uzasadni/gi) || []).length,
         badge: badge.textContent, badgeStatus: badge.dataset.status, badgeHidden: badge.getAttribute('aria-hidden'),
@@ -78,6 +80,8 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     assert.match(s.proposal, /^Proponowana ocena wymagania: Niespełnione/);
     assert.equal(s.boxVisible, true);
     assert.equal(s.boxText, 'Wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Uzasadnij ją w komentarzu.');
+    assert.equal(s.isError, false, 'przed opuszczeniem pola ramka nie jest w stanie błędu');
+    assert.equal(s.iconVisible, false);
     assert.equal(s.label, 'Komentarz — uzasadnienie oceny (wymagane)');
     assert.equal(s.required, 'true');
     assert.equal(s.describedby, s.boxId);
@@ -94,7 +98,9 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     s = await rowState(p, idx);
     assert.equal(s.invalid, 'true');
     assert.equal(s.missingVisible, true);
-    assert.equal(s.boxText, 'Wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Brak uzasadnienia — uzupełnij komentarz.');
+    assert.equal(s.boxText, 'Błąd: wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Brak uzasadnienia — uzupełnij komentarz.');
+    assert.equal(s.isError, true, 'brak uzasadnienia: ramka wygląda jak pozostałe komunikaty błędów');
+    assert.equal(s.iconVisible, true, 'ikona błędu widoczna');
     assert.equal(s.missingCount, 1, 'jedno zdanie o uzasadnieniu, bez dublowania');
 
     // Same spacje to wciąż brak uzasadnienia

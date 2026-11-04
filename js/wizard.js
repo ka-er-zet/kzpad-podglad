@@ -1013,6 +1013,9 @@ const REQUIREMENT_STATUS_LABELS = {
     'not-applicable': 'Nie dotyczy'
 };
 
+// Ikona błędu jak w komunikatach formularza (alert-circle); widoczna tylko w stanie błędu (.is-error)
+const DISCREPANCY_ERROR_ICON = '<svg class="assessment-discrepancy-icon-error" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>';
+
 const DISCREPANCY_ICON = '<svg class="assessment-discrepancy-icon" aria-hidden="true" focusable="false" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>';
 
 function getRowSafeArticleId(row) {
@@ -1068,7 +1071,8 @@ function getRequirementAssessmentState(row) {
 /** Tekst komunikatu o rozbieżności; w stanie błędu (brak uzasadnienia) końcówka opisuje błąd. */
 function getDiscrepancyText(state, invalid = false) {
     const end = invalid ? 'Brak uzasadnienia — uzupełnij komentarz.' : 'Uzasadnij ją w komentarzu.';
-    return `Wybrana ocena (${state.selectedLabel}) jest inna niż proponowana na podstawie testów (${state.proposal.label}). ${end}`;
+    // Stan błędu oznaczony jak w pozostałych komunikatach formularza: „Błąd: …”
+    return `${invalid ? 'Błąd: w' : 'W'}ybrana ocena (${state.selectedLabel}) jest inna niż proponowana na podstawie testów (${state.proposal.label}). ${end}`;
 }
 
 function setDiscrepancyText(row, state) {
@@ -1076,6 +1080,9 @@ function setDiscrepancyText(row, state) {
     if (!textEl) return;
     const invalid = !!(state.commentEl && state.commentEl.getAttribute('aria-invalid') === 'true');
     textEl.textContent = state.discrepancy ? getDiscrepancyText(state, invalid) : '';
+    // Ramka w stanie błędu wygląda jak komunikaty błędów formularza (czerwona ramka, ikona w kółku)
+    const box = textEl.closest('.assessment-discrepancy');
+    if (box) box.classList.toggle('is-error', state.discrepancy && invalid);
 }
 
 function announceAssessment(text) {
@@ -3463,7 +3470,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
                     </fieldset>
 
                     <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
-                        ${DISCREPANCY_ICON}
+                        ${DISCREPANCY_ICON}${DISCREPANCY_ERROR_ICON}
                         <p class="assessment-discrepancy-text"></p>
                     </div>
 

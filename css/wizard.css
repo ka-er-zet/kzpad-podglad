@@ -3156,6 +3156,31 @@ dialog .modal-body {
 
 .assessment-discrepancy p {
     margin: 0;
+    padding: 0;
+}
+
+/* Stan błędu (brak uzasadnienia): taki sam wygląd jak komunikaty błędów formularza (#product-name-error) */
+.assessment-discrepancy-icon-error {
+    display: none;
+    flex-shrink: 0;
+}
+
+.assessment-discrepancy.is-error {
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem;
+    border: 2px solid var(--error);
+    border-radius: 8px;
+    background: var(--error-bg);
+    color: var(--error);
+}
+
+.assessment-discrepancy.is-error .assessment-discrepancy-icon {
+    display: none;
+}
+
+.assessment-discrepancy.is-error .assessment-discrepancy-icon-error {
+    display: block;
 }
 
 [data-theme="dark"] .assessment-discrepancy {
