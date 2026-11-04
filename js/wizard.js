@@ -103,24 +103,35 @@ function showToast(message, type = 'success', duration = 5000) {
         window.lucide.createIcons();
     }
 
-    // Zapamiętaj poprzednio sfocusowany element, by przywrócić fokus po zamknięciu
-    const previouslyFocused = document.activeElement;
-
     // Obsługa przycisku zamknięcia
     closeBtn.addEventListener('click', () => {
         toast.remove();
-        // Przywróć fokus do elementu, który wywołał toast
-        if (previouslyFocused && previouslyFocused !== document.body) {
-            previouslyFocused.focus();
+        // Przywróć fokus do elementu, w którym użytkownik był tuż przed kliknięciem w toast
+        // (nie do tego, który miał fokus w chwili pojawienia się toastu — mógł być daleko, np. nagłówek
+        // arkusza). preventScroll: zamknięcie powiadomienia nie może przewijać strony.
+        const target = lastFocusOutsideToast;
+        if (target && target !== document.body && target.isConnected) {
+            target.focus({ preventScroll: true });
         }
     });
 
     // Przenieś fokus na przycisk zamknięcia zaraz po wyświetleniu
     // setTimeout zapewnia, że element jest w DOM i widoczny
     setTimeout(() => {
-        closeBtn.focus();
+        // Fokus wchodzi w toast z bieżącego miejsca; zapamiętujemy je, bo kliknięcie myszą w toast
+        // przenosi fokus na przycisk, a po zamknięciu chcemy wrócić tam, gdzie użytkownik był.
+        if (!lastFocusOutsideToast && document.activeElement && document.activeElement !== document.body) {
+            lastFocusOutsideToast = document.activeElement;
+        }
+        closeBtn.focus({ preventScroll: true });
     }, 50);
 }
+
+// Ostatni element poza powiadomieniami, który miał fokus (do przywrócenia po zamknięciu toastu).
+let lastFocusOutsideToast = null;
+document.addEventListener('focusin', (e) => {
+    if (e.target instanceof Element && !e.target.closest('#toast-container')) lastFocusOutsideToast = e.target;
+});
 
 /**
  * Uproszczone nazwy rozdziałów do wyświetlenia w Wizardzie

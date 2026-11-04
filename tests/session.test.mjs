@@ -248,6 +248,24 @@ test('wczytanie pliku i wybór kopii roboczej: powrót do ostatnio edytowanego p
     await ctx.close();
 });
 
+test('zamknięcie powiadomienia nie przewija strony', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await dirtySheet(p, { name: 'Toast' });
+    // fokus na nagłówku arkusza (jak po wczytaniu pliku), potem użytkownik przewija w dół
+    await p.evaluate(() => document.getElementById('selectedProductName').focus());
+    await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    const y = await p.evaluate(() => window.pageYOffset);
+    assert.ok(y > 1000, 'strona przewinięta w dół');
+    await p.evaluate(() => showToast('Powiadomienie testowe', 'success', 60000));
+    await p.waitForTimeout(150);
+    await p.click('#toast-container .toast-close');
+    await p.waitForTimeout(300);
+    assert.equal(await p.locator('#toast-container .toast').count(), 0, 'powiadomienie zamknięte');
+    const after = await p.evaluate(() => window.pageYOffset);
+    assert.ok(Math.abs(after - y) < 5, `pozycja przewinięcia bez zmian (było ${y}, jest ${after})`);
+    await ctx.close();
+});
+
 test('kopia z dawnego autozapisu (localStorage) trafia na listę', async () => {
     const ctx = await newContext(); const p = await ctx.newPage();
     await dirtySheet(p, { name: 'Stara kopia' });
