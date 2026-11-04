@@ -834,8 +834,8 @@ const Browser = {
             const bodyText = OZSearch.clauseBody(req);
             const snip = OZSearch.snippet(bodyText, match.terms);
             matchNote = snip
-                ? `<p class="browser-card-match-note"><span class="browser-card-match-label">W treści:</span> ${snip}</p>`
-                : '<p class="browser-card-match-note"><span class="browser-card-match-label">Trafienie w treści poniżej.</span></p>';
+                ? `<p class="browser-card-match-note"><span class="browser-card-match-label">W opisie sprawdzania:</span> ${snip}</p>`
+                : '<p class="browser-card-match-note"><span class="browser-card-match-label">Trafienie w opisie sprawdzania poniżej.</span></p>';
         }
 
         div.innerHTML = `

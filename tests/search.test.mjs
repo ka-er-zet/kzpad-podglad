@@ -191,7 +191,7 @@ test('przeglądarka: fragment treści przy trafieniu tylko w treści, limit 50 w
     const without = notes.filter((c) => !c.note);
     assert.ok(withNote.length > 0 && without.length > 0, 'część wyników trafiona tylko w opisie');
     withNote.forEach((c) => {
-        assert.match(c.note, /^W treści: /, 'etykieta fragmentu');
+        assert.match(c.note, /^W opisie sprawdzania: /, 'etykieta fragmentu');
         assert.ok(c.noteMarks.length >= 1, 'fragment treści ma podświetlone trafienie');
         assert.ok(c.note.length < 260, 'fragment jest krótki');
         assert.ok(c.noteMarks.some((m) => /^kontrast/i.test(m)), 'podświetlone słowo to szukane: ' + c.noteMarks);
