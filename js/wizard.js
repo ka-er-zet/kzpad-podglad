@@ -3469,13 +3469,13 @@ document.getElementById('auditForm').onsubmit = (e) => {
                         </label>
                     </fieldset>
 
+                    <label for="comment-${safeArticleId}"><span class="comment-label-text">Komentarz</span></label>
+                    <textarea id="comment-${safeArticleId}" name="comment-${safeArticleId}"></textarea>
+
                     <div class="assessment-discrepancy" id="discrepancy-${safeArticleId}" hidden>
                         ${DISCREPANCY_ICON}
                         <p class="assessment-discrepancy-text"></p>
                     </div>
-
-                    <label for="comment-${safeArticleId}"><span class="comment-label-text">Komentarz</span></label>
-                    <textarea id="comment-${safeArticleId}" name="comment-${safeArticleId}"></textarea>
                 </section>
             `;
             

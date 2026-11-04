@@ -3152,9 +3152,15 @@ dialog .modal-body {
     flex-shrink: 0;
 }
 
+/* Błąd tuż pod polem (jak w formularzu startowym) */
+.assessment-section textarea[aria-invalid="true"] {
+    margin-bottom: 0;
+}
+
 .assessment-discrepancy p {
     margin: 0;
     padding: 0;
+    color: var(--error);
 }
 
 .summary-discrepancy-warning {
