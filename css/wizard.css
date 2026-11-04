@@ -3133,41 +3133,9 @@ dialog .modal-body {
 
 .assessment-discrepancy {
     display: flex;
-    gap: 0.6rem;
-    align-items: flex-start;
-    margin: 0 0 1rem 0;
-    padding: 0.75rem 1rem;
-    border: 1px solid #B45309;
-    border-left-width: 4px;
-    border-radius: 8px;
-    background: color-mix(in srgb, #B45309 8%, transparent);
-    font-size: 0.9rem;
-}
-
-.assessment-discrepancy[hidden] {
-    display: none;
-}
-
-.assessment-discrepancy-icon {
-    flex-shrink: 0;
-    margin-top: 0.15rem;
-    color: #B45309;
-}
-
-.assessment-discrepancy p {
-    margin: 0;
-    padding: 0;
-}
-
-/* Stan błędu (brak uzasadnienia): taki sam wygląd jak komunikaty błędów formularza (#product-name-error) */
-.assessment-discrepancy-icon-error {
-    display: none;
-    flex-shrink: 0;
-}
-
-.assessment-discrepancy.is-error {
     align-items: center;
     gap: 0.75rem;
+    margin: 0.5rem 0 1rem 0;
     padding: 1rem;
     border: 2px solid var(--error);
     border-radius: 8px;
@@ -3175,20 +3143,18 @@ dialog .modal-body {
     color: var(--error);
 }
 
-.assessment-discrepancy.is-error .assessment-discrepancy-icon {
+/* Taki sam wygląd jak komunikaty błędów formularza (#product-name-error); widoczne tylko przy braku uzasadnienia */
+.assessment-discrepancy[hidden] {
     display: none;
 }
 
-.assessment-discrepancy.is-error .assessment-discrepancy-icon-error {
-    display: block;
+.assessment-discrepancy-icon {
+    flex-shrink: 0;
 }
 
-[data-theme="dark"] .assessment-discrepancy {
-    border-color: #F0B45A;
-    background: color-mix(in srgb, #F0B45A 10%, transparent);
-}
-[data-theme="dark"] .assessment-discrepancy-icon {
-    color: #F0B45A;
+.assessment-discrepancy p {
+    margin: 0;
+    padding: 0;
 }
 
 .summary-discrepancy-warning {

@@ -43,8 +43,6 @@ const rowState = (p, idx) => p.evaluate((idx) => {
         proposal: row.querySelector('.test-summary-assessment').textContent.replace(/\s+/g, ' ').trim(),
         boxVisible: !box.hidden && box.getBoundingClientRect().height > 0,
         boxText: box.querySelector('.assessment-discrepancy-text').textContent,
-        isError: box.classList.contains('is-error'),
-        iconVisible: getComputedStyle(box.querySelector('.assessment-discrepancy-icon-error')).display !== 'none',
         missingVisible: box.querySelector('.assessment-discrepancy-text').textContent.endsWith('Brak uzasadnienia — uzupełnij komentarz.'),
         missingCount: (box.textContent.match(/uzasadni/gi) || []).length,
         badge: badge.textContent, badgeStatus: badge.dataset.status, badgeHidden: badge.getAttribute('aria-hidden'),
@@ -78,10 +76,8 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     await setRow(p, idx, { test: 'fail' });
     s = await rowState(p, idx);
     assert.match(s.proposal, /^Proponowana ocena wymagania: Niespełnione/);
-    assert.equal(s.boxVisible, true);
+    assert.equal(s.boxVisible, false, 'ramka widoczna dopiero jako błąd (brak uzasadnienia), nie od razu');
     assert.equal(s.boxText, 'Wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Uzasadnij ją w komentarzu.');
-    assert.equal(s.isError, false, 'przed opuszczeniem pola ramka nie jest w stanie błędu');
-    assert.equal(s.iconVisible, false);
     assert.equal(s.label, 'Komentarz — uzasadnienie oceny (wymagane)');
     assert.equal(s.required, 'true');
     assert.equal(s.describedby, s.boxId);
@@ -99,8 +95,7 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     assert.equal(s.invalid, 'true');
     assert.equal(s.missingVisible, true);
     assert.equal(s.boxText, 'Błąd: wybrana ocena (Spełnione) jest inna niż proponowana na podstawie testów (Niespełnione). Brak uzasadnienia — uzupełnij komentarz.');
-    assert.equal(s.isError, true, 'brak uzasadnienia: ramka wygląda jak pozostałe komunikaty błędów');
-    assert.equal(s.iconVisible, true, 'ikona błędu widoczna');
+    assert.equal(s.boxVisible, true, 'brak uzasadnienia: komunikat błędu widoczny');
     assert.equal(s.missingCount, 1, 'jedno zdanie o uzasadnieniu, bez dublowania');
 
     // Same spacje to wciąż brak uzasadnienia
@@ -113,6 +108,7 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     await ta.fill('Test nie dotyczy tej wersji');
     s = await rowState(p, idx);
     assert.equal(s.invalid, null);
+    assert.equal(s.boxVisible, false, 'komunikat błędu znika po uzupełnieniu');
     assert.equal(s.missingVisible, false);
     assert.equal(s.required, 'true');
 
@@ -128,7 +124,8 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     await setRow(p, idx, { test: 'na' });
     s = await rowState(p, idx);
     assert.match(s.proposal, /Proponowana ocena wymagania: Nie dotyczy/);
-    assert.equal(s.boxVisible, true);
+    assert.equal(s.boxVisible, false, 'uzasadnienie jest, więc bez komunikatu błędu');
+    assert.equal(s.required, 'true', 'rozbieżność trwa (uzasadnienie wymagane)');
 
     assert.deepEqual(p.errors, []);
 });
@@ -211,7 +208,8 @@ print(json.dumps({'hdr': hdr, 'rows': rows, 'summ': summ}, ensure_ascii=False))
         await p2.waitForTimeout(500);
     } finally { fs.rmSync(tmp, { force: true }); }
     a = await rowState(p2, idxs[0]);
-    assert.equal(a.boxVisible, true, 'rozbieżność widoczna po wczytaniu');
+    assert.match(a.boxText, /jest inna niż proponowana/, 'rozbieżność odtworzona po wczytaniu (opis dla czytnika)');
+    assert.equal(a.boxVisible, true, 'po wczytaniu odtwarza się podsumowanie, które pokazuje błąd braku uzasadnienia');
     assert.equal(a.badge, 'Spełnione');
     assert.match(a.proposal, /Proponowana ocena wymagania: Niespełnione/);
     assert.equal(a.required, 'true');
