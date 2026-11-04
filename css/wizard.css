@@ -95,7 +95,7 @@
 
     /* Kolory pomocnicze dla jasnego motywu */
     --secondary-border-color: rgba(0, 0, 0, 0.08);
-    --secondary-text-color: #6b7280;
+    --secondary-text-color: #5b6472;
 }
 
 /* Zmiana koloru obramowania inputów w ciemnym motywie (poprawa z 4,5:1 do 4,6:1) */
@@ -614,13 +614,7 @@ dialog .icon-btn:focus-visible {
     --skip-color: var(--primary-inverse);
 }
 
-/* Ciemny motyw: wyciszony tekst (Pico: 4,26–4,48:1) i przyciski „secondary” (Pico: ok. 3:1)
-   podniesione do min. 4,5:1 (WCAG 1.4.3) */
-:root[data-theme="dark"],
-[data-theme="dark"] {
-    --muted-color: #9aa8b2;
-}
-
+/* Ciemny motyw: przyciski „secondary” (Pico: ok. 3:1) podniesione do min. 4,5:1 (WCAG 1.4.3) */
 [data-theme="dark"] button.outline.secondary,
 [data-theme="dark"] [role="button"].outline.secondary {
     --secondary: #a9b6bf;
@@ -3020,12 +3014,12 @@ dialog .modal-body {
 }
 
 .drafts-count {
-    color: var(--muted-color);
+    color: var(--secondary-text-color);
     font-weight: normal;
 }
 
 .drafts-intro {
-    color: var(--muted-color);
+    color: var(--secondary-text-color);
     margin-bottom: 1rem;
 }
 
@@ -3065,7 +3059,7 @@ dialog .modal-body {
 .draft-status {
     margin: 0;
     font-size: 0.9rem;
-    color: var(--muted-color);
+    color: var(--secondary-text-color);
 }
 
 .draft-status {
@@ -3213,7 +3207,7 @@ dialog .modal-body {
 .browser-card-match-note {
     margin: 0 0 0.5rem 0;
     font-size: 0.85rem;
-    color: var(--secondary-text-color, var(--muted-color));
+    color: var(--secondary-text-color);
 }
 
 @media (forced-colors: active) {
