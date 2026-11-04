@@ -333,6 +333,8 @@ test('w przeglądarce wymagań jest przycisk powrotu do arkusza, który zachowuj
     await p.click('#hero-browse-requirements');
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), true);
+    // strzałka ozdobna jest ukryta przed czytnikami: nazwa przycisku to sam tekst
+    await p.getByRole('button', { name: 'Wróć do arkusza oceny', exact: true }).waitFor();
     await p.click('#browser-back-to-sheet');
     assert.equal(await p.locator('#browser-section').isVisible(), false);
     assert.equal(await p.locator('#resultsArea .requirement-row').first().isVisible(), true);
