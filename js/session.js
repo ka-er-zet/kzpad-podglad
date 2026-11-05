@@ -557,8 +557,9 @@
     }
 
     /**
-     * Pobiera kopię roboczą jako plik JSON (taki sam jak zapis oceny), bez otwierania jej w arkuszu
-     * i bez usuwania kopii. Daje dostęp do danych także wtedy, gdy kopia nie chce się otworzyć.
+     * Pobiera kopię roboczą jako plik JSON (taki sam jak zapis oceny), bez otwierania jej w arkuszu.
+     * Jak każdy zapis do pliku usuwa kopię (plik jest teraz aktualną wersją oceny). Daje dostęp do
+     * danych także wtedy, gdy kopia nie chce się otworzyć.
      */
     async function downloadDraft(id) {
         let rec = null;
@@ -575,7 +576,14 @@
         a.click();
         a.remove();
         setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-        announce('Kopia robocza została pobrana jako plik JSON.');
+        lsRemove(PENDING_PREFIX + id);
+        try { await store.remove(id); } catch (e) { /* ignoruj */ }
+        notifyOthers();
+        await renderList();
+        announce('Kopia robocza została zapisana w pliku JSON i usunięta z listy.');
+        const toggle = document.getElementById('drafts-toggle');
+        const section = document.getElementById('drafts-section');
+        if (toggle && section && !section.classList.contains('hidden')) toggle.focus({ preventScroll: true });
         return true;
     }
 

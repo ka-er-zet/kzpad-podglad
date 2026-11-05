@@ -159,7 +159,7 @@ test('usunięcie kopii z listy wymaga potwierdzenia', async () => {
     await ctx.close();
 });
 
-test('kopię roboczą można pobrać jako plik JSON z listy; kopia zostaje na liście', async () => {
+test('kopię roboczą można pobrać jako plik JSON z listy; jak każdy zapis do pliku usuwa kopię', async () => {
     const ctx = await newContext(); const p1 = await ctx.newPage();
     await dirtySheet(p1, { name: 'Do pobrania' });
     const id = await currentId(p1);
@@ -175,8 +175,7 @@ test('kopię roboczą można pobrać jako plik JSON z listy; kopia zostaje na li
     const json = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
     const subject = json['@graph'].find((x) => x['@type']?.includes?.('earl:TestSubject'));
     assert.equal(subject['eaa:assessmentId'], id, 'plik ma ten sam identyfikator co kopia');
-    const left = await waitForDrafts(p, 1);
-    assert.equal(left[0].id, id, 'pobranie nie usuwa kopii');
+    await waitForDrafts(p, 0);
     await ctx.close();
 });
 
