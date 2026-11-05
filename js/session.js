@@ -556,6 +556,29 @@
         return true;
     }
 
+    /**
+     * Pobiera kopię roboczą jako plik JSON (taki sam jak zapis oceny), bez otwierania jej w arkuszu
+     * i bez usuwania kopii. Daje dostęp do danych także wtedy, gdy kopia nie chce się otworzyć.
+     */
+    async function downloadDraft(id) {
+        let rec = null;
+        try { rec = await store.get(id); } catch (e) { rec = null; }
+        if (!rec || !rec.earl) { toast('Nie znaleziono tej kopii roboczej.', 'error'); renderList(); return false; }
+        const slug = (t) => (typeof slugifyWizard === 'function' ? slugifyWizard(t || '') : String(t || '').replace(/[^a-z0-9]/gi, '_'));
+        const parts = ['arkusz', slug(rec.profile), slug(rec.label)].filter(Boolean);
+        const name = `${parts.join('_')}_${String(rec.savedAt || '').slice(0, 10) || 'kopia'}.json`;
+        const blob = new Blob([JSON.stringify(rec.earl, null, 2)], { type: 'application/json' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+        announce('Kopia robocza została pobrana jako plik JSON.');
+        return true;
+    }
+
     async function deleteDraft(id, label) {
         const ok = await askConfirm(
             `Usunąć kopię roboczą oceny ${label}? Niezapisane w pliku zmiany tej oceny zostaną utracone. Tej operacji nie można cofnąć.`,
@@ -685,7 +708,13 @@
                 del.textContent = 'Usuń';
                 del.setAttribute('aria-label', `Usuń kopię roboczą: ${name}`);
                 del.addEventListener('click', () => deleteDraft(d.id, `„${name}”`));
-                actions.append(open, del);
+                const dl = document.createElement('button');
+                dl.type = 'button';
+                dl.className = 'outline secondary';
+                dl.textContent = 'Pobierz JSON';
+                dl.setAttribute('aria-label', `Pobierz kopię roboczą jako plik JSON: ${name}`);
+                dl.addEventListener('click', () => downloadDraft(d.id));
+                actions.append(open, dl, del);
                 li.append(actions);
             }
             list.append(li);

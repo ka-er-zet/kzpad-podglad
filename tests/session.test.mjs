@@ -159,6 +159,27 @@ test('usunięcie kopii z listy wymaga potwierdzenia', async () => {
     await ctx.close();
 });
 
+test('kopię roboczą można pobrać jako plik JSON z listy; kopia zostaje na liście', async () => {
+    const ctx = await newContext(); const p1 = await ctx.newPage();
+    await dirtySheet(p1, { name: 'Do pobrania' });
+    const id = await currentId(p1);
+    await p1.close();
+    const p = await ctx.newPage();
+    await p.goto(url);
+    await p.waitForSelector('#drafts-section:not(.hidden)');
+    const [dl] = await Promise.all([
+        p.waitForEvent('download'),
+        p.getByRole('button', { name: 'Pobierz kopię roboczą jako plik JSON: Do pobrania' }).click(),
+    ]);
+    assert.match(dl.suggestedFilename(), /^arkusz_.*do_pobrania.*\.json$/);
+    const json = JSON.parse(fs.readFileSync(await dl.path(), 'utf8'));
+    const subject = json['@graph'].find((x) => x['@type']?.includes?.('earl:TestSubject'));
+    assert.equal(subject['eaa:assessmentId'], id, 'plik ma ten sam identyfikator co kopia');
+    const left = await waitForDrafts(p, 1);
+    assert.equal(left[0].id, id, 'pobranie nie usuwa kopii');
+    await ctx.close();
+});
+
 test('ta sama ocena w dwóch kartach: druga karta jej nie otworzy (lista i wczytanie pliku)', async () => {
     const ctx = await newContext(); const a = await ctx.newPage();
     await dirtySheet(a, { name: 'Wspólna' });
@@ -184,7 +205,7 @@ test('ta sama ocena w dwóch kartach: druga karta jej nie otworzy (lista i wczyt
 
     await a.goto('about:blank'); // zamknięcie oceny w karcie A zwalnia blokadę
     await b.evaluate(() => window.dispatchEvent(new Event('focus')));
-    await b.waitForFunction(() => document.querySelectorAll('#drafts-list button').length === 2);
+    await b.waitForFunction(() => document.querySelectorAll('#drafts-list button').length === 3);
     await ctx.close();
 });
 
