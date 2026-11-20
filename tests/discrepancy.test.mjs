@@ -233,15 +233,20 @@ test('„Generuj podsumowanie” przenosi do pierwszego pola z błędem uzasadni
     const p = await newPage();
     await p.goto(url);
     await generateSheet(p);
+    // po wygenerowaniu arkusza aplikacja z opóźnieniem ustawia fokus na nagłówku — czekamy, żeby nie nałożył się na test
+    await p.waitForFunction(() => document.activeElement && document.activeElement.id === 'selectedProductName');
     const idxs = await p.evaluate(() => [...document.querySelectorAll('.requirement-row')]
         .map((r, i) => (r.querySelector('.checklist-test-item[data-test-id]') ? i : -1)).filter((i) => i >= 0));
     await setRow(p, idxs[1], { test: 'fail', status: 'compliant' });
     await setRow(p, idxs[0], { test: 'fail', status: 'compliant' });
+    // ogłoszenie o rozbieżności po ostatniej zmianie oceny musi się ustalić, zanim wygenerujemy podsumowanie
+    await p.waitForFunction(() => /Uzasadnij/.test(document.getElementById('generation-announcement').textContent));
     await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
     await p.evaluate(() => document.getElementById('btn-generate-summary').click());
     // ogłoszenie jest czyszczone po sekundzie, więc sprawdzamy je od razu
     assert.match(await p.textContent('#generation-announcement'), /Brak uzasadnienia w polach: 2/);
-    await p.waitForTimeout(500);
+    // przewijanie jest płynne (smooth) — czekamy, aż pole z błędem znajdzie się w widoku
+    await p.waitForFunction(() => { const f = document.querySelector('.requirement-row textarea[aria-invalid="true"]'); const t = f && f.getBoundingClientRect().top; return t >= 0 && t < window.innerHeight; }, null, { timeout: 8000 });
     const r = await p.evaluate(() => {
         const a = document.activeElement;
         const first = document.querySelector('.requirement-row textarea[aria-invalid="true"]');

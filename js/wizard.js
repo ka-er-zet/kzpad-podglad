@@ -1271,8 +1271,10 @@ function getAssessmentSummaryData() {
         const artMatch = article.match(/Art\.?\s*(\d+)/);
         const artNum = artMatch ? parseInt(artMatch[1], 10) : 0;
         let itemCategory = '';
-        if (artNum >= 7 && artNum <= 22) itemCategory = 'accessibility_requirements';
-        else if ([23, 24, 26, 32, 33].includes(artNum)) itemCategory = 'service_provider_obligations';
+        // Art. 22 (usługi wsparcia) jest obowiązkiem podmiotu gospodarczego, nie wymaganiem dostępności:
+        // art. 43 ustawy wymienia go wśród obowiązków podlegających kontroli (art. 22, 23, 24, …).
+        if (artNum >= 7 && artNum <= 21) itemCategory = 'accessibility_requirements';
+        else if ([22, 23, 24, 26, 32, 33].includes(artNum)) itemCategory = 'service_provider_obligations';
 
         // Obiekt pomocniczy dla linku i danych
         const itemData = { 
@@ -1514,13 +1516,13 @@ function generateDescriptiveSummary(isInitial = false, userInitiated = false) {
             return catHtml;
         };
 
-        html += renderCategorySection('Wymagania dostępności (Art. 7–22)', {
+        html += renderCategorySection('Wymagania dostępności (Art. 7–21)', {
             failures: filterByCat(failures, 'accessibility_requirements'),
             passed: filterByCat(passed, 'accessibility_requirements'),
             inapplicable: filterByCat(inapplicable, 'accessibility_requirements'),
             untested: filterByCat(untested, 'accessibility_requirements')
         });
-        html += renderCategorySection('Obowiązki informacyjne (Art. 23, 24, 26, 32, 33)', {
+        html += renderCategorySection('Obowiązki informacyjne (Art. 22, 23, 24, 26, 32, 33)', {
             failures: filterByCat(failures, 'service_provider_obligations'),
             passed: filterByCat(passed, 'service_provider_obligations'),
             inapplicable: filterByCat(inapplicable, 'service_provider_obligations'),
