@@ -35,7 +35,8 @@ test('znaczniki HTML w komentarzach i nazwie produktu są widoczne w podsumowani
             injected: area.querySelectorAll('img, b, u, script, em').length,
             pwned: window.__pwned,
             text: area.textContent,
-            comments: [...area.querySelectorAll('.summary-item-comment')].map((e) => e.textContent),
+            // tylko komentarze użytkownika (ta sama klasa ma też dopisek o ocenie innej niż proponowana)
+            comments: [...area.querySelectorAll('.summary-item-comment')].map((e) => e.textContent).filter((t) => t.startsWith('Komentarz:')),
         };
     });
     assert.equal(result.pwned, undefined, 'kod z komentarza nie może się wykonać');

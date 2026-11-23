@@ -222,7 +222,7 @@ test('listwa ikon: po zwinięciu na szerokim ekranie; etykiety ikon; spis wysuwa
     // etykieta ikony: wspólny mechanizm aplikacji, po prawej od ikony, Esc ją zamyka
     const toc = p.locator('[data-rail="toc"]');
     // etykiety chowają się przy przewijaniu strony — czekamy, aż przewijanie po wygenerowaniu arkusza się skończy
-    await p.waitForTimeout(1000);
+    await p.evaluate(() => new Promise((r) => { let last = -1, same = 0; const t = () => { if (scrollY === last) { if (++same > 15) return r(); } else { same = 0; last = scrollY; } requestAnimationFrame(t); }; t(); }));
     await toc.focus();
     const lab = toc.locator('.icon-label');
     assert.equal(await lab.evaluate((l) => l.classList.contains('icon-label--visible')), true);
@@ -248,6 +248,43 @@ test('listwa ikon: po zwinięciu na szerokim ekranie; etykiety ikon; spis wysuwa
     await p.locator('#np-panel .np-sec-link').nth(1).click();
     await p.waitForTimeout(300);
     assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), false, 'podgląd zamknięty po wyborze');
+    assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
+test('listwa: przełącznik motywu jak w nagłówku; ikony czytelne po najechaniu (kontrast ≥ 3:1)', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await p.click('#np-panel .np-collapse');
+    await p.waitForTimeout(400);
+    const theme = p.locator('[data-rail="theme"]');
+    const before = await p.evaluate(() => document.documentElement.getAttribute('data-theme'));
+    const expectLabel = (t) => t === 'dark' ? 'Przełącz motyw na jasny' : 'Przełącz motyw na ciemny';
+    assert.equal(await theme.getAttribute('aria-label'), expectLabel(before));
+    // kontrast ikony po najechaniu i z fokusem, w obu motywach
+    const ratio = () => p.evaluate(() => {
+        const cv = document.createElement('canvas'); cv.width = cv.height = 1; const cx = cv.getContext('2d', { willReadFrequently: true });
+        const rgb = (c, base) => { cx.fillStyle = base || '#fff'; cx.fillRect(0, 0, 1, 1); cx.fillStyle = c; cx.fillRect(0, 0, 1, 1); return Array.from(cx.getImageData(0, 0, 1, 1).data).slice(0, 3); };
+        const hex = (a) => '#' + a.map((x) => x.toString(16).padStart(2, '0')).join('');
+        const lum = (a) => { const [r, g, b] = a.map((x) => { x /= 255; return x <= 0.03928 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4); }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+        const b = document.querySelector('[data-rail="theme"]');
+        const railBg = hex(rgb(getComputedStyle(document.getElementById('np-rail')).backgroundColor));
+        const bg = rgb(getComputedStyle(b).backgroundColor, railBg);
+        const fg = rgb(getComputedStyle(b.querySelector('svg')).color, hex(bg));
+        const l1 = lum(fg), l2 = lum(bg);
+        return (Math.max(l1, l2) + 0.05) / (Math.min(l1, l2) + 0.05);
+    });
+    for (let i = 0; i < 2; i++) {
+        await theme.hover();
+        assert.ok(await ratio() >= 3, `ikona po najechaniu (${await p.evaluate(() => document.documentElement.getAttribute('data-theme'))}): ${(await ratio()).toFixed(2)}`);
+        await theme.click();
+        await p.waitForTimeout(150);
+        assert.ok(await ratio() >= 3, `ikona z fokusem po kliknięciu: ${(await ratio()).toFixed(2)}`);
+        const now = await p.evaluate(() => document.documentElement.getAttribute('data-theme'));
+        assert.notEqual(now, i === 0 ? before : undefined);
+        assert.equal(await theme.getAttribute('aria-label'), expectLabel(now), 'nazwa mówi, na jaki motyw przełączy');
+        assert.equal(await theme.locator('svg').getAttribute('data-lucide'), now === 'dark' ? 'sun' : 'moon');
+    }
     assert.deepEqual(p.errors, []);
     await p.context().close();
 });

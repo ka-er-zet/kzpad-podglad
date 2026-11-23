@@ -3129,15 +3129,15 @@ dialog .modal-body {
 }
 [data-theme="light"] .requirement-status-badge[data-status="compliant"] {
     background: color-mix(in srgb, #2E7D32 15%, transparent);
-    color: #2E7D32;
+    color: #1B5E20;   /* min. 4,5:1 na tle odznaki (WCAG 1.4.3) */
 }
 [data-theme="dark"] .requirement-status-badge[data-status="non-compliant"] {
     background: color-mix(in srgb, #EF5350 15%, transparent);
-    color: #EF5350;
+    color: #FF8A80;   /* min. 4,5:1 na tle odznaki (WCAG 1.4.3) */
 }
 [data-theme="light"] .requirement-status-badge[data-status="non-compliant"] {
     background: color-mix(in srgb, #C62828 15%, transparent);
-    color: #C62828;
+    color: #A11A1A;   /* min. 4,5:1 na tle odznaki (WCAG 1.4.3) */
 }
 
 /* Podpowiedź bezpośrednio pod wybranym przyciskiem oceny (widoczna, gdy ocena różni się od proponowanej) */

@@ -3941,7 +3941,8 @@ function enhanceClauseTagsWizard(container = document) {
             document.documentElement.setAttribute('data-theme', saved);
             const icon = document.getElementById('theme-icon');
             if (icon) {
-                icon.setAttribute('data-lucide', saved === 'dark' ? 'moon' : 'sun');
+                // jak w toggleTheme(): ikona pokazuje motyw, na który przycisk przełączy
+                icon.setAttribute('data-lucide', saved === 'dark' ? 'sun' : 'moon');
                 if (window.lucide) window.lucide.createIcons();
             }
             if (typeof updateThemeToggleButtonsWizard === 'function') updateThemeToggleButtonsWizard(saved);

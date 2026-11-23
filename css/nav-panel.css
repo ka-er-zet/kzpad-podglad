@@ -386,9 +386,11 @@ body.np-railmode .np-brand {
 .np-panel .np-brand-btn, .np-rail-btn {
     display: inline-flex; align-items: center; justify-content: center; position: relative;
     width: 2.25rem; height: 2.25rem; padding: 0; margin: 0; border: 0; border-radius: var(--border-radius);
-    background: transparent; color: var(--np-muted, var(--secondary-text-color)); cursor: pointer; box-shadow: none;
+    background: transparent; color: var(--np-muted); cursor: pointer; box-shadow: none;
 }
-.np-panel .np-brand-btn:hover, .np-rail-btn:hover { background: var(--np-hover, rgba(127,127,127,0.12)); color: var(--color); }
+/* Kolor ikon z tokenów panelu/listwy, nie z var(--color): wewnątrz przycisku Pico podmienia --color
+   przy :hover/:focus na --primary-inverse (biały w jasnym motywie, czarny w ciemnym) — ikona znikała */
+.np-panel .np-brand-btn:hover, .np-rail-btn:hover { background: var(--np-hover); color: var(--np-fg); }
 .np-panel .np-brand-btn:focus-visible, .np-rail-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .np-brand-btn svg, .np-rail-btn svg { width: 1.2rem; height: 1.2rem; }
 body:not(.np-peek) .np-pin, body:not(.np-peek) .np-peek-close, body.np-peek .np-collapse { display: none; }
@@ -401,6 +403,9 @@ body.np-railmode .np-foot { display: block; flex: none; margin: 0; padding: 0.4r
 
 /* Listwa ikon: tylko szeroki ekran, gdy panel zwinięty (także pod podglądem) */
 .np-rail {
+    --np-fg: var(--color);
+    --np-muted: var(--secondary-text-color);
+    --np-hover: rgba(127, 127, 127, 0.12);
     position: fixed; left: 0; top: 0; bottom: 0; width: var(--np-rail); z-index: 110;
     flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.4rem 0 0.6rem;
     background: var(--card-background-color); border-right: 1px solid var(--secondary-border-color);

@@ -115,7 +115,7 @@
             </div>
             <ul class="np-list np-foot">
                 ${item('glossary', 'circle-help', 'Słownik pojęć i pomoc')}
-                ${item('theme', 'sun-moon', 'Zmień motyw')}
+                ${item('theme', 'moon', 'Przełącz motyw')}
             </ul>`;
         header.after(panel); // w kolejności fokusu zaraz po nagłówku, przed treścią
         buildRail();
@@ -262,14 +262,30 @@
             </ul>
             <ul class="np-rail-list np-rail-foot">
                 ${railBtn('glossary', 'circle-help', 'Słownik pojęć i pomoc')}
-                ${railBtn('theme', 'sun-moon', 'Zmień motyw')}
+                ${railBtn('theme', 'moon', 'Przełącz motyw')}
             </ul>`;
         panel.before(rail);
         rail.addEventListener('click', onRailClick);
+        // Przełącznik motywu jak w nagłówku: ikona i nazwa mówią, na jaki motyw przełączy (aktualizacja przy każdej zmianie)
+        new MutationObserver(syncTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+        syncTheme();
         if (typeof enhanceIconButtons === 'function') enhanceIconButtons(rail);
         enhanceIconButtonsIn(panel.querySelector('.np-brand'));
     }
     function enhanceIconButtonsIn(root) { if (root && typeof enhanceIconButtons === 'function') enhanceIconButtons(root); }
+
+    function syncTheme() {
+        const dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        const label = dark ? 'Przełącz motyw na jasny' : 'Przełącz motyw na ciemny';
+        const icon = dark ? 'sun' : 'moon';
+        $$('[data-rail="theme"], [data-act="theme"]').forEach(b => {
+            const ic = b.querySelector('[data-lucide]');
+            if (ic && ic.getAttribute('data-lucide') !== icon) { const i = document.createElement('i'); i.setAttribute('data-lucide', icon); i.setAttribute('aria-hidden', 'true'); ic.replaceWith(i); }
+            if (b.hasAttribute('data-rail')) setRailLabel(b, label);
+            else { const t = b.querySelector('span'); if (t) t.textContent = label; }
+        });
+        icons();
+    }
 
     function setRailLabel(btn, label) {
         if (!btn) return;

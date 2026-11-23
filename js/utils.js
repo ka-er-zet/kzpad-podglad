@@ -425,10 +425,16 @@ const ModalManager = (function () {
             const first = items[0];
             const last = items[items.length - 1];
             const active = document.activeElement;
+            // Przeglądarka może dać fokus także elementom spoza listy (np. przewijany obszar treści okna w Chrome).
+            // Liczy się więc, czy w danym kierunku jest jeszcze element z listy, a nie tylko „pierwszy/ostatni”.
+            const P = Node.DOCUMENT_POSITION_PRECEDING, F = Node.DOCUMENT_POSITION_FOLLOWING;
+            const inside = dialog.contains(active) && active !== dialog;
             if (e.shiftKey) {
-                if (active === first || !dialog.contains(active)) { e.preventDefault(); last.focus(); }
-            } else if (active === last || !dialog.contains(active)) {
-                e.preventDefault(); first.focus();
+                const anyBefore = inside && items.some((el) => el !== active && (active.compareDocumentPosition(el) & P));
+                if (active === first || !anyBefore) { e.preventDefault(); last.focus(); }
+            } else {
+                const anyAfter = inside && items.some((el) => el !== active && (active.compareDocumentPosition(el) & F));
+                if (active === last || !anyAfter) { e.preventDefault(); first.focus(); }
             }
         };
         entry.onFocusIn = (e) => {
@@ -438,7 +444,9 @@ const ModalManager = (function () {
             target.focus();
         };
 
-        dialog.addEventListener('keydown', entry.onKeyDown);
+        // Na dokumencie (faza przechwytywania), nie na oknie: Tab musi być obsłużony także wtedy,
+        // gdy fokus wyjątkowo jest poza oknem (np. na body)
+        document.addEventListener('keydown', entry.onKeyDown, true);
         document.addEventListener('focusin', entry.onFocusIn);
         // Zamknięcie dowolną drogą (Esc obsłużone w oncancel, dialog.close() itd.) sprząta po oknie
         entry.onClose = () => release(entry);
@@ -455,7 +463,7 @@ const ModalManager = (function () {
         const idx = stack.indexOf(entry);
         if (idx === -1) return;
         stack.splice(idx, 1);
-        entry.dialog.removeEventListener('keydown', entry.onKeyDown);
+        document.removeEventListener('keydown', entry.onKeyDown, true);
         entry.dialog.removeEventListener('close', entry.onClose);
         document.removeEventListener('focusin', entry.onFocusIn);
         if (stack.length === 0) document.documentElement.classList.remove('modal-is-open');
@@ -867,9 +875,18 @@ function parseMarkdown(text) {
     let result = '';
     let listStack = []; // Stos do śledzenia zagnieżdżonych typów list i wcięć
 
+    // Lista zagnieżdżona musi być wewnątrz <li> poprzedniego elementu (ol > li > ul), nie obok niego (ol > ul) —
+    // inaczej czytniki ekranu gubią strukturę listy (WCAG 1.3.1). inLi: lista otwarta w <li>, przy zamknięciu domykamy też <li>.
+    const popList = () => { const l = listStack.pop(); return `</${l.type}>` + (l.inLi ? '</li>' : ''); };
+    const openNested = (type, start, ind) => {
+        const inLi = result.endsWith('</li>');
+        if (inLi) result = result.slice(0, -5);
+        result += `<${type}${start} class="markdown-list">`;
+        listStack.push({ type, indent: ind, inLi });
+    };
     const closeAllLists = () => {
         while (listStack.length > 0) {
-            result += `</${listStack.pop().type}>`;
+            result += popList();
         }
     };
 
@@ -908,15 +925,14 @@ function parseMarkdown(text) {
                 let top = listStack[listStack.length - 1];
 
                 if (indent > top.indent) {
-                    // Rozpocznij zagnieżdżoną listę
-                    result += `<${currentType}${getStartAttr()} class="markdown-list">`;
-                    listStack.push({ type: currentType, indent: indent });
+                    // Rozpocznij zagnieżdżoną listę (wewnątrz <li> poprzedniego elementu)
+                    openNested(currentType, getStartAttr(), indent);
                 } else if (indent < top.indent) {
                     // Zamknij zagnieżdżone listy do pasującego lub niższego wcięcia
                     // Najbardziej zewnętrznej listy nie zamykamy: mniejsze wcięcie w obrębie jednej listy
                     // (np. dane z " - (a)" i "- (b)") oznacza po prostu kolejny jej element.
                     while (listStack.length > 1 && indent < listStack[listStack.length - 1].indent) {
-                        result += `</${listStack.pop().type}>`;
+                        result += popList();
                     }
                     if (listStack.length === 1 && indent < listStack[0].indent) listStack[0].indent = indent;
                     // Jeśli typ na tym poziomie jest inny, zmień go
@@ -927,13 +943,15 @@ function parseMarkdown(text) {
                         result += `<${currentType}${getStartAttr()} class="markdown-list">`;
                         listStack.push({ type: currentType, indent: indent });
                     } else if (top.type !== currentType) {
-                        result += `</${listStack.pop().type}><${currentType}${getStartAttr()} class="markdown-list">`;
-                        listStack.push({ type: currentType, indent: indent });
+                        const l = listStack.pop();
+                        result += `</${l.type}><${currentType}${getStartAttr()} class="markdown-list">`;
+                        listStack.push({ type: currentType, indent: indent, inLi: l.inLi });
                     }
                 } else if (currentType !== top.type) {
                     // Takie samo wcięcie, ale inny typ (np. przejście z - na 1.)
-                    result += `</${listStack.pop().type}><${currentType}${getStartAttr()} class="markdown-list">`;
-                    listStack.push({ type: currentType, indent: indent });
+                    const l = listStack.pop();
+                    result += `</${l.type}><${currentType}${getStartAttr()} class="markdown-list">`;
+                    listStack.push({ type: currentType, indent: indent, inLi: l.inLi });
                 }
             }
             result += `<li>${content}</li>`;
