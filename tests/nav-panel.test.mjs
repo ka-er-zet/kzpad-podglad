@@ -11,7 +11,8 @@ before(async () => { server = await startServer(); browser = await chromium.laun
 after(async () => { await browser.close(); server.close(); });
 
 const WIDE = { width: 1440, height: 900 };     // panel obok treści (≥ 1360 px)
-const NARROW = { width: 1100, height: 760 };   // panel wysuwany nad treścią
+const NARROW = { width: 700, height: 760 };    // telefon / wąskie okno: nagłówek z „Menu”, panel jako okno
+const MID = { width: 1100, height: 760 };      // średni ekran: listwa ikon, panel tylko nad treścią
 const newPage = async (viewport = WIDE) => {
     const ctx = await browser.newContext({ viewport, acceptDownloads: true, serviceWorkers: 'block' });
     const p = await ctx.newPage();
@@ -38,7 +39,8 @@ test('panel: obszar nawigacji z opcjami głównymi; arkusz z postępem jak w pod
         header: Math.round(document.querySelector('.app-header').getBoundingClientRect().bottom),
         panel: Math.round(document.getElementById('np-panel').getBoundingClientRect().top)
     }));
-    assert.equal(top.panel, top.header, 'panel zaczyna się pod nagłówkiem (nic nie jest przez niego zasłonięte)');
+    assert.equal(top.panel, 0, 'na szerokim ekranie panel zaczyna się u góry okna (przejmuje nagłówek)');
+    assert.equal(top.header, 0, 'nagłówek nad treścią nie zajmuje miejsca');
 
     await generateSheet(p);
     await fillAssessments(p);
@@ -203,6 +205,73 @@ test('Excel: pusty arkusz do wypełnienia bez ocen i podsumowania, ocena w Excel
     assert.deepEqual(full.sheets, ['Podsumowanie opisowe', 'Ocena szczegółowa']);
     assert.equal(full.rows.length, blank.rows.length, 'ten sam zakres wymagań');
     assert.ok(full.rows.some((r) => r.status === 'Spełnione') && full.rows.some((r) => r.comment.startsWith('Komentarz')), 'są oceny i komentarze');
+    assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
+test('listwa ikon: po zwinięciu na szerokim ekranie; etykiety ikon; spis wysuwa panel nad treścią w bieżącym miejscu', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await generateSheet(p);
+    await fillAssessments(p);
+    await p.click('#np-panel .np-collapse');
+    await p.waitForTimeout(350);
+    const rail = p.getByRole('navigation', { name: 'Nawigacja aplikacji (zwinięta)' });
+    await rail.waitFor();
+    assert.equal(await p.locator('[data-rail="expand"]').evaluate((b) => b === document.activeElement), true, 'fokus na „Rozwiń menu”');
+    // etykieta ikony: wspólny mechanizm aplikacji, po prawej od ikony, Esc ją zamyka
+    const toc = p.locator('[data-rail="toc"]');
+    // etykiety chowają się przy przewijaniu strony — czekamy, aż przewijanie po wygenerowaniu arkusza się skończy
+    await p.waitForTimeout(1000);
+    await toc.focus();
+    const lab = toc.locator('.icon-label');
+    assert.equal(await lab.evaluate((l) => l.classList.contains('icon-label--visible')), true);
+    assert.equal((await lab.textContent()).trim(), 'Spis arkusza');
+    const r = await p.evaluate(() => { const b = document.querySelector('[data-rail="toc"]').getBoundingClientRect(); const l = document.querySelector('[data-rail="toc"] .icon-label').getBoundingClientRect(); return { b: b.right, l: l.left }; });
+    assert.ok(r.l > r.b, 'etykieta po prawej od ikony');
+    await p.keyboard.press('Escape');
+    assert.equal(await lab.evaluate((l) => l.classList.contains('icon-label--visible')), false, 'Esc zamyka etykietę');
+    assert.match(await p.locator('[data-rail="sheet"]').getAttribute('aria-label'), /^Arkusz oceny: ocenione \d+ z \d+ wymagań$/);
+    // spis: podgląd nad treścią, fokus na bieżącej sekcji, Esc wraca na ikonę
+    await toc.click();
+    await p.waitForTimeout(300);
+    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), true);
+    assert.equal(await p.evaluate(() => document.getElementById('main-content').inert), true, 'treść nieaktywna');
+    assert.equal(await p.evaluate(() => document.activeElement.getAttribute('aria-current')), 'location');
+    await p.keyboard.press('Escape');
+    await p.waitForTimeout(300);
+    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), false);
+    assert.equal(await toc.evaluate((b) => b === document.activeElement), true, 'fokus wraca na ikonę');
+    // wybór sekcji w podglądzie zamyka go
+    await toc.click();
+    await p.waitForTimeout(300);
+    await p.locator('#np-panel .np-sec-link').nth(1).click();
+    await p.waitForTimeout(300);
+    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), false, 'podgląd zamknięty po wyborze');
+    assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
+test('średni ekran: listwa zamiast nagłówka, Alt+M wysuwa panel nad treścią i wraca do pola', async () => {
+    const p = await newPage(MID);
+    await p.goto(url);
+    await p.waitForSelector('#np-rail', { state: 'visible' });
+    assert.equal(await p.locator('.np-menu-btn').isVisible(), false, 'bez przycisku „Menu” w nagłówku');
+    await generateSheet(p);
+    const ta = p.locator('.requirement-row').nth(5).locator('textarea[name^="comment-"]');
+    await ta.scrollIntoViewIfNeeded();
+    await ta.focus();
+    const fieldId = await ta.getAttribute('id');
+    await p.keyboard.press('Alt+KeyM');
+    await p.waitForTimeout(300);
+    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), true);
+    assert.equal(await p.locator('#np-panel .np-pin').isVisible(), false, 'na średnim ekranie panelu nie da się przypiąć');
+    assert.equal(await p.evaluate(() => document.activeElement.getAttribute('aria-current')), 'location');
+    await p.keyboard.press('Alt+KeyM');
+    await p.waitForTimeout(300);
+    assert.equal((await active(p)).id, fieldId, 'powrót do pola');
+    const sw = await p.evaluate(() => document.documentElement.scrollWidth <= document.documentElement.clientWidth);
+    assert.ok(sw, 'bez poziomego przewijania');
     assert.deepEqual(p.errors, []);
     await p.context().close();
 });

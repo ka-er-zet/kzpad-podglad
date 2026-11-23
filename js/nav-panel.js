@@ -24,10 +24,15 @@
         { value: 'justify', label: 'Wymagają uzasadnienia' }
     ];
     const WIDE = window.matchMedia('(min-width: 1360px) and (min-height: 501px)');
+    // Od 768 px (i > 500 px wysokości) zamiast nagłówka z przyciskiem „Menu” jest listwa ikon; panel przypięty tylko na szerokim
+    const RAIL = window.matchMedia('(min-width: 768px) and (min-height: 501px)');
     const LS_PANEL = 'oz-pad:panel-collapsed';
     const LS_GROUPS = 'oz-pad:panel-groups';
 
-    let panel, toggleBtn, backdrop, model = [], currentId = null, filter = 'all';
+    let panel, toggleBtn, backdrop, rail, model = [], currentId = null, filter = 'all';
+    // Podgląd: na szerokim ekranie przy zwiniętym panelu ikona listwy wysuwa panel nad treścią (jak okno na węższym ekranie)
+    let peek = false, peekTrigger = null;
+    const isModal = () => !WIDE.matches || peek;
     let groupState = {}, openSections = new Set();
     const pending = new Set();
 
@@ -92,6 +97,12 @@
                 <span class="np-panel-bar-title" aria-hidden="true">Menu</span>
                 <button type="button" class="np-close" aria-label="Zamknij menu" title="Zamknij menu"><i data-lucide="x" aria-hidden="true"></i></button>
             </div>
+            <div class="np-brand">
+                <a href="index.html" class="np-brand-link" aria-label="Strona główna aplikacji OZ-PAD"><img src="img/eaa.svg" alt="" aria-hidden="true"><span aria-hidden="true">OZ-PAD</span></a>
+                <button type="button" class="np-brand-btn np-collapse" aria-label="Zwiń menu" aria-keyshortcuts="Alt+M" data-icon-label="Zwiń menu (Alt+M)" data-icon-label-placement="right"><i data-lucide="panel-left-close" aria-hidden="true"></i></button>
+                <button type="button" class="np-brand-btn np-pin" aria-label="Przypnij menu" data-icon-label="Przypnij menu obok treści" data-icon-label-placement="right"><i data-lucide="pin" aria-hidden="true"></i></button>
+                <button type="button" class="np-brand-btn np-peek-close" aria-label="Zamknij menu" data-icon-label="Zamknij menu (Esc)" data-icon-label-placement="right"><i data-lucide="x" aria-hidden="true"></i></button>
+            </div>
             <div class="np-scroll">
                 ${group('main', 'Opcje główne', `<ul class="np-list">
                     ${item('home', 'house', 'Widok startowy')}
@@ -101,8 +112,13 @@
                 </ul>`)}
                 <div id="np-drafts-slot"></div>
                 <div id="np-sheet-slot"></div>
-            </div>`;
+            </div>
+            <ul class="np-list np-foot">
+                ${item('glossary', 'circle-help', 'Słownik pojęć i pomoc')}
+                ${item('theme', 'sun-moon', 'Zmień motyw')}
+            </ul>`;
         header.after(panel); // w kolejności fokusu zaraz po nagłówku, przed treścią
+        buildRail();
 
         backdrop = document.createElement('div');
         backdrop.className = 'np-backdrop';
@@ -111,18 +127,22 @@
 
         toggleBtn.addEventListener('click', () => setOpen(!isOpen(), true));
         panel.querySelector('.np-close').addEventListener('click', () => setOpen(false, true));
+        panel.querySelector('.np-collapse').addEventListener('click', () => { setOpen(false, true); const b = rail.querySelector('[data-rail="expand"]'); if (b) b.focus(); });
+        panel.querySelector('.np-pin').addEventListener('click', () => { peek = false; document.body.classList.remove('np-peek'); peekTrigger = null; setOpen(true, true); panel.querySelector('.np-collapse').focus(); });
+        panel.querySelector('.np-peek-close').addEventListener('click', () => closePeek(true));
         const setTop = () => { const h = header.getBoundingClientRect(); document.documentElement.style.setProperty('--pp-top', Math.max(0, h.bottom) + 'px'); };
         setTop();
         window.addEventListener('resize', setTop);
         window.addEventListener('scroll', () => schedule(setTop), { passive: true });
-        backdrop.addEventListener('click', () => setOpen(false, true));
+        backdrop.addEventListener('click', () => { if (peek) closePeek(true); else setOpen(false, true); });
         panel.addEventListener('click', onPanelClick);
         panel.addEventListener('change', (e) => { if (e.target.id === 'np-filter') { filter = e.target.value; applyFilter(true); } });
         document.addEventListener('keydown', (e) => {
             // Skrót Alt+M: przejście do menu z dowolnego miejsca (e.code — niezależnie od układu klawiatury)
             if (e.altKey && !e.ctrlKey && !e.metaKey && !e.shiftKey && e.code === 'KeyM') {
                 e.preventDefault();
-                if (panel.contains(document.activeElement)) returnToContent(true);
+                if (peek) closePeek(true);
+                else if (panel.contains(document.activeElement)) returnToContent(true);
                 else focusMenu();
                 return;
             }
@@ -132,6 +152,7 @@
             returnToContent();
         });
         WIDE.addEventListener('change', () => applyMode());
+        RAIL.addEventListener('change', () => applyMode());
         applyMode();
         // Animacje dopiero po pierwszym wyświetleniu (bez „wjeżdżania” panelu przy ładowaniu strony)
         requestAnimationFrame(() => requestAnimationFrame(() => document.body.classList.add('np-anim')));
@@ -148,21 +169,26 @@
         document.body.classList.toggle('np-open', open);
         toggleBtn.setAttribute('aria-expanded', String(open));
         toggleBtn.querySelector('span').textContent = open ? 'Zwiń menu' : 'Menu';
-        const modal = !WIDE.matches;
+        const modal = isModal();
         // Szeroki ekran: panel po prostu znika. Mniejszy: wysuwa się z boku (widoczność sterowana w CSS, z animacją)
         panel.hidden = false;   // widoczność i animacja w CSS (body.np-open)
         backdrop.hidden = !(open && modal);
         // Okno modalne na wąskim ekranie: reszta strony nieaktywna
         ['main-content'].forEach(id => { const el = document.getElementById(id); if (el) el.inert = open && modal; });
         $$('.app-footer, #toast-container').forEach(el => { el.inert = open && modal; });
-        if (WIDE.matches && user) lsSet(LS_PANEL, open ? '0' : '1');
+        if (WIDE.matches && user && !peek) lsSet(LS_PANEL, open ? '0' : '1');
+        updateRail();
         if (user && open && modal) { const f = panel.querySelector('.np-close'); if (f) f.focus(); }
         if (user && !open && modal) toggleBtn.focus();
         if (open) updateCurrent(true);
     }
 
     function applyMode() {
+        if (peek) { peek = false; document.body.classList.remove('np-peek'); }
         document.body.classList.toggle('np-wide', WIDE.matches);
+        document.body.classList.toggle('np-railmode', RAIL.matches);
+        // Wysokość nagłówka (rezerwa przy przewijaniu do fokusu) zmienia się, bo na szerokim ekranie nagłówek chowa się w panelu
+        requestAnimationFrame(() => window.dispatchEvent(new Event('resize')));
         if (WIDE.matches) setOpen(lsGet(LS_PANEL) !== '1', false);
         else setOpen(false, false);
     }
@@ -172,6 +198,7 @@
     function focusMenu() {
         const ae = document.activeElement;
         returnFocus = (ae && ae !== document.body && !panel.contains(ae)) ? ae : null;
+        if (RAIL.matches && !WIDE.matches) { openPeek(sheetVisible() ? 'toc' : 'top', returnFocus); return; }
         if (!isOpen()) { setOpen(true, false); if (WIDE.matches) lsSet(LS_PANEL, '0'); }
         updateCurrent(true);
         requestAnimationFrame(() => {
@@ -183,6 +210,7 @@
     }
     /** collapse: Alt+M zwija też panel na dużym ekranie (Esc tylko wraca do treści). */
     function returnToContent(collapse) {
+        if (peek) { closePeek(true); return; }
         const modal = !WIDE.matches;
         if (modal) setOpen(false, false);
         else if (collapse) { setOpen(false, false); lsSet(LS_PANEL, '1'); }
@@ -193,7 +221,130 @@
         else { const m = document.getElementById('main-content'); if (m) { m.tabIndex = -1; m.focus(); } }
     }
 
-    function closeIfModal() { if (!WIDE.matches && isOpen()) setOpen(false, false); }
+    function closeIfModal() {
+        if (peek) closePeek(false);
+        else if (!WIDE.matches && isOpen()) setOpen(false, false);
+    }
+
+    // ---------------------------------------------------------------------------------
+    // Listwa ikon (szeroki ekran, panel zwinięty). Ikony grup wysuwają panel jako podgląd w danym miejscu,
+    // ikony pojedynczych akcji działają od razu. Etykiety ikon — wspólny mechanizm aplikacji (enhanceIconButtons).
+    // ---------------------------------------------------------------------------------
+    function railBtn(key, icon, label, extra = '') {
+        return `<li><button type="button" class="np-rail-btn" data-rail="${key}" aria-label="${esc(label)}" data-icon-label="${esc(label)}" data-icon-label-placement="right"${extra}><i data-lucide="${icon}" aria-hidden="true"></i></button></li>`;
+    }
+    function buildRail() {
+        rail = document.createElement('div');
+        rail.setAttribute('role', 'navigation');
+        rail.id = 'np-rail';
+        rail.className = 'np-rail';
+        rail.setAttribute('aria-label', 'Nawigacja aplikacji (zwinięta)');
+        rail.innerHTML = `
+            <a href="index.html" class="np-rail-logo" aria-label="Strona główna aplikacji OZ-PAD"><img src="img/eaa.svg" alt="" aria-hidden="true"></a>
+            <ul class="np-rail-list">
+                ${railBtn('expand', 'panel-left-open', 'Rozwiń menu (Alt+M)', ' aria-keyshortcuts="Alt+M" aria-controls="np-panel"')}
+            </ul>
+            <ul class="np-rail-list">
+                ${railBtn('home', 'house', 'Widok startowy')}
+                ${railBtn('new', 'file-plus-2', 'Nowy arkusz oceny')}
+                ${railBtn('load', 'upload', 'Wczytaj zapisany stan (JSON)')}
+                ${railBtn('browse', 'library-big', 'Przeglądarka wymagań')}
+            </ul>
+            <ul class="np-rail-list" data-rail-group="drafts">
+                ${railBtn('drafts', 'files', 'Kopie robocze', ' aria-controls="np-panel"')}
+            </ul>
+            <ul class="np-rail-list" data-rail-group="sheet">
+                <li><button type="button" class="np-rail-btn np-rail-ring" data-rail="sheet" aria-controls="np-panel" aria-label="Arkusz oceny" data-icon-label="Arkusz oceny" data-icon-label-placement="right">
+                    <svg viewBox="0 0 36 36" aria-hidden="true" focusable="false"><circle class="np-ring-bg" cx="18" cy="18" r="15"/><circle class="np-ring-fg" cx="18" cy="18" r="15" pathLength="100" stroke-dasharray="0 100"/></svg>
+                </button></li>
+                ${railBtn('toc', 'list-tree', 'Spis arkusza', ' aria-controls="np-panel"')}
+                ${railBtn('json', 'save', 'Zapisz plik JSON (Ctrl+S)')}
+            </ul>
+            <ul class="np-rail-list np-rail-foot">
+                ${railBtn('glossary', 'circle-help', 'Słownik pojęć i pomoc')}
+                ${railBtn('theme', 'sun-moon', 'Zmień motyw')}
+            </ul>`;
+        panel.before(rail);
+        rail.addEventListener('click', onRailClick);
+        if (typeof enhanceIconButtons === 'function') enhanceIconButtons(rail);
+        enhanceIconButtonsIn(panel.querySelector('.np-brand'));
+    }
+    function enhanceIconButtonsIn(root) { if (root && typeof enhanceIconButtons === 'function') enhanceIconButtons(root); }
+
+    function setRailLabel(btn, label) {
+        if (!btn) return;
+        btn.setAttribute('aria-label', label);
+        btn.setAttribute('data-icon-label', label);
+        const span = btn.querySelector('.icon-label');
+        if (span) span.textContent = label;
+    }
+
+    /** Stan listwy: które grupy są dostępne, postęp, bieżący widok. */
+    function updateRail() {
+        if (!rail) return;
+        const nDrafts = $$('#drafts-list > li').length;
+        rail.querySelector('[data-rail-group="drafts"]').hidden = nDrafts === 0;
+        setRailLabel(rail.querySelector('[data-rail="drafts"]'), `Kopie robocze (${nDrafts})`);
+        const hasSheet = !!panel.querySelector('[data-group="sheet"]');
+        rail.querySelector('[data-rail-group="sheet"]').hidden = !hasSheet;
+        const pr = $('#np-progress');
+        if (hasSheet && pr) {
+            const done = +pr.value || 0, total = +pr.max || 1;
+            rail.querySelector('.np-ring-fg').setAttribute('stroke-dasharray', `${Math.round(done / total * 100)} 100`);
+            setRailLabel(rail.querySelector('[data-rail="sheet"]'), `Arkusz oceny: ocenione ${done} z ${total} wymagań`);
+        }
+        const v = document.body.dataset.npView;
+        $$('[data-rail]', rail).forEach(b => b.removeAttribute('aria-current'));
+        const cur = rail.querySelector(`[data-rail="${({ start: 'home', new: 'new', browser: 'browse' })[v] || '-'}"]`);
+        if (cur) cur.setAttribute('aria-current', 'page');
+    }
+
+    function onRailClick(e) {
+        const btn = e.target.closest('[data-rail]');
+        if (!btn) return;
+        if (typeof hideAllIconLabels === 'function') hideAllIconLabels();
+        const k = btn.getAttribute('data-rail');
+        if (k === 'expand') {
+            if (!WIDE.matches) { openPeek('top', btn); return; }   // średni ekran: panel tylko nad treścią
+            setOpen(true, true); const c = panel.querySelector('.np-collapse'); if (c) c.focus(); return;
+        }
+        if (k === 'drafts' || k === 'sheet' || k === 'toc') { openPeek(k, btn); return; }
+        runAct(k);
+    }
+
+    function expandGroup(id) {
+        const t = panel.querySelector(`[data-group="${id}"] > .np-group-h .np-group-toggle`);
+        if (t && t.getAttribute('aria-expanded') !== 'true') toggleDisclosure(t, 'group');
+        return t;
+    }
+
+    function openPeek(where, trigger) {
+        peek = true; peekTrigger = trigger;
+        document.body.classList.add('np-peek');
+        setOpen(true, false);
+        let target = null;
+        if (where === 'drafts') { expandGroup('drafts'); target = panel.querySelector('[data-draft-index]'); }
+        else if (where === 'sheet') { target = expandGroup('sheet'); }
+        else if (where === 'top') { const box = panel.querySelector('.np-scroll'); if (box) box.scrollTop = 0; target = panel.querySelector('[aria-current="page"]') || panel.querySelector('.np-scroll .np-item'); }
+        else if (where === 'toc') {
+            expandGroup('sheet'); expandGroup('sheetnav');
+            updateCurrent(true);
+            const vis = (el) => el && el.offsetParent !== null;
+            target = [...panel.querySelectorAll('[data-group="sheetnav"] [aria-current]')].find(vis) || panel.querySelector('.np-sec-link');
+            const box = panel.querySelector('.np-scroll');
+            if (target && box) requestAnimationFrame(() => { const lr = target.getBoundingClientRect(), br = box.getBoundingClientRect(); box.scrollTop += (lr.top - br.top) - br.height / 3; });
+        }
+        requestAnimationFrame(() => (target || panel.querySelector('.np-peek-close')).focus());
+    }
+
+    function closePeek(restoreFocus) {
+        if (!peek) return;
+        const t = peekTrigger;
+        setOpen(false, false);
+        peek = false; peekTrigger = null;
+        document.body.classList.remove('np-peek');
+        if (restoreFocus && t && t.offsetParent !== null) t.focus();
+    }
 
     // ---------------------------------------------------------------------------------
     // Akcje
@@ -231,11 +382,16 @@
         }
         const btn = e.target.closest('button[data-act]');
         if (!btn) return;
-        const act = btn.getAttribute('data-act');
+        runAct(btn.getAttribute('data-act'));
+    }
+
+    function runAct(act) {
         const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
         closeIfModal();
         if (act !== 'home') forcedView = null;
         switch (act) {
+            case 'glossary': click('btn-show-glossary'); break;
+            case 'theme': if (window.utils && window.utils.toggleTheme) window.utils.toggleTheme(); break;
             case 'home': showView('start', true); break;
             case 'new': click('hero-new-audit'); break;
             case 'load': click('wizard-file-input'); break;
@@ -302,6 +458,7 @@
         $$('[data-act]', panel).forEach(b => b.removeAttribute('aria-current'));
         const cur = panel.querySelector(`[data-act="${({ start: 'home', new: 'new', browser: 'browse' })[v] || '-'}"]`);
         if (cur) cur.setAttribute('aria-current', 'page');
+        updateRail();
     }
 
     function focusHeading(v) {
@@ -365,7 +522,7 @@
         const slot = $('#np-drafts-slot');
         if (!slot) return;
         const lis = $$('#drafts-list > li');
-        if (!lis.length) { slot.innerHTML = ''; return; }
+        if (!lis.length) { slot.innerHTML = ''; updateRail(); return; }
         const items = lis.map((li, i) => {
             const title = (li.querySelector('.draft-title') || {}).textContent || '(bez nazwy)';
             const meta = (li.querySelector('.draft-meta') || {}).textContent || '';
@@ -386,6 +543,7 @@
         }).join('');
         slot.innerHTML = group('drafts', `Kopie robocze <span class="np-group-meta">${lis.length}</span>`, `<ul class="np-list">${items}</ul>`);
         icons();
+        updateRail();
     }
 
     // ---------------------------------------------------------------------------------
@@ -529,6 +687,7 @@
 
     function toggleNeedsSheet(on) {
         $$('[data-needs-sheet]', panel).forEach(b => { b.disabled = !on; });
+        updateRail();
     }
 
     function refresh() {
@@ -563,6 +722,7 @@
         pt.innerHTML = `${done}/${total}<span class="sr-only"> wymagań ocenionych</span>`;
         const pr = $('#np-progress'); pr.max = Math.max(total, 1); pr.value = done;
         pr.setAttribute('aria-label', `Postęp oceny: ${done} z ${total} wymagań`);
+        updateRail();
         const parts = [`Spełnione: ${counts['compliant']}`, `Niespełnione: ${counts['non-compliant']}`, `Nie dotyczy: ${counts['not-applicable']}`];
         if (toJustify) parts.push(`Bez uzasadnienia: ${toJustify}`);
 

@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { ROOT, startServer, baseUrl, stripTimes, saveJson, generateSheet, fillAssessments, readDrafts, LEGACY_AUTOSAVE_KEY, goTo } from './helpers.mjs';
+import { ROOT, startServer, baseUrl, stripTimes, saveJson, generateSheet, fillAssessments, readDrafts, LEGACY_AUTOSAVE_KEY, goTo, visibleOf, APP_LOGO } from './helpers.mjs';
 
 let server, browser, url;
 before(async () => { server = await startServer(); browser = await chromium.launch(); url = baseUrl(server); });
@@ -332,7 +332,8 @@ test('gdy autozapis działa: przeglądarka wymagań, ikona aplikacji i zamknięc
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await dialogOpen(p).count(), 0);
     await p.click('#browser-back-to-sheet');
-    await Promise.all([p.waitForNavigation(), p.click('#app-logo')]);
+    const logo = await visibleOf(p, APP_LOGO);
+    await Promise.all([p.waitForNavigation(), p.click(logo)]);
     assert.equal(await dialogOpen(p).count(), 0);
     await p.goto('about:blank');
     assert.deepEqual(dialogs, [], 'bez natywnego ostrzeżenia przeglądarki');
@@ -403,7 +404,7 @@ test('sekcję „Kopie robocze” można zwinąć; stan jest zapamiętany', asyn
     const p = await ctx.newPage();
     await p.goto(url);
     await p.waitForSelector('#drafts-section:not(.hidden)');
-    const toggle = p.getByRole('button', { name: /Kopie robocze/ });
+    const toggle = p.locator('#drafts-toggle');
     assert.equal(await toggle.getAttribute('aria-expanded'), 'true', 'domyślnie rozwinięta');
     await toggle.click();
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false');

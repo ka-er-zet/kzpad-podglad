@@ -53,6 +53,9 @@ export async function goTo(page, act) {
     const tile = { new: '#hero-new-audit', browse: '#hero-browse-requirements' }[act];
     await page.waitForSelector('#np-panel', { state: 'attached' });
     if (tile && await page.locator(tile).isVisible()) { await page.click(tile); return; }
+    // listwa ikon (panel zwinięty lub średni ekran): akcja wprost z listwy
+    const railBtn = page.locator(`#np-rail [data-rail="${act}"]`);
+    if (await railBtn.isVisible()) { await railBtn.click(); return; }
     const opened = await page.evaluate(() => document.body.classList.contains('np-open'));
     if (!opened) await page.click('.np-menu-btn');
     const group = page.locator('#np-panel [data-group="main"] .np-group-toggle');
@@ -112,3 +115,11 @@ export const readDrafts = (page) => page.evaluate(() => new Promise((resolve) =>
     };
     req.onerror = () => resolve([]);
 }));
+
+/** Pierwszy widoczny z selektorów (ten sam element bywa w nagłówku, w panelu albo na listwie ikon — zależnie od szerokości okna). */
+export async function visibleOf(page, selectors) {
+    for (const sel of selectors) { if (await page.locator(sel).first().isVisible()) return sel; }
+    throw new Error('Żaden widoczny: ' + selectors.join(', '));
+}
+export const GLOSSARY = ['#btn-show-glossary', '#np-rail [data-rail="glossary"]', '#np-panel [data-act="glossary"]'];
+export const APP_LOGO = ['#app-logo', '#np-panel .np-brand-link', '#np-rail .np-rail-logo'];

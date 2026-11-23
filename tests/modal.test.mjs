@@ -3,7 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
-import { startServer, baseUrl, generateSheet } from './helpers.mjs';
+import { startServer, baseUrl, generateSheet, visibleOf, GLOSSARY } from './helpers.mjs';
 
 let server, browser, url;
 before(async () => { server = await startServer(); browser = await chromium.launch(); url = baseUrl(server); });
@@ -32,15 +32,17 @@ async function tabCycle(p, sel, presses = 12) {
 test('słownik: blokada przewijania, pułapka fokusu i powrót fokusu na przycisk', async () => {
     const { ctx, page: p } = await newPage();
     await p.goto(url);
-    await p.focus('#btn-show-glossary');
-    await p.click('#btn-show-glossary');
+    await p.waitForSelector('#np-panel', { state: 'attached' });
+    const gl = await visibleOf(p, GLOSSARY);
+    await p.focus(gl);
+    await p.click(gl);
     await p.waitForSelector('#glossaryModal[open]');
     assert.equal(await locked(p), true);
     await tabCycle(p, '#glossaryModal');
     await p.keyboard.press('Escape');
     await p.waitForSelector('#glossaryModal:not([open])', { state: 'attached' });
     assert.equal(await locked(p), false, 'przewijanie odblokowane');
-    assert.equal(await p.evaluate(() => document.activeElement && document.activeElement.id), 'btn-show-glossary');
+    assert.equal(await p.locator(gl).evaluate((el) => el === document.activeElement), true, 'fokus wraca na przycisk słownika');
     await ctx.close();
 });
 
@@ -65,7 +67,9 @@ test('klauzula: to samo zachowanie co słownik', async () => {
 test('okno potwierdzenia: blokada przewijania, fokus startowy, pułapka, Esc i powrót fokusu', async () => {
     const { ctx, page: p } = await newPage();
     await p.goto(url);
-    await p.focus('#btn-show-glossary');
+    await p.waitForSelector('#np-panel', { state: 'attached' });
+    const gl = await visibleOf(p, GLOSSARY);
+    await p.focus(gl);
     const ask = (focusOn) => p.evaluate((f) => { window.__r = undefined; window.utils.confirm('Na pewno?', 'Tytuł', 'Tak', 'Nie', f).then((r) => { window.__r = r; }); }, focusOn);
 
     await ask('confirm');
@@ -84,7 +88,7 @@ test('okno potwierdzenia: blokada przewijania, fokus startowy, pułapka, Esc i p
     await p.waitForFunction(() => window.__r !== undefined);
     assert.equal(await p.evaluate(() => window.__r), false);
     assert.equal(await locked(p), false);
-    assert.equal(await p.evaluate(() => document.activeElement.id), 'btn-show-glossary', 'fokus wraca na element wywołujący');
+    assert.equal(await p.locator(gl).evaluate((el) => el === document.activeElement), true, 'fokus wraca na element wywołujący');
 
     await ask('cancel');
     await p.waitForSelector('#app-confirm-dialog[open]');

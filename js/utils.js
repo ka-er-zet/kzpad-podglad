@@ -158,6 +158,14 @@ function placeIconLabel(buttonEl, labelEl) {
         const brect = buttonEl.getBoundingClientRect();
         const labelRect = labelEl.getBoundingClientRect();
         const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0);
+
+        // Etykieta obok przycisku (np. listwa ikon przy lewej krawędzi ekranu): po prawej, wyśrodkowana w pionie
+        if (buttonEl.dataset.iconLabelPlacement === 'right') {
+            labelEl.style.left = `${brect.right + 8}px`;
+            labelEl.style.top = `${Math.max(8, brect.top + brect.height / 2 - labelRect.height / 2)}px`;
+            labelEl.style.transform = 'translateY(0)';
+            return;
+        }
         const spaceRight = vw - brect.left;
         const centerLeft = brect.left + (brect.width / 2) - (labelRect.width / 2);
 
@@ -212,11 +220,12 @@ function showIconLabel(label) {
  * Ulepsza przyciski zawierające tylko ikony o widoczne etykiety pojawiające się przy hover/focus.
  * Dodaje spany .icon-label, usuwa nadmiarowe aria-label/title.
  */
-function enhanceIconButtons() {
-    const selectors = ['#menu-toggle', '#btn-save-audit', '#btn-edit-config', '#btn-save-wizard', '#btn-load-wizard', '#btn-download-spreadsheet', 'button[onclick*="toggleTheme"]', '.theme-toggle'];
+function enhanceIconButtons(root = document) {
+    // [data-icon-label] — także przyciski tworzone później (np. listwa ikon panelu nawigacji); wywołanie jest idempotentne
+    const selectors = ['#menu-toggle', '#btn-save-audit', '#btn-edit-config', '#btn-save-wizard', '#btn-load-wizard', '#btn-download-spreadsheet', 'button[onclick*="toggleTheme"]', '.theme-toggle', 'button[data-icon-label]'];
     const seen = new Set();
     selectors.forEach(sel => {
-        document.querySelectorAll(sel).forEach(el => {
+        root.querySelectorAll(sel).forEach(el => {
             if (seen.has(el)) return;
             seen.add(el);
             // Szczególny przypadek: przyciski przełącznika motywu zawsze dostają icon-label

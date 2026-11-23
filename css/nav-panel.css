@@ -44,9 +44,9 @@
 .np-panel button { margin: 0; width: auto; font-size: inherit; line-height: inherit; box-shadow: none; }
 
 /* Szeroki ekran: treść obok panelu */
-body.np-wide.np-open #main-content,
-body.np-wide.np-open .app-footer { margin-left: calc(var(--np-width) + 1.5rem); }
-body.np-wide.np-open #main-content { margin-right: 1.5rem; width: auto; max-width: 1200px; }
+body.np-wide.np-open:not(.np-peek) #main-content,
+body.np-wide.np-open:not(.np-peek) .app-footer { margin-left: calc(var(--np-width) + 1.5rem); }
+body.np-wide.np-open:not(.np-peek) #main-content { margin-right: 1.5rem; width: auto; max-width: 1200px; }
 
 /* Wąski lub niski ekran: panel wysuwany nad treścią (modalny) */
 body:not(.np-wide) .np-panel { top: 0; z-index: 130; box-shadow: 0 0 2rem rgba(0,0,0,0.3); width: min(var(--np-width), 88vw); }
@@ -328,7 +328,7 @@ body:not(.np-wide) .np-panel-bar {
 /* Stopka: Pico daje body>footer szerokość 100% — przy marginesie na panel wystawałaby poza ekran.
    Pico centruje ją też marginesami auto, a w kolumnie flex (body) margines auto wyłącza rozciąganie
    i stopka kurczy się do treści — stąd margin-right: 0 */
-body.np-wide.np-open .app-footer { width: auto; margin-right: 0; }
+body.np-wide.np-open:not(.np-peek) .app-footer { width: auto; margin-right: 0; }
 
 /* Opcje podsumowania (rozwijane jak sekcje arkusza) */
 .np-panel .np-summary-actions .np-item { padding: 0.2rem 0.35rem; gap: 0.4rem; }
@@ -361,4 +361,75 @@ body.np-anim.np-wide .app-footer { transition: margin-left 0.25s ease; }
 @media (prefers-reduced-motion: reduce) {
     body.np-anim .np-panel, body.np-anim.np-open .np-panel,
     body.np-anim.np-wide #main-content, body.np-anim.np-wide .app-footer { transition: none; }
+}
+
+/* =====================================================================================
+   Wariant: od 768 px panel przejmuje nagłówek; listwa ikon, gdy panel nie jest przypięty
+   (szeroki ekran ≥ 1360 px: panel można przypiąć obok treści; średni: tylko podgląd nad treścią)
+   ===================================================================================== */
+:root { --np-rail: 3.5rem; }
+.np-brand, .np-foot, .np-rail { display: none; }
+
+/* Nagłówek nad treścią znika (zostaje tylko „Pomiń nawigację”); logo, słownik i motyw są w panelu lub listwie */
+body.np-railmode .app-header.np-header { padding: 0; border: 0; min-height: 0; height: 0; background: none; box-shadow: none; }
+body.np-railmode .app-header.np-header > .header-content,
+body.np-railmode .app-header.np-header > .header-actions { display: none; }
+body.np-railmode .np-panel { top: 0; }
+
+/* Górny wiersz panelu: logo i nazwa + zwiń (przypięty) albo przypnij / zamknij (podgląd) */
+body.np-railmode .np-brand {
+    display: flex; align-items: center; gap: 0.25rem; flex: none;
+    height: 3rem; padding: 0 0.5rem 0 var(--np-pad-x);
+}
+.np-panel .np-brand-link { display: flex; align-items: center; gap: 0.55rem; margin-right: auto; color: var(--np-fg); text-decoration: none; font-weight: 700; font-size: 1rem; }
+.np-panel .np-brand-link img { width: 1.6rem; height: 1.6rem; }
+.np-panel .np-brand-btn, .np-rail-btn {
+    display: inline-flex; align-items: center; justify-content: center; position: relative;
+    width: 2.25rem; height: 2.25rem; padding: 0; margin: 0; border: 0; border-radius: var(--border-radius);
+    background: transparent; color: var(--np-muted, var(--secondary-text-color)); cursor: pointer; box-shadow: none;
+}
+.np-panel .np-brand-btn:hover, .np-rail-btn:hover { background: var(--np-hover, rgba(127,127,127,0.12)); color: var(--color); }
+.np-panel .np-brand-btn:focus-visible, .np-rail-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
+.np-brand-btn svg, .np-rail-btn svg { width: 1.2rem; height: 1.2rem; }
+body:not(.np-peek) .np-pin, body:not(.np-peek) .np-peek-close, body.np-peek .np-collapse { display: none; }
+/* Średni ekran: panelu nie da się przypiąć obok treści — tylko podgląd nad treścią */
+body:not(.np-wide) .np-pin, body:not(.np-wide) .np-collapse { display: none; }
+body.np-railmode .np-panel-bar { display: none; }
+
+/* Dół panelu: słownik i motyw */
+body.np-railmode .np-foot { display: block; flex: none; margin: 0; padding: 0.4rem var(--np-pad-x) 0.6rem; border-top: 1px solid var(--np-line); }
+
+/* Listwa ikon: tylko szeroki ekran, gdy panel zwinięty (także pod podglądem) */
+.np-rail {
+    position: fixed; left: 0; top: 0; bottom: 0; width: var(--np-rail); z-index: 110;
+    flex-direction: column; align-items: center; gap: 0.25rem; padding: 0.4rem 0 0.6rem;
+    background: var(--card-background-color); border-right: 1px solid var(--secondary-border-color);
+}
+body.np-railmode:not(.np-open) .np-rail, body.np-railmode.np-peek .np-rail { display: flex; }
+body.np-railmode:not(.np-open), body.np-railmode.np-peek { padding-left: var(--np-rail); }
+/* Średni ekran: stopka i treść obok listwy */
+body.np-railmode:not(.np-wide) .app-footer { width: auto; margin-right: 0; }
+.np-rail-logo { display: flex; width: 2.25rem; height: 2.6rem; align-items: center; justify-content: center; }
+.np-rail-logo img { width: 1.6rem; height: 1.6rem; }
+.np-rail-list { list-style: none; margin: 0; padding: 0.3rem 0; display: flex; flex-direction: column; gap: 0.15rem; border-top: 1px solid var(--secondary-border-color); }
+.np-rail-list li { list-style: none; margin: 0; padding: 0; }
+.np-rail-list[hidden] { display: none; }
+.np-rail-foot { margin-top: auto; }
+.np-rail-btn[aria-current] { color: var(--primary); background: color-mix(in srgb, var(--primary) 12%, transparent); }
+/* Pierścień postępu arkusza */
+.np-rail-ring svg { width: 1.5rem; height: 1.5rem; transform: rotate(-90deg); }
+.np-ring-bg, .np-ring-fg { fill: none; stroke-width: 4; }
+.np-ring-bg { stroke: var(--secondary-border-color); }
+.np-ring-fg { stroke: var(--primary); stroke-linecap: round; }
+/* Etykiety ikon na listwie: po prawej, poza listwą */
+.np-rail .icon-label, .np-brand .icon-label { transform: none; }
+
+/* Podgląd: panel wysunięty nad treścią z cieniem, tło przyciemnione */
+body.np-railmode.np-peek .np-panel { z-index: 130; box-shadow: 0 0 2rem rgba(0,0,0,0.35); }
+body.np-railmode.np-peek { overflow: hidden; }
+
+@media (forced-colors: active) {
+    .np-rail { border-right: 1px solid CanvasText; }
+    .np-rail-btn[aria-current] { outline: 2px solid Highlight; }
+    .np-ring-fg { stroke: Highlight; }
 }
