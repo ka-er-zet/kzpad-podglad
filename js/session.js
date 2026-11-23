@@ -150,7 +150,11 @@
     }
 
     function progress() {
-        const rows = Array.from(document.querySelectorAll('#resultsArea .requirement-row'));
+        // Te same wymagania co w podsumowaniu: kryteria Art. 19 liczą się tylko, gdy są włączone
+        const art19Switch = document.querySelector('#resultsArea input[role="switch"]');
+        const art19On = art19Switch ? art19Switch.checked : false;
+        const rows = Array.from(document.querySelectorAll('#resultsArea .requirement-row'))
+            .filter((r) => art19On || !r.closest('[data-art19-container="true"]'));
         const done = rows.filter((r) => r.querySelector('input[type="radio"][name^="status-"]:checked')).length;
         return { done, total: rows.length };
     }

@@ -436,3 +436,21 @@ test('powrót z przeglądarki wymagań i otwarcie kopii przenoszą do ostatnio e
     assert.equal(await q.evaluate(() => document.activeElement.value), 'tu skończyłem');
     await ctx.close();
 });
+
+test('postęp w kopii roboczej liczy te same wymagania co podsumowanie (Art. 19 tylko, gdy włączony)', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await dirtySheet(p);
+    const hasArt19 = await p.evaluate(() => !!document.querySelector('#resultsArea [data-art19-container="true"] .requirement-row'));
+    assert.ok(hasArt19, 'profil testowy ma kryteria Art. 19 (inaczej test niczego nie sprawdza)');
+    const check = async () => {
+        await p.evaluate(() => Session.flush());
+        const d = (await waitForDrafts(p, 1))[0];
+        const s = await p.evaluate(() => getAssessmentSummaryData());
+        assert.equal(d.progress.total, s.totalCount, 'liczba wymagań jak w podsumowaniu');
+        assert.equal(d.progress.done, s.totalCount - s.untestedCount, 'liczba ocenionych jak w podsumowaniu');
+    };
+    await check();                                                  // Art. 19 wyłączony
+    await p.evaluate(() => { const sw = document.querySelector('#resultsArea input[role="switch"]'); sw.click(); });
+    await check();                                                  // Art. 19 włączony
+    await ctx.close();
+});
