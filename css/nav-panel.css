@@ -1,0 +1,362 @@
+/* Panel nawigacji OZ-PAD (js/nav-panel.js). Panel ma własną skalę typograficzną i resetuje style Pico w swoim obrębie. */
+
+:root {
+    --np-width: 22rem;          /* przy root 20px = 440px */
+    --np-fs: 0.8rem;            /* podstawowy tekst panelu */
+    --np-fs-sm: 0.7rem;         /* liczniki, statusy, opisy */
+    --np-lh: 1.4;
+    --np-pad-x: 0.75rem;
+    --np-chev: 1.5rem;          /* kolumna strzałek — wyrównuje wszystkie poziomy */
+}
+
+/* ---------- Nagłówek: akcje w panelu, nagłówek stały ---------- */
+.app-header.np-header .header-actions { width: auto; margin-left: auto; }
+.app-header.np-header { z-index: 120; }
+.app-header.np-header .header-content { display: flex; align-items: center; flex-wrap: nowrap; margin-bottom: 0; }
+.np-menu-btn {
+    display: inline-flex; align-items: center; gap: 0.4rem;
+    width: auto; margin: 0 0.75rem 0 0; padding: 0.35rem 0.7rem; font-size: 0.8rem;
+}
+.np-menu-btn svg { width: 1.1rem; height: 1.1rem; }
+
+/* ---------- Panel: kontener ---------- */
+.np-panel {
+    --np-fg: var(--color);
+    --np-muted: var(--secondary-text-color);
+    --np-line: var(--secondary-border-color);
+    --np-hover: rgba(127, 127, 127, 0.12);
+    position: fixed; left: 0; bottom: 0; top: var(--np-top, 0px);
+    width: var(--np-width); max-width: 100vw;
+    background: var(--card-background-color);
+    border-right: 1px solid var(--np-line);
+    z-index: 110;
+    display: flex; flex-direction: column;
+    font-size: var(--np-fs); line-height: var(--np-lh); color: var(--np-fg);
+}
+.np-panel[hidden] { display: none; }
+.np-scroll { overflow-y: auto; overflow-x: hidden; padding: 0.5rem var(--np-pad-x) 2rem; flex: 1; overscroll-behavior: contain; }
+
+/* Reset stylów Pico w panelu */
+.np-panel h2, .np-panel p, .np-panel ul, .np-panel ol, .np-panel li, .np-panel label { margin: 0; padding: 0; font-size: inherit; line-height: inherit; }
+.np-panel ul, .np-panel ol { list-style: none; }
+.np-panel li { list-style: none; display: block; }
+.np-panel a { margin: 0; }
+.np-panel button { margin: 0; width: auto; font-size: inherit; line-height: inherit; box-shadow: none; }
+
+/* Szeroki ekran: treść obok panelu */
+body.np-wide.np-open #main-content,
+body.np-wide.np-open .app-footer { margin-left: calc(var(--np-width) + 1.5rem); }
+body.np-wide.np-open #main-content { margin-right: 1.5rem; width: auto; max-width: 1200px; }
+
+/* Wąski lub niski ekran: panel wysuwany nad treścią (modalny) */
+body:not(.np-wide) .np-panel { top: 0; z-index: 130; box-shadow: 0 0 2rem rgba(0,0,0,0.3); width: min(var(--np-width), 88vw); }
+.np-backdrop { position: fixed; inset: 0; background: rgba(0, 0, 0, 0.45); z-index: 125; }
+.np-backdrop[hidden] { display: none; }
+body:not(.np-wide).np-open { overflow: hidden; }
+
+/* ---------- Grupy ---------- */
+.np-group + .np-group { border-top: 1px solid var(--np-line); margin-top: 0.5rem; padding-top: 0.5rem; }
+.np-group-body { padding-bottom: 0.25rem; }
+.np-group-body[hidden] { display: none; }
+
+.np-panel .np-group-toggle {
+    display: flex; align-items: center; width: 100%;
+    background: none; border: 0; border-radius: var(--border-radius);
+    padding: 0.4rem 0; color: var(--np-muted); text-align: left; cursor: pointer;
+    font-size: var(--np-fs-sm); font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+}
+.np-group-toggle:hover { color: var(--np-fg); }
+.np-count { font-weight: 400; letter-spacing: 0; }
+
+.np-chevron { width: 1rem; height: 1rem; flex: none; transition: transform 0.15s; }
+.np-group-toggle .np-chevron { width: var(--np-chev); }
+[aria-expanded="true"] > .np-chevron { transform: rotate(90deg); }
+@media (prefers-reduced-motion: reduce) { .np-chevron { transition: none; } }
+
+/* Pozycje menu (przyciski) */
+.np-panel .np-item {
+    display: flex; align-items: flex-start; gap: 0; width: 100%;
+    background: none; border: 0; border-radius: var(--border-radius);
+    padding: 0.35rem 0.25rem 0.35rem 0; color: var(--np-fg); text-align: left; font-weight: 400; cursor: pointer;
+}
+.np-item:hover:not(:disabled) { background: var(--np-hover); }
+.np-item:disabled { color: var(--np-muted); cursor: not-allowed; opacity: 0.75; }
+.np-item svg { width: var(--np-chev); height: 1.05rem; flex: none; margin-top: 0.1rem; }
+.np-draft > span { display: flex; flex-direction: column; min-width: 0; }
+.np-draft-title { font-weight: 600; overflow-wrap: anywhere; }
+.np-draft-meta { color: var(--np-muted); font-size: var(--np-fs-sm); }
+.np-draft.is-disabled { color: var(--np-muted); }
+
+/* ---------- Arkusz: karta postępu i filtr ---------- */
+.np-sheet-card { padding: 0.25rem 0 0.6rem var(--np-chev); }
+.np-sheet-name { font-weight: 700; font-size: 0.9rem; line-height: 1.3; margin-bottom: 0.35rem; overflow-wrap: anywhere; }
+.np-progress-text { color: var(--np-fg); }
+.np-progress-details { display: flex; flex-wrap: wrap; gap: 0.1rem 0.75rem; color: var(--np-muted); font-size: var(--np-fs-sm); }
+
+.np-filter { display: flex; align-items: center; gap: 0.5rem; padding-left: var(--np-chev); margin-bottom: 0.15rem; }
+.np-filter-label { color: var(--np-muted); flex: none; }
+.np-panel #np-filter {
+    flex: 1; min-width: 0; margin: 0; height: auto;
+    padding: 0.25rem 2rem 0.25rem 0.5rem; font-size: var(--np-fs); line-height: var(--np-lh);
+    background-position: center right 0.5rem; background-size: 0.9rem auto;
+}
+.np-filter-status { padding-left: var(--np-chev); color: var(--np-muted); font-size: var(--np-fs-sm); min-height: 0.5rem; margin-bottom: 0.35rem !important; }
+
+/* ---------- Drzewo wymagań ---------- */
+.np-sec { margin-top: 0.1rem; }
+.np-sec-row { display: flex; align-items: flex-start; }
+.np-panel .np-sec-toggle {
+    flex: none; width: var(--np-chev); padding: 0.3rem 0; display: flex; justify-content: flex-start; align-items: center;
+    background: none; border: 0; color: var(--np-muted); cursor: pointer; border-radius: var(--border-radius);
+}
+.np-sec-toggle:hover { color: var(--np-fg); }
+.np-sec-link {
+    flex: 1; min-width: 0;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 0.75rem;
+    padding: 0.2rem 0.35rem; border-radius: var(--border-radius);
+    color: var(--np-fg); text-decoration: none; font-weight: 600;
+}
+.np-sec-name { min-width: 0; overflow-wrap: anywhere; }
+.np-sec-link:hover .np-sec-name { text-decoration: underline; }
+.np-sec-count {
+    flex: none; font-weight: 400; font-size: var(--np-fs-sm); color: var(--np-muted);
+    font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.np-sec-count.is-done { color: #1e7e34; }
+[data-theme="dark"] .np-sec-count.is-done { color: #6fd58a; }
+.np-sec-count.is-off { font-style: italic; }
+
+.np-panel .np-req-list { margin: 0.1rem 0 0.4rem calc(var(--np-chev) / 2 - 1px); padding-left: calc(var(--np-chev) / 2); border-left: 1px solid var(--np-line); }
+.np-req-list[hidden] { display: none; }
+.np-req-link {
+    display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.1rem 0.5rem;
+    padding: 0.2rem 0.35rem; border-radius: var(--border-radius);
+    color: var(--np-fg); text-decoration: none; font-weight: 400;
+}
+.np-req-link:hover .np-req-art { text-decoration: underline; }
+.np-req-art { min-width: 0; }
+.np-req-state { display: inline-flex; flex-wrap: wrap; gap: 0.25rem; }
+.np-req-link[aria-current="location"], .np-sec-link[aria-current="location"] {
+    background: var(--primary-focus); box-shadow: inset 3px 0 0 var(--primary);
+}
+.np-req-link[aria-current="location"] .np-req-art { font-weight: 600; }
+
+.np-status {
+    font-size: var(--np-fs-sm); line-height: 1.35; white-space: nowrap;
+    padding: 0 0.3rem; border-radius: 0.2rem; border: 1px solid currentColor;
+}
+.np-status[data-status="compliant"] { color: #1e7e34; }
+.np-status[data-status="non-compliant"] { color: #b3261e; }
+.np-status[data-status="not-applicable"], .np-status[data-status="none"] { color: var(--np-muted); }
+.np-status[data-status="none"] { border-style: dashed; }
+[data-theme="dark"] .np-status[data-status="compliant"] { color: #6fd58a; }
+[data-theme="dark"] .np-status[data-status="non-compliant"] { color: #ff8a80; }
+.np-flag { color: #b3261e; font-size: var(--np-fs-sm); }
+[data-theme="dark"] .np-flag { color: #ff8a80; }
+
+.requirement-row.np-filtered-out, .category-header.np-filtered-out { display: none !important; }
+
+@media (forced-colors: active) {
+    .np-req-link[aria-current="location"], .np-sec-link[aria-current="location"] { outline: 2px solid Highlight; }
+    .np-status { border-color: CanvasText; }
+    .np-panel { border-right: 1px solid CanvasText; }
+}
+
+/* Odstęp między grupami (grupy są w osobnych slotach, więc nie sąsiadują w DOM) */
+.np-group { border-bottom: 1px solid var(--np-line); padding-bottom: 0.4rem; margin-bottom: 0.4rem; }
+.np-scroll > .np-group:last-child { border-bottom: 0; }
+
+/* Na telefonie root ma 16–17 px — panel potrzebuje większego tekstu */
+@media (max-width: 991px) {
+    :root { --np-fs: 0.9375rem; --np-fs-sm: 0.8125rem; }
+}
+
+/* ---------- Uproszczenie grupy „Arkusz oceny” ---------- */
+.np-panel .np-group-toggle .np-group-title { flex: 1; display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
+.np-group-meta { font-weight: 400; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; color: var(--np-muted); }
+.np-panel .np-progress {
+    display: block; width: calc(100% - var(--np-chev)); margin: 0 0 0.6rem var(--np-chev);
+    height: 0.25rem; border-radius: 0.125rem;
+}
+.np-filter { margin-bottom: 0.5rem; }
+.np-filter-status:empty { min-height: 0; margin-bottom: 0 !important; }
+.np-sec-link { font-weight: 400; }
+.np-sec-count.is-done { color: var(--np-muted); }
+[data-theme="dark"] .np-sec-count.is-done { color: var(--np-muted); }
+.np-sec { margin-top: 0; }
+
+/* ---------- Wymagania: ikona statusu w stałej kolumnie ---------- */
+.np-req-link { flex-wrap: nowrap; align-items: flex-start; gap: 0.4rem; }
+.np-req-icon { flex: none; width: 1rem; height: 1rem; margin-top: 0.15em; display: inline-flex; }
+.np-req-icon svg { width: 100%; height: 100%; }
+.np-req-icon[data-status="compliant"] { color: #1e7e34; }
+.np-req-icon[data-status="non-compliant"] { color: #b3261e; }
+.np-req-icon[data-status="not-applicable"], .np-req-icon[data-status="none"] { color: var(--np-muted); }
+[data-theme="dark"] .np-req-icon[data-status="compliant"] { color: #6fd58a; }
+[data-theme="dark"] .np-req-icon[data-status="non-compliant"] { color: #ff8a80; }
+.np-req-art { flex: 1; }
+.np-flag { flex: none; font-weight: 700; width: 1rem; text-align: center; }
+@media (forced-colors: active) { .np-req-icon { color: CanvasText !important; } }
+
+/* ---------- Wyciszenie: bieżące miejsce i filtr ---------- */
+.np-req-link[aria-current="location"], .np-sec-link[aria-current="location"] {
+    background: none; box-shadow: inset 2px 0 0 var(--primary); border-radius: 0;
+}
+.np-req-link[aria-current="location"] .np-req-art,
+.np-sec-link[aria-current="location"] .np-sec-name { font-weight: 600; color: var(--np-fg); }
+
+.np-filter { gap: 0.25rem; }
+.np-panel #np-filter {
+    flex: 0 1 auto; width: auto !important; max-width: 100%;
+    border: 0; border-bottom: 1px dashed var(--np-muted); border-radius: 0;
+    background-color: transparent; box-shadow: none;
+    padding: 0.1rem 1.4rem 0.1rem 0.1rem;
+    color: var(--np-fg); font-size: var(--np-fs);
+    background-position: center right 0.1rem; background-size: 0.8rem auto;
+}
+.np-panel #np-filter:hover { border-bottom-style: solid; }
+.np-panel #np-filter:focus { box-shadow: none; }
+.np-panel #np-filter:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.np-filter-label::after { content: ":"; }
+
+
+/* ---------- Widoki panelu głównego: jeden naraz ---------- */
+body[data-np-view="start"] #setup-section,
+body[data-np-view="start"] #resultsArea,
+body[data-np-view="start"] #browser-section,
+body[data-np-view="new"] #hero-section,
+body[data-np-view="new"] #resultsArea,
+body[data-np-view="new"] #browser-section,
+body[data-np-view="sheet"] #hero-section,
+body[data-np-view="sheet"] #setup-section,
+body[data-np-view="sheet"] #browser-section,
+body[data-np-view="browser"] #hero-section,
+body[data-np-view="browser"] #setup-section,
+body[data-np-view="browser"] #resultsArea { display: none !important; }
+
+/* Bieżący widok w menu */
+.np-item[aria-current="page"] { box-shadow: inset 2px 0 0 var(--primary); border-radius: 0; font-weight: 600; }
+
+/* Akcje arkusza */
+.np-sheet-actions { margin: 0 0 0.5rem !important; }
+
+/* Kopia robocza, do której przeszliśmy z panelu */
+#drafts-list > li:focus { outline: 2px solid var(--primary); outline-offset: 4px; }
+#drafts-list > li.np-flash { background: var(--primary-focus); transition: background-color 0.4s; }
+@media (prefers-reduced-motion: reduce) { #drafts-list > li.np-flash { transition: none; } }
+
+/* Pojedyncza pozycja „Widok startowy” nad grupami */
+.np-top { border-bottom: 1px solid var(--np-line); padding-bottom: 0.4rem !important; margin-bottom: 0.4rem !important; }
+/* Wiersz „Podsumowanie oceny” wyrównany do sekcji (bez strzałki) */
+.np-sec-toggle-spacer { flex: none; width: var(--np-chev); }
+
+/* ---------- Mniejsze ekrany: panel wysuwany z boku nad treścią (jak menu aplikacji mobilnych) ---------- */
+body:not(.np-wide) .np-panel {
+    transform: translateX(-100%);
+    visibility: hidden;                 /* zamknięty panel nie przyjmuje fokusu i nie jest czytany */
+    transition: transform 0.22s ease, visibility 0s linear 0.22s;
+}
+body:not(.np-wide).np-open .np-panel {
+    transform: none;
+    visibility: visible;
+    transition: transform 0.22s ease, visibility 0s;
+}
+.np-backdrop { transition: opacity 0.22s ease; }
+@media (prefers-reduced-motion: reduce) {
+    body:not(.np-wide) .np-panel, body:not(.np-wide).np-open .np-panel, .np-backdrop { transition: none; }
+}
+
+/* ---------- Pasek panelu na mniejszych ekranach: tytuł + ikona zamknięcia ---------- */
+.np-panel-bar { display: none; }
+body:not(.np-wide) .np-panel-bar {
+    display: flex; align-items: center; justify-content: space-between; flex: none;
+    height: 3.25rem; padding: 0 0.5rem 0 calc(var(--np-pad-x) + 0.25rem);
+    border-bottom: 1px solid var(--np-line);
+}
+.np-panel-bar-title { font-weight: 700; font-size: 0.95rem; }
+.np-panel .np-close {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2.75rem; height: 2.75rem; padding: 0; border: 0; border-radius: 50%;
+    background: transparent; color: var(--np-fg); cursor: pointer;
+}
+.np-panel .np-close:hover { background: var(--np-hover); }
+.np-panel .np-close:focus-visible { outline: 2px solid var(--primary); outline-offset: 2px; }
+.np-close svg { width: 1.35rem; height: 1.35rem; }
+
+/* ---------- Wcięcia zagnieżdżonych elementów ---------- */
+.np-group-body { padding-left: calc(var(--np-chev) - 0.25rem); }
+.np-panel .np-tree .np-req-list { margin-left: calc(var(--np-chev) / 2 + 0.25rem); padding-left: 0.5rem; }
+.np-filter, .np-filter-status { padding-left: 0; }
+.np-panel .np-progress { margin-left: 0; width: 100%; }
+
+/* Podpowiedź skrótu na przycisku „Menu” */
+.np-kbd {
+    font-family: inherit; font-size: 0.7rem; line-height: 1; padding: 0.15rem 0.3rem;
+    border: 1px solid currentColor; border-radius: 0.2rem; background: transparent; color: inherit;
+}
+@media (max-width: 767px) { .np-kbd { display: none; } }  /* telefon: zwykle bez klawiatury */
+#main-content:focus { outline: none; }
+
+/* ---------- Podsekcja w grupie (Nawigacja po arkuszu w Arkuszu oceny) ---------- */
+.np-panel .np-subgroup { border-bottom: 0; margin: 0.35rem 0 0; padding: 0; }
+.np-panel .np-subgroup .np-group-toggle {
+    text-transform: none; letter-spacing: 0; font-size: var(--np-fs); font-weight: 600; color: var(--np-fg);
+    padding-left: 0;
+}
+.np-panel .np-subgroup .np-group-toggle .np-chevron { width: 1.25rem; }
+.np-panel .np-subgroup > .np-group-body { padding-left: 1.25rem; }
+
+/* ---------- Bieżące miejsce i bieżący widok: ciche wyróżnienie (bez kreski przy ikonach i strzałkach) ---------- */
+.np-panel .np-item[aria-current],
+.np-panel .np-sec-link[aria-current],
+.np-panel .np-req-link[aria-current] {
+    box-shadow: none !important;
+    border-radius: var(--border-radius);
+    background: color-mix(in srgb, var(--primary) 9%, transparent);
+    color: var(--primary);
+    font-weight: 400;
+}
+.np-panel .np-item[aria-current] span,
+.np-panel .np-sec-link[aria-current] .np-sec-name,
+.np-panel .np-req-link[aria-current] .np-req-art { font-weight: 500; color: var(--primary); }
+@media (forced-colors: active) {
+    .np-panel [aria-current] { outline: 2px solid Highlight; outline-offset: -2px; background: none; }
+}
+/* ikony menu w bieżącym widoku w kolorze tekstu wyróżnienia; ikony statusów zachowują swój kolor */
+.np-panel .np-item[aria-current] svg { color: var(--primary); }
+
+/* Stopka: Pico daje body>footer szerokość 100% — przy marginesie na panel wystawałaby poza ekran */
+body.np-wide.np-open .app-footer { width: auto; }
+
+/* Opcje podsumowania (rozwijane jak sekcje arkusza) */
+.np-panel .np-summary-actions .np-item { padding: 0.2rem 0.35rem; gap: 0.4rem; }
+.np-panel .np-summary-actions .np-item svg { width: 1rem; height: 1rem; margin-top: 0.15em; }
+
+/* ---------- Niższy nagłówek (73 → ok. 50 px na komputerze) ---------- */
+.app-header.np-header { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+.app-header.np-header #app-logo { width: 1.6rem; height: 1.6rem; }
+.app-header.np-header .app-logo-svg { width: 100%; height: 100%; max-height: none; }
+.app-header.np-header .header-title { font-size: 1rem; }
+.app-header.np-header .np-menu-btn { padding: 0.2rem 0.55rem; }
+.app-header.np-header .header-actions .icon-btn {
+    width: 1.8rem; height: 1.8rem; min-width: 1.8rem; padding: 0;
+    display: inline-flex; align-items: center; justify-content: center;
+}
+.app-header.np-header .header-actions .icon-btn svg { width: 1.1rem; height: 1.1rem; }
+@media (max-width: 600px), (max-height: 500px) {
+    .app-header.np-header { flex-wrap: nowrap; padding: 0.25rem 0.5rem; }
+    .app-header.np-header .header-actions { width: auto; }
+    .app-header.np-header .header-actions .icon-btn { width: 2.25rem; height: 2.25rem; }  /* dotyk: 36 px */
+}
+
+/* ---------- Płynne zwijanie / rozwijanie panelu (także na dużym ekranie) ---------- */
+body.np-wide .np-panel { transform: translateX(-100%); visibility: hidden; }
+body.np-wide.np-open .np-panel { transform: none; visibility: visible; }
+body.np-anim .np-panel { transition: transform 0.25s ease, visibility 0s linear 0.25s; }
+body.np-anim.np-open .np-panel { transition: transform 0.25s ease, visibility 0s; }
+body.np-anim.np-wide #main-content,
+body.np-anim.np-wide .app-footer { transition: margin-left 0.25s ease; }
+@media (prefers-reduced-motion: reduce) {
+    body.np-anim .np-panel, body.np-anim.np-open .np-panel,
+    body.np-anim.np-wide #main-content, body.np-anim.np-wide .app-footer { transition: none; }
+}

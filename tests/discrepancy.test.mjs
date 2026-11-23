@@ -94,7 +94,7 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
     // Wejście w puste pole i wyjście → błąd
     const ta = p.locator('.requirement-row').nth(idx).locator('.assessment-section textarea[name^="comment-"]');
     await ta.focus();
-    await p.locator('#wizard-product-name').focus();
+    await p.locator('#selectedProductName').focus();   // wyjście z pola (formularz kreatora jest w innym widoku)
     s = await rowState(p, idx);
     assert.equal(s.invalid, 'true');
     assert.equal(s.missingVisible, true);
@@ -106,7 +106,7 @@ test('rozbieżność: komunikat, badge, wymagane uzasadnienie, błąd dopiero po
 
     // Same spacje to wciąż brak uzasadnienia
     await ta.fill('   ');
-    await p.locator('#wizard-product-name').focus();
+    await p.locator('#selectedProductName').focus();   // wyjście z pola (formularz kreatora jest w innym widoku)
     s = await rowState(p, idx);
     assert.equal(s.invalid, 'true');
 

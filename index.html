@@ -21,6 +21,7 @@
     <script src="js/exporter.js"></script>
     <script src="js/session.js"></script>
     <link rel="stylesheet" href="css/wizard.css">
+    <link rel="stylesheet" href="css/nav-panel.css">
     <style>
         /* Stylizacja przycisku zamknięcia (x) na wzór Edytora */
         dialog article .close {
@@ -85,15 +86,6 @@
             </div>
         </div>
         <nav class="header-actions" aria-label="Menu aplikacji">
-            <button class="outline secondary icon-btn theme-toggle" id="btn-save-wizard" aria-label="Zapisz wersję roboczą oceny (format JSON)" data-icon-label="Zapisz wersję roboczą oceny (JSON)" title="Zapisz wersję roboczą oceny (JSON)">
-                <i data-lucide="save" aria-hidden="true"></i>
-            </button>
-            <button class="outline secondary icon-btn theme-toggle" id="btn-load-wizard" aria-label="Wczytaj wersję roboczą oceny (format JSON)" data-icon-label="Wczytaj wersję roboczą oceny (JSON)" title="Wczytaj wersję roboczą oceny (JSON)">
-                <i data-lucide="upload" aria-hidden="true"></i>
-            </button>
-            <button class="outline secondary icon-btn theme-toggle" id="btn-download-spreadsheet" aria-label="Pobierz arkusz oceny w formacie Excel" title="Pobierz arkusz oceny w formacie Excel">
-                <i data-lucide="file-spreadsheet" aria-hidden="true"></i>
-            </button>
             <button class="outline secondary icon-btn theme-toggle" id="btn-show-glossary" aria-label="Słownik pojęć i pomoc" data-icon-label="Słownik pojęć i pomoc" title="Słownik pojęć i pomoc">
                 <i data-lucide="help-circle" aria-hidden="true"></i>
             </button>
@@ -265,7 +257,8 @@
                     Generuj Arkusz Oceny
                 </button>
             </form>
-        </section> <!-- /sekcja-setup -->
+            </section>
+        </div> <!-- /setup-section -->
 
         <section id="resultsArea" class="hidden" aria-label="Arkusz oceny">
             <div id="status-message" role="status" aria-live="polite" class="sr-only"></div>
@@ -331,5 +324,6 @@
     <script src="js/minisearch.js"></script>
     <script src="js/search.js"></script>
     <script src="js/wizard.js" defer></script>
+    <script src="js/nav-panel.js" defer></script>
 </body>
 </html>

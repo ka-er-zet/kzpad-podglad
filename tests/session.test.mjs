@@ -5,7 +5,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
-import { ROOT, startServer, baseUrl, stripTimes, saveJson, generateSheet, fillAssessments, readDrafts, LEGACY_AUTOSAVE_KEY } from './helpers.mjs';
+import { ROOT, startServer, baseUrl, stripTimes, saveJson, generateSheet, fillAssessments, readDrafts, LEGACY_AUTOSAVE_KEY, goTo } from './helpers.mjs';
 
 let server, browser, url;
 before(async () => { server = await startServer(); browser = await chromium.launch(); url = baseUrl(server); });
@@ -98,14 +98,14 @@ test('„Nowy arkusz” przy niezapisanej ocenie: za pierwszym razem okno inform
     const ctx = await newContext(); const p = await ctx.newPage();
     await dirtySheet(p, { name: 'Ocena A' });
 
-    await p.click('#hero-new-audit');
+    await goTo(p, 'new');
     await dialogOpen(p).waitFor();
     assert.equal(await dialogTitle(p).textContent(), 'Kopie robocze ocen');
     await p.click('#dialog-cancel'); // Anuluj
     assert.equal(await p.locator('#resultsArea').isVisible(), true, 'anulowanie zostawia arkusz');
     assert.equal(await p.evaluate(() => Session.hasUnsavedChanges()), true);
 
-    await p.click('#hero-new-audit');
+    await goTo(p, 'new');
     await dialogOpen(p).waitFor();
     await p.click('#dialog-confirm'); // Kontynuuj
     await p.waitForFunction(() => document.getElementById('resultsArea').classList.contains('hidden'));
@@ -117,7 +117,7 @@ test('„Nowy arkusz” przy niezapisanej ocenie: za pierwszym razem okno inform
     await fillAssessments(p);
     await p.evaluate(() => Session.flush());
     await p.evaluate(() => document.querySelectorAll('#toast-container .toast').forEach((t) => t.remove()));
-    await p.click('#hero-new-audit');
+    await goTo(p, 'new');
     await p.waitForFunction(() => document.getElementById('resultsArea').classList.contains('hidden'));
     assert.equal(await dialogOpen(p).count(), 0, 'bez okna za drugim razem');
     assert.ok((await toastText(p)).some((t) => /zachowana jako kopia robocza/.test(t)));
@@ -131,6 +131,9 @@ test('ponowne wygenerowanie arkusza zachowuje poprzednią ocenę i zaczyna nową
     await dirtySheet(p, { name: 'Pierwsza' });
     await markInfoSeen(p);
     const firstId = await currentId(p);
+    // formularz kreatora jest w osobnym widoku: Wstecz w przeglądarce wraca do niego z poprzednimi danymi
+    await p.goBack();
+    await p.waitForSelector('#wizard-product-name', { state: 'visible' });
     await p.fill('#wizard-product-name', 'Druga');
     await p.click('#generateBtn');
     await p.waitForFunction((id) => Session.currentId() && Session.currentId() !== id, firstId);
@@ -273,7 +276,10 @@ test('zamknięcie powiadomienia nie przewija strony', async () => {
     await dirtySheet(p, { name: 'Toast' });
     // fokus na nagłówku arkusza (jak po wczytaniu pliku), potem użytkownik przewija w dół
     await p.evaluate(() => document.getElementById('selectedProductName').focus());
+    // po wygenerowaniu arkusza aplikacja płynnie przewija do jego nagłówka — czekamy, aż przewijanie się skończy
+    await p.waitForTimeout(600);
     await p.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await p.waitForTimeout(150);
     const y = await p.evaluate(() => window.pageYOffset);
     assert.ok(y > 1000, 'strona przewinięta w dół');
     await p.evaluate(() => showToast('Powiadomienie testowe', 'success', 60000));
@@ -322,7 +328,7 @@ test('gdy autozapis działa: przeglądarka wymagań, ikona aplikacji i zamknięc
     const ctx = await newContext(); const p = await ctx.newPage();
     const dialogs = []; p.on('dialog', (d) => { dialogs.push(d.type()); d.dismiss(); });
     await dirtySheet(p);
-    await p.click('#hero-browse-requirements');
+    await goTo(p, 'browse');
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await dialogOpen(p).count(), 0);
     await p.click('#browser-back-to-sheet');
@@ -344,7 +350,7 @@ test('gdy autozapis nie działa: ostrzeżenie, pytanie przed nową oceną i ostr
     await p.evaluate(() => Session.flush());
     assert.match(await p.locator('#autosave-status').textContent(), /Nie można zapisać kopii roboczej/);
 
-    await p.click('#hero-new-audit');
+    await goTo(p, 'new');
     await dialogOpen(p).waitFor();
     assert.equal(await dialogTitle(p).textContent(), 'Niezapisane zmiany');
     await p.click('#dialog-cancel');
@@ -368,7 +374,7 @@ test('w przeglądarce wymagań jest przycisk powrotu do arkusza, który zachowuj
     const ctx = await newContext(); const p = await ctx.newPage();
     await dirtySheet(p);
     const before = stripTimes(await snapshot(p));
-    await p.click('#hero-browse-requirements');
+    await goTo(p, 'browse');
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), true);
     // strzałka ozdobna jest ukryta przed czytnikami: nazwa przycisku to sam tekst
@@ -383,7 +389,7 @@ test('w przeglądarce wymagań jest przycisk powrotu do arkusza, który zachowuj
 test('bez arkusza przycisk powrotu w przeglądarce wymagań jest ukryty', async () => {
     const ctx = await newContext(); const p = await ctx.newPage();
     await p.goto(url);
-    await p.click('#hero-browse-requirements');
+    await goTo(p, 'browse');
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await p.locator('#browser-back-to-sheet').isVisible(), false);
     await ctx.close();
@@ -420,7 +426,7 @@ test('powrót z przeglądarki wymagań i otwarcie kopii przenoszą do ostatnio e
     await target.evaluate((ta) => { let d = ta.closest('details'); while (d) { d.open = false; d = d.parentElement.closest('details'); } });
     await p.evaluate(() => window.scrollTo(0, 0));
 
-    await p.click('#hero-browse-requirements');
+    await goTo(p, 'browse');
     await p.waitForSelector('#browser-section:not(.hidden)');
     await p.click('#browser-back-to-sheet');
     await p.waitForFunction((n) => document.activeElement && document.activeElement.name === n, name);

@@ -2843,44 +2843,12 @@ function setupWizardSave() {
     if (wizardSaveBound) return;
     wizardSaveBound = true;
 
-    const saveBtn = document.getElementById('btn-save-wizard');
-    const loadBtn = document.getElementById('btn-load-wizard');
-    const spreadsheetBtn = document.getElementById('btn-download-spreadsheet');
+    // Zapis, wczytanie i eksport są w panelu nawigacji (js/nav-panel.js); w nagłówku zostały słownik i motyw
     const glossaryBtn = document.getElementById('btn-show-glossary');
     const fileInput = document.getElementById('wizard-file-input');
 
-    if (saveBtn) {
-        saveBtn.addEventListener('click', () => {
-            if (isDownloadingWizard) return;
-            isDownloadingWizard = true;
-            downloadWizardAssessment();
-            setTimeout(() => isDownloadingWizard = false, 1000);
-        });
-    }
-
-    if (loadBtn) {
-        loadBtn.addEventListener('click', () => {
-            // Jeśli hero jest widoczne, kliknięcie w navbarze też powinno przygotować UI
-            const heroSection = document.getElementById('hero-section');
-            const setupSection = document.getElementById('setup-section');
-            if (heroSection && !heroSection.classList.contains('hidden')) {
-                // Nie ukrywamy jeszcze hero, zrobimy to po wybraniu pliku w handleWizardFileLoad
-            }
-            if (fileInput) fileInput.click();
-        });
-    }
-
     if (fileInput) {
         fileInput.addEventListener('change', handleWizardFileLoad);
-    }
-
-    if (spreadsheetBtn) {
-        spreadsheetBtn.addEventListener('click', () => {
-            if (isDownloadingWizard) return;
-            isDownloadingWizard = true;
-            downloadWizardSpreadsheet(true);
-            setTimeout(() => isDownloadingWizard = false, 1000);
-        });
     }
 
      if (glossaryBtn) {
@@ -2901,8 +2869,7 @@ function setupWizardSave() {
             setTimeout(() => isDownloadingWizard = false, 1000);
         } else if ((e.ctrlKey || e.metaKey) && e.key === 'o') {
             e.preventDefault();
-            const loadBtn = document.getElementById('btn-load-wizard');
-            if (loadBtn) loadBtn.click();
+            if (fileInput) fileInput.click();
         }
     });
 }
@@ -3988,49 +3955,13 @@ init();
 function setupHeaderScrollHandler() {
     const header = document.querySelector('.app-header');
     if (!header) return;
-
-    // Progi w pikselach: chowamy po przewinięciu w dół o kilka pikseli, pokazujemy dopiero po wyraźnym
-    // przewinięciu w górę — przy czytaniu palcem kierunek zmienia się co chwilę, a iOS „odbija” stronę.
-    const TOP_ZONE = 100;
-    const HIDE_AFTER = 10;
-    const SHOW_AFTER = 40;
-    let lastY = window.pageYOffset;
-    let travel = 0; // droga w bieżącym kierunku (+ w dół, - w górę)
-
+    // Nagłówek jest niski i stały (nawigacja jest w panelu), więc już się nie chowa przy przewijaniu.
+    // Wysokość przyklejonego nagłówka to rezerwa dla elementu z fokusem (scroll-padding-top, WCAG 2.4.11).
     const isSticky = () => getComputedStyle(header).position === 'sticky';
-    const show = () => header.classList.remove('header-hidden');
-    const hide = () => header.classList.add('header-hidden');
-
-    // Rezerwa miejsca dla elementów z fokusem (scroll-padding-top w CSS), tylko gdy nagłówek jest przyklejony
     const updateHeaderHeight = () => {
         const h = isSticky() ? Math.ceil(header.getBoundingClientRect().height) : 0;
         document.documentElement.style.setProperty('--app-header-height', h + 'px');
-        if (!isSticky()) show();
     };
     updateHeaderHeight();
     window.addEventListener('resize', updateHeaderHeight);
-
-    // Fokus w schowanym nagłówku (np. Shift+Tab) — pokaż go, żeby fokus był widoczny
-    header.addEventListener('focusin', show);
-
-    window.addEventListener('scroll', () => {
-        const y = window.pageYOffset;
-        const maxY = document.documentElement.scrollHeight - window.innerHeight;
-        if (!isSticky() || y < TOP_ZONE) {
-            show();
-            lastY = y;
-            travel = 0;
-            return;
-        }
-        if (y < 0 || y > maxY) { lastY = y; return; } // „odbijanie” na krańcach strony (iOS)
-
-        const delta = y - lastY;
-        lastY = y;
-        if (delta === 0) return;
-        if ((delta > 0) !== (travel > 0)) travel = 0; // zmiana kierunku
-        travel += delta;
-
-        if (travel > HIDE_AFTER && !header.contains(document.activeElement)) hide();
-        else if (travel < -SHOW_AFTER) show();
-    }, { passive: true });
 }

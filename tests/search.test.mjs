@@ -3,7 +3,7 @@ import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import { chromium } from 'playwright';
-import { startServer, baseUrl } from './helpers.mjs';
+import { startServer, baseUrl, goTo } from './helpers.mjs';
 
 const require = createRequire(import.meta.url);
 const S = require('../js/search.js');
@@ -132,7 +132,7 @@ async function openBrowser() {
     p.errors = [];
     p.on('pageerror', (e) => p.errors.push(String(e)));
     await p.goto(url);
-    await p.click('#hero-browse-requirements');
+    await goTo(p, 'browse');
     await p.waitForSelector('#browser-search', { state: 'visible' });
     return p;
 }

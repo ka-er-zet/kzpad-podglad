@@ -40,15 +40,32 @@ export function stripTimes(node) {
 export async function saveJson(page) {
     const [download] = await Promise.all([
         page.waitForEvent('download'),
-        page.click('#btn-save-wizard'),
+        page.keyboard.press('Control+s'),
     ]);
     return JSON.parse(fs.readFileSync(await download.path(), 'utf8'));
 }
 
+/**
+ * Przejście do widoku jak użytkownik: kafelkiem na stronie startowej, a gdy go nie widać (inny widok) —
+ * z panelu nawigacji („Menu”, na węższym ekranie wysuwany). act: 'new' | 'browse' | 'home'.
+ */
+export async function goTo(page, act) {
+    const tile = { new: '#hero-new-audit', browse: '#hero-browse-requirements' }[act];
+    await page.waitForSelector('#np-panel', { state: 'attached' });
+    if (tile && await page.locator(tile).isVisible()) { await page.click(tile); return; }
+    const opened = await page.evaluate(() => document.body.classList.contains('np-open'));
+    if (!opened) await page.click('.np-menu-btn');
+    const group = page.locator('#np-panel [data-group="main"] .np-group-toggle');
+    if (await group.getAttribute('aria-expanded') !== 'true') await group.click();
+    await page.click(`#np-panel [data-act="${act === 'browse' ? 'browse' : act}"]`);
+}
+
 /** Nowa ocena: wybór profilu, dane kreatora i wygenerowanie arkusza. */
 export async function generateSheet(page, { name = 'Terminal testowy ąęść', desc = 'Opis / wersja 1.0', auditor = 'Anna Tester' } = {}) {
-    await page.waitForSelector('#hero-new-audit');
-    await page.click('#hero-new-audit');
+    await goTo(page, 'new');
+    // kliknięcie „Nowy arkusz” czyści formularz asynchronicznie (po obsłudze kopii roboczej) — czekamy na to
+    await page.waitForFunction(() => !document.getElementById('setup-section').classList.contains('hidden'));
+    await page.waitForTimeout(200);
     await page.waitForSelector('input[name="product_choice"]', { state: 'attached' });
     await page.locator('input[name="product_choice"]').nth(1).check({ force: true });
     await page.fill('#wizard-product-name', name);
