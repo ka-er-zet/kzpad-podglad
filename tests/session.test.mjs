@@ -380,8 +380,9 @@ test('w przeglądarce wymagań jest przycisk powrotu do arkusza, który zachowuj
     // strzałka ozdobna jest ukryta przed czytnikami: nazwa przycisku to sam tekst
     await p.getByRole('button', { name: 'Wróć do arkusza oceny', exact: true }).waitFor();
     await p.click('#browser-back-to-sheet');
+    // widok przełącza panel w następnej klatce (obserwator zmian), więc czekamy na stan zamiast sprawdzać od razu
+    await p.locator('#resultsArea .requirement-row').first().waitFor({ state: 'visible', timeout: 2000 });
     assert.equal(await p.locator('#browser-section').isVisible(), false);
-    assert.equal(await p.locator('#resultsArea .requirement-row').first().isVisible(), true);
     assert.deepEqual(stripTimes(await snapshot(p)), before, 'oceny bez zmian');
     await ctx.close();
 });

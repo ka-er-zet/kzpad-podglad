@@ -374,14 +374,17 @@
             // W panelu krótko: kiedy i ile ocenione (pełny opis jest na liście w widoku startowym)
             const when = (meta.match(/ostatnia zmiana:\s*([^·]+)/) || [])[1];
             const prog = meta.match(/ocenione\s+(\d+)\s+z\s+(\d+)/);
-            const short = (/^Otwarta w innej karcie/.test(status) ? 'Otwarta w innej karcie' : status) || [when && when.trim(), prog && `ocenione ${prog[1]}/${prog[2]}`].filter(Boolean).join(' · ') || meta;
-            const inner = `<span class="np-draft-title">${esc(title)}</span><span class="np-draft-meta">${esc(short)}</span>`;
             // Ikona: ołówek — ocena otwarta w tej karcie; kłódka — otwarta (zablokowana) w innej karcie; zegar — zapisana kopia
             const current = /^Bieżąca/.test(status), otherTab = /^Otwarta w innej karcie/.test(status);
+            // Także przy bieżącej ocenie pokazujemy czas zapisu (uwaga PFRON: aktualna godzina kopii w nawigacji);
+            // stan „bieżąca”/„w innej karcie” niesie ikona, a czytnikom ekranu — tekst ukryty wizualnie
+            const short = [when && when.trim(), prog && `ocenione ${prog[1]}/${prog[2]}`].filter(Boolean).join(' · ') || status || meta;
+            const sr = current ? 'bieżąca ocena w tej karcie, ' : otherTab ? 'otwarta w innej karcie, ' : '';
+            const inner = `<span class="np-draft-title">${esc(title)}</span><span class="np-draft-meta"><span class="sr-only">${sr}</span>${esc(short)}</span>`;
             const icon = current ? 'file-pen-line' : otherTab ? 'lock' : 'file-clock';
             return `<li><button type="button" class="np-item np-draft" data-draft-index="${i}"><i data-lucide="${icon}" aria-hidden="true"></i><span>${inner}</span></button></li>`;
         }).join('');
-        slot.innerHTML = group('drafts', `Kopie robocze <span class="np-count">(${lis.length})</span>`, `<ul class="np-list">${items}</ul>`);
+        slot.innerHTML = group('drafts', `Kopie robocze <span class="np-group-meta">${lis.length}</span>`, `<ul class="np-list">${items}</ul>`);
         icons();
     }
 
@@ -456,7 +459,6 @@
                 </li>`;
         }).join('');
         slot.innerHTML = group('sheet', 'Arkusz oceny <span class="np-group-meta" id="np-progress-text"></span>', `
-            <progress id="np-progress" class="np-progress" max="1" value="0" aria-label="Postęp oceny"></progress>
             <ul class="np-list np-sheet-actions">
                 ${item('json', 'save', 'Zapisz plik JSON (Ctrl+S)')}
                 ${item('xlsx-blank', 'file-spreadsheet', 'Pobierz pusty arkusz Excel (do wypełnienia)')}
@@ -486,6 +488,9 @@
         const sumEl = document.getElementById('wizard-summary-section');
         if (sumEl) sumEl.tabIndex = -1;
 
+        // Pasek postępu pod nagłówkiem grupy, poza zwijaną treścią — widoczny także po zwinięciu
+        const sheetHead = slot.querySelector('[data-group="sheet"] > .np-group-h');
+        if (sheetHead) sheetHead.insertAdjacentHTML('beforeend', '<progress id="np-progress" class="np-progress" max="1" value="0" aria-label="Postęp oceny"></progress>');
         toggleNeedsSheet(true);
         watchSummary();
         icons();

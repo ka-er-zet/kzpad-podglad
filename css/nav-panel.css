@@ -55,17 +55,17 @@ body:not(.np-wide) .np-panel { top: 0; z-index: 130; box-shadow: 0 0 2rem rgba(0
 body:not(.np-wide).np-open { overflow: hidden; }
 
 /* ---------- Grupy ---------- */
-.np-group + .np-group { border-top: 1px solid var(--np-line); margin-top: 0.5rem; padding-top: 0.5rem; }
+.np-subgroup + .np-subgroup { border-top: 1px solid var(--np-line); margin-top: 0.5rem; padding-top: 0.5rem; }
 .np-group-body { padding-bottom: 0.25rem; }
 .np-group-body[hidden] { display: none; }
 
 .np-panel .np-group-toggle {
     display: flex; align-items: center; width: 100%;
     background: none; border: 0; border-radius: var(--border-radius);
-    padding: 0.4rem 0; color: var(--np-muted); text-align: left; cursor: pointer;
-    font-size: var(--np-fs-sm); font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    padding: 0.45rem 0.25rem 0.45rem 0; color: var(--np-fg); text-align: left; cursor: pointer;
+    font-size: calc(var(--np-fs) * 1.06); font-weight: 700;
 }
-.np-group-toggle:hover { color: var(--np-fg); }
+.np-group-toggle:hover { background: var(--np-hover); }
 .np-count { font-weight: 400; letter-spacing: 0; }
 
 .np-chevron { width: 1rem; height: 1rem; flex: none; transition: transform 0.15s; }
@@ -163,7 +163,7 @@ body:not(.np-wide).np-open { overflow: hidden; }
 }
 
 /* Odstęp między grupami (grupy są w osobnych slotach, więc nie sąsiadują w DOM) */
-.np-group { border-bottom: 1px solid var(--np-line); padding-bottom: 0.4rem; margin-bottom: 0.4rem; }
+.np-group { border-bottom: 1px solid var(--np-line); padding: 0.2rem 0; }
 .np-scroll > .np-group:last-child { border-bottom: 0; }
 
 /* Na telefonie root ma 16–17 px — panel potrzebuje większego tekstu */
@@ -173,9 +173,9 @@ body:not(.np-wide).np-open { overflow: hidden; }
 
 /* ---------- Uproszczenie grupy „Arkusz oceny” ---------- */
 .np-panel .np-group-toggle .np-group-title { flex: 1; display: flex; justify-content: space-between; align-items: baseline; gap: 0.5rem; }
-.np-group-meta { font-weight: 400; letter-spacing: 0; text-transform: none; font-variant-numeric: tabular-nums; color: var(--np-muted); }
+.np-group-meta { font-weight: 400; font-size: var(--np-fs-sm); font-variant-numeric: tabular-nums; color: var(--np-muted); }
 .np-panel .np-progress {
-    display: block; width: calc(100% - var(--np-chev)); margin: 0 0 0.6rem var(--np-chev);
+    display: block; width: calc(100% - var(--np-chev) - 0.25rem); margin: 0 0 0.45rem var(--np-chev);
     height: 0.25rem; border-radius: 0.125rem;
 }
 .np-filter { margin-bottom: 0.5rem; }
@@ -300,7 +300,7 @@ body:not(.np-wide) .np-panel-bar {
 /* ---------- Podsekcja w grupie (Nawigacja po arkuszu w Arkuszu oceny) ---------- */
 .np-panel .np-subgroup { border-bottom: 0; margin: 0.35rem 0 0; padding: 0; }
 .np-panel .np-subgroup .np-group-toggle {
-    text-transform: none; letter-spacing: 0; font-size: var(--np-fs); font-weight: 600; color: var(--np-fg);
+    font-size: var(--np-fs); font-weight: 600; color: var(--np-fg);
     padding-left: 0;
 }
 .np-panel .np-subgroup .np-group-toggle .np-chevron { width: 1.25rem; }
