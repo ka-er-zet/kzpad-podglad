@@ -1,7 +1,7 @@
 # Dokumentacja techniczna — OZ-PAD (Konfigurator Arkusza Oceny)
 
 **Wersja:** 1.4.2  
-**Data:** wrzesień 2026
+**Data:** wrzesień 2026 (dokumentacja uzupełniona w listopadzie 2026: panel nawigacji, kopie robocze, wyszukiwarka, testy)
 
 ---
 
@@ -13,13 +13,18 @@ OZ-PAD to aplikacja webowa typu **Single Page Application (SPA)**, w całości o
 
 | Plik | Rola |
 |---|---|
-| `index.html` + `js/wizard.js` | Moduł oceny — główna ścieżka pracy użytkownika |
+| `index.html` + `js/wizard.js` | Moduł oceny — główna ścieżka pracy użytkownika (arkusz, podsumowanie, przeglądarka wymagań, eksporty XLSX i JSON) |
+| `js/nav-panel.js` + `css/nav-panel.css` | Panel nawigacji (menu boczne, listwa ikon), widoki z adresami `#start`, `#nowy-arkusz`, `#arkusz`, `#wymagania`, skrót Alt+M |
+| `js/session.js` | Kopie robocze ocen (autozapis w IndexedDB), ochrona przed utratą pracy, blokada tej samej oceny w dwóch kartach |
+| `js/search.js` + `js/minisearch.js` | Wyszukiwarka przeglądarki wymagań (MiniSearch + własny stemmer polski) |
 | `editor.html` + `js/editor.js` | Moduł edycji danych (administracyjny) |
 | `js/exporter.js` | Współdzielona logika eksportu (ODT) |
-| `js/utils.js` | Funkcje pomocnicze współdzielone między modułami |
+| `js/utils.js` | Funkcje pomocnicze współdzielone między modułami (m.in. `ModalManager`, renderowanie Markdown, statystyki oceny) |
 | `js/version.js` | Jedyne źródło prawdy o wersji aplikacji (`APP_VERSION`); używany przez stronę i Service Worker |
+| `css/wizard.css`, `css/pico.min.css` | Style aplikacji i biblioteka stylów |
 | `service-worker.js` | Obsługa PWA i trybu offline |
 | `clauses_json/` | Baza danych aplikacji (pliki JSON) |
+| `tests/` | Testy developerskie (Node + Playwright), patrz sekcja 8 |
 
 ### Przepływ danych
 
@@ -27,16 +32,33 @@ OZ-PAD to aplikacja webowa typu **Single Page Application (SPA)**, w całości o
 clauses_json/*.json
        │
        ▼
-   wizard.js          ← stan audytu przechowywany w pamięci przeglądarki
+   wizard.js          ← stan audytu w DOM i w pamięci przeglądarki
        │
-       ├──► exporter.js  → eksport XLSX (przez ExcelJS)
-       │                 → eksport ODT (przez JSZip)
-       │                 → eksport JSON (stan audytu)
+       ├──► session.js   → kopie robocze w IndexedDB (autozapis)
        │
-       └──► index.html  → prezentacja wyników użytkownikowi
+       ├──► nav-panel.js → panel, postęp, filtr, widoki (korzysta z elementów wizard.js)
+       │
+       ├──► search.js    → indeks wyszukiwania wymagań (budowany z clauses.json i mapping.json)
+       │
+       ├──► wizard.js    → eksport XLSX (przez ExcelJS)
+       │                 → eksport JSON (EARL, stan audytu)
+       │
+       ├──► exporter.js  → eksport ODT (przez JSZip)
+       │
+       └──► index.html   → prezentacja wyników użytkownikowi
 ```
 
+Eksport XLSX i JSON jest zaimplementowany w `wizard.js`, a `exporter.js` obsługuje wyłącznie ODT. `nav-panel.js` i `session.js` nie mają własnej logiki oceny: wywołują funkcje globalne `wizard.js` (np. `downloadWizardAssessment`, `downloadWizardSpreadsheet`, `generateDescriptiveSummary`, `downloadSummaryODT`).
+
 Moduł edytora (`editor.js`) pracuje niezależnie od modułu oceny. Wczytuje pliki JSON bezpośrednio z dysku lub z serwera, umożliwia ich edycję i pobieranie zmodyfikowanych wersji.
+
+### Reguły oceny w `wizard.js`
+
+*   **Ocena proponowana** wynika z testów jednostkowych. Wybór innej oceny to **rozbieżność**: wymaga uzasadnienia w komentarzu (błąd po opuszczeniu pola; „Generuj podsumowanie” przenosi do pierwszego błędu). Rozbieżności trafiają do podsumowania, XLSX i ODT.
+*   **Kategorie w podsumowaniu** wynikają z numeru artykułu: Art. 7–21 to `accessibility_requirements`, Art. 22, 23, 24, 26, 32, 33 to `service_provider_obligations` (art. 22 jest obowiązkiem podmiotu gospodarczego, art. 43 ustawy).
+*   **Art. 19** (kryteria funkcjonalne) włącza przełącznik w arkuszu; gdy jest wyłączony, wymagania z kontenerów `data-art19-container` nie wchodzą do postępu, podsumowania ani raportów. Excel ma osobną sekcję Art. 19.
+*   **Pusty arkusz Excel**: `downloadWizardSpreadsheet(false, { blank: true })`; nazwa pliku z końcówką `_do-wypelnienia`.
+*   **Indeks wyszukiwania** budowany jest przy pierwszym użyciu przeglądarki wymagań, osobno dla widoku prawnego i technicznego, z dokumentów: kod, tytuł, kategoria, kody normy z mapowania i pełna treść klauzuli.
 
 ---
 
@@ -188,9 +210,11 @@ Plik `service-worker.js` implementuje strategię **Network First z fallbackiem n
 
 ### Cache
 
-- Nazwa cache: `OZ-PAD-v<wersja>` (np. `OZ-PAD-v1.4.2`) — wersja pochodzi z `js/version.js`
-- Przy instalacji SW pre-cachowane są wszystkie zasoby statyczne: HTML, CSS, JS, obrazy oraz pliki JSON bazy danych.
+- Nazwa cache: `OZ-PAD-v<wersja>` (np. `OZ-PAD-v1.4.2`) — wersja pochodzi z `js/version.js` (`importScripts`)
+- Przy instalacji SW pre-cachowane są wszystkie zasoby statyczne z listy `ASSETS_TO_CACHE`: HTML, manifest, ikony, CSS (`pico.min.css`, `wizard.css`, `nav-panel.css`), JS (`version`, `utils`, `session`, `minisearch`, `search`, `exporter`, `wizard`, `nav-panel` i biblioteki), obrazy oraz pliki JSON bazy danych. **Nowy plik JS/CSS używany przez `index.html` trzeba dopisać do tej listy**, inaczej nie będzie dostępny offline (a `cache.addAll` przerwie instalację, jeśli któregoś wpisu brakuje).
+- Klucze pamięci podręcznej są bez parametrów zapytania (`?…`), żeby jeden plik miał jedną kopię i działał offline niezależnie od dopisków w adresie. Przy aktywacji SW usuwa kopie z parametrami (pozostałość po starszych wersjach).
 - Przy aktualizacji SW stary cache jest automatycznie usuwany i zastępowany nowym.
+- SW przyjmuje komunikat `SKIP_WAITING` (natychmiastowa aktywacja nowej wersji).
 
 ### Strategie pobierania zasobów
 
@@ -213,15 +237,28 @@ Po podmianie plików na serwerze należy podnieść `APP_VERSION` w `js/version.
 
 ## 5. Moduł eksportu (`js/exporter.js`)
 
-Obsługuje generowanie dokumentu ODT (OpenDocument Text). Wywoływany przez `wizard.js`.
+`exporter.js` generuje dokument ODT (OpenDocument Text) i jest wywoływany przez `wizard.js`. Pozostałe formaty powstają w `wizard.js`.
 
 ### Formaty eksportu
 
-| Format | Biblioteka | Plik wyjściowy | Zawartość |
+Nazwy plików tworzy `generateWizardFileName(ext)`: `[typ]_[profil]_[produkt]_[RRRR-MM-DD].[ext]`. Typ to `arkusz` dla JSON i `podsumowanie` dla Excela i ODT. Człony są „slugowane”, nazwa produktu obcinana do ok. 50 znaków.
+
+| Format | Biblioteka | Przykładowy plik | Zawartość |
 |---|---|---|---|
-| `.xlsx` | ExcelJS | `arkusz-oceny-[produkt].xlsx` | Arkusz kalkulacyjny z wszystkimi wymaganiami, ocenami i komentarzami |
-| `.odt` | JSZip | `raport-[produkt].odt` | Dokument tekstowy z podsumowaniem i listami wyników |
-| `.json` | natywny JS | `audyt-[produkt].json` | Pełny stan audytu do późniejszego wczytania |
+| `.xlsx` (po ocenie) | ExcelJS | `podsumowanie_[profil]_[produkt]_[data].xlsx` | Wymagania, oceny, oceny proponowane, rozbieżności, komentarze; podział na wymagania dostępności i obowiązki informacyjne; sekcja Art. 19 |
+| `.xlsx` (pusty) | ExcelJS | `podsumowanie_[profil]_[produkt]_[data]_do-wypelnienia.xlsx` | Arkusz do wypełnienia poza aplikacją |
+| `.odt` | JSZip | `podsumowanie_[profil]_[produkt]_[data].odt` | Dokument tekstowy z podsumowaniem i listami wyników; rozbieżności oznaczone przy wymaganiach |
+| `.json` | natywny JS | `arkusz_[profil]_[produkt]_[data].json` | Pełny stan oceny (EARL JSON-LD) do późniejszego wczytania |
+
+### Format pliku JSON (EARL)
+
+Stan oceny zapisuje `buildAssessmentEARL()` (w `wizard.js`) jako JSON-LD z słownikami `earl`, `dct`, `foaf`, `sch`, `xsd` i `eaa`. Zawiera:
+
+*   assertora-narzędzie z wersją `dct:hasVersion` (z `APP_VERSION`) oraz, jeśli podano, osobę oceniającą,
+*   przedmiot oceny (`earl:TestSubject`) z polami `eaa:assessmentId` (identyfikator oceny, ten sam co klucz kopii roboczej), `eaa:art19Enabled` i `eaa:productCategory`,
+*   asercje `earl:Assertion` dla wymagań i dla testów jednostkowych (wynik: `earl:passed`, `earl:failed`, `earl:inapplicable`, `earl:untested`).
+
+Odczyt (`restoreAssessment`) odtwarza stan formularza. Test `roundtrip` sprawdza, że zapis → wczytanie → zapis daje identyczny plik (po pominięciu pól czasowych). Zmieniając format, zachowaj zgodność wsteczną z plikami wcześniej zapisanymi przez użytkowników.
 
 ### Zależności `exporter.js`
 
@@ -242,3 +279,95 @@ python generate_clauses_export.py
 ```
 
 Skrypt czyta `clauses_json/clauses.json` i zapisuje `clauses_export.md` w głównym katalogu projektu. Przydatny po większych zmianach w bazie klauzul — pozwala szybko przejrzeć całą zawartość bazy w czytelnym formacie Markdown bez uruchamiania aplikacji.
+
+---
+
+## 7. Kopie robocze i pamięć lokalna (`js/session.js`)
+
+Moduł `session.js` chroni pracę użytkownika przed utratą. Udostępnia obiekt `window.Session` (m.in. `Session.currentId()`).
+
+### Model
+
+*   Każda ocena ma **identyfikator** (`eaa:assessmentId` w pliku JSON), nadawany przy wygenerowaniu arkusza albo odczytywany z wczytanego pliku.
+*   Każda ocena ma jedną **kopię roboczą** w IndexedDB. Kopia istnieje wtedy i tylko wtedy, gdy ocena ma zmiany niezapisane w pliku JSON. Zapis pliku JSON usuwa kopię; można ją też usunąć ręcznie z listy.
+*   Autozapis następuje z opóźnieniem (debounce 1,5 s) po zmianie. Przy ukryciu lub zamknięciu karty kopia jest dodatkowo zapisywana synchronicznie do `localStorage` (klucz „pending”), bo zapis do IndexedDB w tym momencie nie zawsze zdąży się zakończyć.
+*   Nowa ocena, wczytanie pliku, otwarcie innej kopii i ponowne wygenerowanie arkusza **zapisują kopię bieżącej pracy przed zmianą**. Za pierwszym razem użytkownik widzi okno z wyjaśnieniem, potem tylko komunikat (toast).
+*   Ta sama ocena nie otworzy się w dwóch kartach (Web Locks API, klucz `oz-pad:assessment:<id>`; komunikacja między kartami przez `BroadcastChannel`).
+*   Gdy zapis kopii jest niemożliwy (tryb prywatny, brak IndexedDB), działa dawna ochrona: pytania przed zastąpieniem arkusza i ostrzeżenie przeglądarki przy zamykaniu karty (`beforeunload`).
+
+### Klucze
+
+| Magazyn | Klucz | Zawartość |
+|---|---|---|
+| IndexedDB | baza `oz-pad`, magazyn `drafts` (`keyPath: id`) | kopie robocze ocen |
+| localStorage | `oz-pad:pending:<id>` | awaryjny zapis przy zamykaniu karty |
+| localStorage | `oz-pad:autosave:v1` | dawny pojedynczy autozapis (z wcześniejszych wersji; `session.js` nadal zna ten klucz) |
+| localStorage | `oz-pad:drafts-info-seen` | użytkownik widział okno wyjaśniające kopie robocze |
+| localStorage | `oz-pad:drafts-collapsed` | lista kopii zwinięta na stronie startowej |
+| localStorage | `oz-pad:panel-collapsed`, `oz-pad:panel-groups` | stan panelu nawigacji (zwinięcie, grupy) |
+
+Wszystkie operacje na `localStorage` są owinięte w `try/catch` (tryb prywatny, limit, blokada).
+
+> **Migracja schematu:** `indexedDB.open('oz-pad', 1)`. Zmiana struktury magazynu wymaga podniesienia wersji bazy i obsługi `onupgradeneeded`.
+
+---
+
+## 8. Panel nawigacji (`js/nav-panel.js`)
+
+*   Panel jest wstawiany w DOM zaraz po nagłówku (kolejność fokusu: nagłówek, panel, treść) i nie zmienia logiki oceny. Korzysta z funkcji i elementów `wizard.js` oraz `session.js`.
+*   Tryby wynikają z zapytań `matchMedia`: **szeroki** (≥ 1360 px szerokości i > 500 px wysokości) — panel obok treści; **listwa ikon** (≥ 768 px i > 500 px wysokości); węższy lub niski ekran — panel wysuwany jako okno modalne (fokus w panelu, Esc zamyka, reszta strony nieaktywna).
+*   Widoki mają adresy `#start`, `#nowy-arkusz`, `#arkusz`, `#wymagania` (Wstecz/Dalej, zmiana tytułu i fokusu).
+*   Skrót **Alt+M** używa `e.code === 'KeyM'`, więc działa niezależnie od układu klawiatury.
+*   Akcje panelu mapują się na istniejące funkcje (`data-act`: `new`, `load`, `browse`, `json`, `xlsx-blank`, `xlsx`, `summary`, `sum-odt`, `glossary`, `theme`). Akcje wymagające podsumowania (`data-needs-summary`) są ukryte, dopóki podsumowanie nie zostanie wygenerowane.
+*   Postęp jest liczony tak samo jak w podsumowaniu (Art. 19 tylko, gdy włączony) i pokazywany także na liście kopii roboczych.
+
+---
+
+## 9. Wyszukiwarka (`js/search.js`)
+
+Eksportuje `window.OZSearch` (a w Node `module.exports`, co pozwala testować ją bez przeglądarki). Silnik: MiniSearch (MIT). Polską odmianę zapewnia **własny** stemmer (obcinanie końcówek po zdjęciu polskich znaków), bez kodu z bibliotek na licencjach z obowiązkiem ujawniania źródeł (patrz `KOMPONENTY_OSS.md`).
+
+*   Zapytanie: każde słowo osobno, w dowolnej kolejności (AND); prefiksy; literówki do 1 edycji; kody z kropkami jako całość.
+*   Ranking: kod i tytuł ważniejsze niż treść klauzuli.
+*   Pomocnicze: `highlight` (podświetlenie z ucieczką HTML), `snippet` (fragment treści), `clauseBody` (tekst klauzuli bez Markdown), `pluralResults`.
+
+---
+
+## 10. Testy
+
+Testy są wyłącznie narzędziem developerskim; aplikacja nie ma kroku budowania. Wymagają Node.js i Playwright (`devDependencies`):
+
+```bash
+npm install
+npx playwright install chromium   # jednorazowo
+npm test                          # node --test tests/*.test.mjs
+```
+
+`tests/helpers.mjs` uruchamia lokalny serwer statyczny i dostarcza pomocniki (wypełnianie arkusza, zapis JSON). Zakres plików testowych:
+
+| Plik | Co sprawdza |
+|---|---|
+| `roundtrip.test.mjs` | zapis → wczytanie → zapis daje identyczny JSON |
+| `session.test.mjs` | kopie robocze, okno informacyjne, ponowne generowanie arkusza, ochrona przed utratą pracy |
+| `nav-panel.test.mjs` | panel, adresy widoków, Alt+M, panel wysuwany na wąskim ekranie |
+| `header.test.mjs` | zachowanie nagłówka na telefonie i od 768 px |
+| `search.test.mjs` | stemmer, tokenizacja, wyszukiwanie |
+| `discrepancy.test.mjs` | rozbieżności z oceną proponowaną, uzasadnienie, podsumowanie i eksporty |
+| `summary-category.test.mjs` | Art. 22 w obowiązkach, Art. 7–21 w wymaganiach dostępności |
+| `summary-escaping.test.mjs` | ucieczka HTML w komentarzach i nazwie produktu |
+| `markdown.test.mjs` | struktura list (WCAG 1.3.1), w tym dane aplikacji |
+| `modal.test.mjs` | okna: pułapka fokusu, blokada przewijania, powrót fokusu |
+| `offline.test.mjs` | start bez sieci, brak duplikowania kopii w pamięci podręcznej |
+
+---
+
+## 11. Wdrożenie automatyczne
+
+Workflow `.github/workflows/pages.yml` publikuje całą zawartość repozytorium na **GitHub Pages** po każdym wypchnięciu na gałąź `main` (oraz ręcznie przez `workflow_dispatch`). Nie ma kroku budowania ani uruchamiania testów — testy trzeba uruchomić lokalnie przed wypchnięciem.
+
+**Lista kontrolna wydania:**
+
+1. Uruchom `npm test`.
+2. Podnieś `APP_VERSION` w `js/version.js` oraz datę wersji w `README.md`.
+3. Jeśli dodano plik JS/CSS używany przez `index.html`, dopisz go do `ASSETS_TO_CACHE` w `service-worker.js`.
+4. Zaktualizuj wersję w `PRZEKAZANIE.md` i `KOMPONENTY_OSS.md` (przy przekazaniu Zamawiającemu).
