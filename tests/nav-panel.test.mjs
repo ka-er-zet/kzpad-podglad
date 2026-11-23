@@ -33,6 +33,11 @@ test('panel: obszar nawigacji z opcjami głównymi; arkusz z postępem jak w pod
     }
     assert.equal(await p.locator('#np-panel [data-group="sheet"]').count(), 0, 'bez arkusza nie ma grupy „Arkusz oceny”');
     assert.equal(await p.locator('#np-panel [data-act="home"]').getAttribute('aria-current'), 'page');
+    const top = await p.evaluate(() => ({
+        header: Math.round(document.querySelector('.app-header').getBoundingClientRect().bottom),
+        panel: Math.round(document.getElementById('np-panel').getBoundingClientRect().top)
+    }));
+    assert.equal(top.panel, top.header, 'panel zaczyna się pod nagłówkiem (nic nie jest przez niego zasłonięte)');
 
     await generateSheet(p);
     await fillAssessments(p);

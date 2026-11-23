@@ -25,7 +25,7 @@
     --np-muted: var(--secondary-text-color);
     --np-line: var(--secondary-border-color);
     --np-hover: rgba(127, 127, 127, 0.12);
-    position: fixed; left: 0; bottom: 0; top: var(--np-top, 0px);
+    position: fixed; left: 0; bottom: 0; top: var(--app-header-height, 0px);   /* pod przyklejonym nagłówkiem */
     width: var(--np-width); max-width: 100vw;
     background: var(--card-background-color);
     border-right: 1px solid var(--np-line);
@@ -34,7 +34,7 @@
     font-size: var(--np-fs); line-height: var(--np-lh); color: var(--np-fg);
 }
 .np-panel[hidden] { display: none; }
-.np-scroll { overflow-y: auto; overflow-x: hidden; padding: 0.5rem var(--np-pad-x) 2rem; flex: 1; overscroll-behavior: contain; }
+.np-scroll { overflow-y: auto; overflow-x: hidden; padding: 0.75rem var(--np-pad-x) 2rem; flex: 1; overscroll-behavior: contain; }
 
 /* Reset stylów Pico w panelu */
 .np-panel h2, .np-panel p, .np-panel ul, .np-panel ol, .np-panel li, .np-panel label { margin: 0; padding: 0; font-size: inherit; line-height: inherit; }
