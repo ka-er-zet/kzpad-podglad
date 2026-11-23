@@ -182,14 +182,18 @@ test('kopia robocza w panelu prowadzi do jej pozycji na liście w widoku startow
     await p.context().close();
 });
 
-test('układ: bez poziomego przewijania przy panelu obok treści', async () => {
+test('układ: bez poziomego przewijania przy panelu obok treści, stopka na całą szerokość', async () => {
     for (const width of [1440, 1920]) {
         const p = await newPage({ width, height: 900 });
         await p.goto(url);
         await generateSheet(p);
         await p.waitForTimeout(400);
-        const r = await p.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth }));
+        const r = await p.evaluate(() => ({
+            sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
+            footerRight: Math.round(document.querySelector('.app-footer').getBoundingClientRect().right)
+        }));
         assert.ok(r.sw <= r.cw, `szerokość ${width}: brak poziomego przewijania (${r.sw} > ${r.cw})`);
+        assert.equal(r.footerRight, r.cw, `szerokość ${width}: stopka sięga do prawej krawędzi`);
         await p.context().close();
     }
 });

@@ -325,8 +325,10 @@ body:not(.np-wide) .np-panel-bar {
 /* ikony menu w bieżącym widoku w kolorze tekstu wyróżnienia; ikony statusów zachowują swój kolor */
 .np-panel .np-item[aria-current] svg { color: var(--primary); }
 
-/* Stopka: Pico daje body>footer szerokość 100% — przy marginesie na panel wystawałaby poza ekran */
-body.np-wide.np-open .app-footer { width: auto; }
+/* Stopka: Pico daje body>footer szerokość 100% — przy marginesie na panel wystawałaby poza ekran.
+   Pico centruje ją też marginesami auto, a w kolumnie flex (body) margines auto wyłącza rozciąganie
+   i stopka kurczy się do treści — stąd margin-right: 0 */
+body.np-wide.np-open .app-footer { width: auto; margin-right: 0; }
 
 /* Opcje podsumowania (rozwijane jak sekcje arkusza) */
 .np-panel .np-summary-actions .np-item { padding: 0.2rem 0.35rem; gap: 0.4rem; }
