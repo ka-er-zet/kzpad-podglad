@@ -1893,7 +1893,9 @@ let isDownloadingWizard = false;
 /**
  * Generuje arkusz Excel z wymaganiami do wypełnienia (ExcelJS)
  */
-async function downloadWizardSpreadsheet(includeSummary = false) {
+// blank: pusty arkusz do wypełnienia (bieżąca konfiguracja wymagań, bez ocen, komentarzy i podsumowania)
+async function downloadWizardSpreadsheet(includeSummary = false, { blank = false } = {}) {
+    if (blank) includeSummary = false;
     // Sprawdź, czy są dane do zapisania. Pobierz aktualne rzędy wymagań
     const requirementRows = document.querySelectorAll('.requirement-row');
     if (requirementRows.length === 0) {
@@ -2205,7 +2207,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         ['Nazwa produktu/usługi:', productName || '(nie podano)'],
         ['Opis/Wersja/URL:', productDesc || '(nie podano)'],
         ['Osoba dokonująca oceny:', auditor || '(nie podano)'],
-        ['Data wypełnienia:', currentDate]
+        ['Data wypełnienia:', blank ? '' : currentDate]
     ];
 
     metaData.forEach((data, index) => {
@@ -2252,7 +2254,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
 
         // Użyj właściwych nazw pól (nie querySelector('input[type=radio]:checked'), bo też łapie testy jednostkowe)
         const safeArticleId = article.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
-        const selectedStatusEl = rowEl.querySelector(`input[type="radio"][name="status-${safeArticleId}"]:checked`);
+        const selectedStatusEl = blank ? null : rowEl.querySelector(`input[type="radio"][name="status-${safeArticleId}"]:checked`);
         let currentStatus = 'Wybierz...';
         if (selectedStatusEl) {
             const val = selectedStatusEl.value;
@@ -2262,7 +2264,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
         }
 
         // Użyj właściwego selektora dla komentarza klauzuli (nie pierwszej textarea w DOM)
-        const currentComment = rowEl.querySelector(`textarea[name="comment-${safeArticleId}"]`)?.value || '';
+        const currentComment = blank ? '' : (rowEl.querySelector(`textarea[name="comment-${safeArticleId}"]`)?.value || '');
 
         // Zbierz testy jednostkowe z tej klauzuli
         const testCards = Array.from(rowEl.querySelectorAll('.checklist-test-item[data-test-id]'));
@@ -2270,19 +2272,19 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
             const testDataId = card.getAttribute('data-test-id');
             const safeTestId = testDataId.replace(/[^a-z0-9]/gi, '-').replace(/-+/g, '-').replace(/^-|-$/g, '');
             const testTitle = card.querySelector('.checklist-test-summary')?.textContent?.trim() || '';
-            const testRadio = card.querySelector(`input[name="test-status-${safeTestId}"]:checked`);
+            const testRadio = blank ? null : card.querySelector(`input[name="test-status-${safeTestId}"]:checked`);
             let testStatus = 'Wybierz...';
             if (testRadio) {
                 if (testRadio.value === 'pass') testStatus = 'Spełnione';
                 else if (testRadio.value === 'fail') testStatus = 'Niespełnione';
                 else if (testRadio.value === 'na') testStatus = 'Nie dotyczy';
             }
-            const testComment = card.querySelector(`textarea[name="test-comment-${safeTestId}"]`)?.value || '';
+            const testComment = blank ? '' : (card.querySelector(`textarea[name="test-comment-${safeTestId}"]`)?.value || '');
             return { testDataId, testTitle, testStatus, testComment };
         });
 
         // Ocena proponowana na podstawie testów i rozbieżność z wybraną oceną (uwaga 9)
-        const assessState = getRequirementAssessmentState(rowEl);
+        const assessState = blank ? { proposal: null, discrepancy: false } : getRequirementAssessmentState(rowEl);
         let proposedText = assessState.proposal ? assessState.proposal.label : '';
         if (assessState.discrepancy) {
             proposedText += `\nInna niż wybrana ocena${assessState.justified ? '' : ' — brak uzasadnienia'}`;
@@ -2417,7 +2419,7 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     const url = window.URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = generateWizardFileName('xlsx');
+    anchor.download = blank ? generateWizardFileName('xlsx').replace(/\.xlsx$/, '_do-wypelnienia.xlsx') : generateWizardFileName('xlsx');
     document.body.appendChild(anchor);
     anchor.click();
     window.URL.revokeObjectURL(url);
@@ -2426,7 +2428,8 @@ async function downloadWizardSpreadsheet(includeSummary = false) {
     // Feedback
     let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');
     if (liveRegion) {
-        liveRegion.innerText = 'Pobrano arkusz oceny w formacie Excel' + (includeSummary ? ' z podsumowaniem.' : '.');
+        liveRegion.innerText = blank ? 'Pobrano pusty arkusz oceny w formacie Excel.'
+            : 'Pobrano arkusz oceny w formacie Excel' + (includeSummary ? ' z podsumowaniem.' : '.');
     }
 }
 

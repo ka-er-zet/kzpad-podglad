@@ -241,6 +241,7 @@
             case 'load': click('wizard-file-input'); break;
             case 'browse': click('hero-browse-requirements'); break;
             case 'json': if (typeof downloadWizardAssessment === 'function') downloadWizardAssessment(); break;
+            case 'xlsx-blank': if (typeof downloadWizardSpreadsheet === 'function') downloadWizardSpreadsheet(false, { blank: true }); break;
             case 'xlsx': if (typeof downloadWizardSpreadsheet === 'function') downloadWizardSpreadsheet(true); break;
             case 'summary': goSheet(false); if (typeof generateDescriptiveSummary === 'function') generateDescriptiveSummary(false, true); break;
             case 'sum-odt': if (typeof downloadSummaryODT === 'function') downloadSummaryODT(); break;
@@ -458,10 +459,11 @@
             <progress id="np-progress" class="np-progress" max="1" value="0" aria-label="Postęp oceny"></progress>
             <ul class="np-list np-sheet-actions">
                 ${item('json', 'save', 'Zapisz plik JSON (Ctrl+S)')}
-                ${item('xlsx', 'file-spreadsheet', 'Pobierz arkusz Excel (z podsumowaniem)')}
+                ${item('xlsx-blank', 'file-spreadsheet', 'Pobierz pusty arkusz Excel (do wypełnienia)')}
             </ul>
             ${group('sheetsum', 'Podsumowanie oceny', `<ul class="np-list np-summary-actions">
                 ${item('summary', 'file-text', 'Generuj podsumowanie')}
+                ${item('xlsx', 'file-spreadsheet', 'Pobierz ocenę z podsumowaniem (Excel)', ' data-needs-summary')}
                 ${item('sum-odt', 'file-text', 'Pobierz podsumowanie (ODT)', ' data-needs-summary')}
             </ul>`, ' data-nested')}
             ${group('sheetnav', 'Nawigacja po arkuszu', `

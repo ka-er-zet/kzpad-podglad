@@ -3,6 +3,7 @@
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { chromium } from 'playwright';
+import { readFile } from 'node:fs/promises';
 import { startServer, baseUrl, generateSheet, fillAssessments, goTo } from './helpers.mjs';
 
 let server, browser, url;
@@ -150,7 +151,7 @@ test('spis arkusza: skok do sekcji oznacza ją jako bieżące miejsce', async ()
     await p.context().close();
 });
 
-test('podsumowanie: „Generuj” zmienia się w „Aktualizuj”, pobranie ODT dopiero po wygenerowaniu', async () => {
+test('podsumowanie: „Generuj” zmienia się w „Aktualizuj”, pobranie Excela z oceną i ODT dopiero po wygenerowaniu', async () => {
     const p = await newPage();
     await p.goto(url);
     await generateSheet(p);
@@ -158,11 +159,50 @@ test('podsumowanie: „Generuj” zmienia się w „Aktualizuj”, pobranie ODT 
     await item.waitFor();
     assert.equal((await item.textContent()).trim(), 'Generuj podsumowanie');
     assert.equal(await p.locator('#np-panel [data-act="sum-odt"]').isVisible(), false);
+    assert.equal(await p.locator('#np-panel [data-act="xlsx"]').isVisible(), false);
+    assert.equal(await p.locator('#np-panel [data-act="xlsx-blank"]').isVisible(), true, 'pusty arkusz od razu po wygenerowaniu');
     await item.click();
     await p.waitForTimeout(300);
     assert.equal((await item.textContent()).trim(), 'Aktualizuj podsumowanie');
+    assert.equal(await p.locator('#np-panel [data-act="xlsx"]').isVisible(), true);
     const [dl] = await Promise.all([p.waitForEvent('download'), p.click('#np-panel [data-act="sum-odt"]')]);
     assert.match(dl.suggestedFilename(), /\.odt$/);
+    assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
+// Zawartość pobranego Excela odczytana tą samą biblioteką ExcelJS, której używa aplikacja
+async function readXlsx(p, dl) {
+    const b64 = (await readFile(await dl.path())).toString('base64');
+    return p.evaluate(async (b64) => {
+        const wb = new ExcelJS.Workbook();
+        await wb.xlsx.load(Uint8Array.from(atob(b64), (c) => c.charCodeAt(0)).buffer);
+        const ws = wb.getWorksheet('Ocena szczegółowa');
+        const rows = [];
+        ws.eachRow((row, i) => { if (i > 9) rows.push({ status: String(row.getCell(3).value ?? ''), comment: String(row.getCell(5).value ?? '') }); });
+        return { sheets: wb.worksheets.map((w) => w.name), rows };
+    }, b64);
+}
+
+test('Excel: pusty arkusz do wypełnienia bez ocen i podsumowania, ocena w Excelu z ocenami', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await generateSheet(p);
+    await fillAssessments(p);
+    const [blankDl] = await Promise.all([p.waitForEvent('download'), p.click('#np-panel [data-act="xlsx-blank"]')]);
+    assert.match(blankDl.suggestedFilename(), /_do-wypelnienia\.xlsx$/);
+    const blank = await readXlsx(p, blankDl);
+    assert.deepEqual(blank.sheets, ['Ocena szczegółowa']);
+    assert.ok(blank.rows.length > 10, 'są wiersze wymagań');
+    assert.deepEqual(blank.rows.filter((r) => r.status !== 'Wybierz...' || r.comment), [], 'brak ocen i komentarzy');
+
+    await p.click('#np-panel [data-act="summary"]');
+    await p.waitForTimeout(300);
+    const [fullDl] = await Promise.all([p.waitForEvent('download'), p.click('#np-panel [data-act="xlsx"]')]);
+    const full = await readXlsx(p, fullDl);
+    assert.deepEqual(full.sheets, ['Podsumowanie opisowe', 'Ocena szczegółowa']);
+    assert.equal(full.rows.length, blank.rows.length, 'ten sam zakres wymagań');
+    assert.ok(full.rows.some((r) => r.status === 'Spełnione') && full.rows.some((r) => r.comment.startsWith('Komentarz')), 'są oceny i komentarze');
     assert.deepEqual(p.errors, []);
     await p.context().close();
 });
