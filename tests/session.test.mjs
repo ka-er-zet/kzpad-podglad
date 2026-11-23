@@ -1,4 +1,4 @@
-// Testy sesji pracy: kopie robocze ocen (IndexedDB, jedna kopia na ocenę), lista „Niezapisane oceny”,
+// Testy sesji pracy: kopie robocze ocen (IndexedDB, jedna kopia na ocenę), lista „Kopie robocze”,
 // blokada tej samej oceny w dwóch kartach i ochrona przed utratą pracy, gdy autozapis nie działa.
 import { test, before, after } from 'node:test';
 import assert from 'node:assert/strict';
@@ -69,7 +69,7 @@ test('wygenerowanie arkusza tworzy kopię roboczą z identyfikatorem, który tra
     await ctx.close();
 });
 
-test('po ponownym wejściu nie ma okna — kopia jest na liście „Niezapisane oceny” i daje się otworzyć', async () => {
+test('po ponownym wejściu nie ma okna — kopia jest na liście „Kopie robocze” i daje się otworzyć', async () => {
     const ctx = await newContext(); const p1 = await ctx.newPage();
     await dirtySheet(p1, { name: 'Bankomat XYZ' });
     const before = await snapshot(p1);
@@ -355,7 +355,7 @@ test('gdy autozapis nie działa: ostrzeżenie, pytanie przed nową oceną i ostr
     await ctx.close();
 });
 
-test('bez kopii roboczych sekcja „Niezapisane oceny” jest ukryta', async () => {
+test('bez kopii roboczych sekcja „Kopie robocze” jest ukryta', async () => {
     const ctx = await newContext(); const p = await ctx.newPage();
     await p.goto(url);
     await p.waitForSelector('#hero-new-audit');
@@ -389,14 +389,14 @@ test('bez arkusza przycisk powrotu w przeglądarce wymagań jest ukryty', async 
     await ctx.close();
 });
 
-test('sekcję „Niezapisane oceny” można zwinąć; stan jest zapamiętany', async () => {
+test('sekcję „Kopie robocze” można zwinąć; stan jest zapamiętany', async () => {
     const ctx = await newContext(); const p1 = await ctx.newPage();
     await dirtySheet(p1, { name: 'Zwijanie' });
     await p1.close();
     const p = await ctx.newPage();
     await p.goto(url);
     await p.waitForSelector('#drafts-section:not(.hidden)');
-    const toggle = p.getByRole('button', { name: /Niezapisane oceny/ });
+    const toggle = p.getByRole('button', { name: /Kopie robocze/ });
     assert.equal(await toggle.getAttribute('aria-expanded'), 'true', 'domyślnie rozwinięta');
     await toggle.click();
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false');

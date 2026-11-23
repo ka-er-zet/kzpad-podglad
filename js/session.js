@@ -6,7 +6,7 @@
  *    arkusza albo odczytywany z wczytanego pliku.
  *  - Każda ocena ma własną kopię roboczą w IndexedDB. Kopia istnieje wtedy i tylko wtedy, gdy ocena
  *    ma zmiany niezapisane w pliku JSON. Zapis pliku JSON usuwa kopię tej oceny; użytkownik może też
- *    usunąć kopię ręcznie z listy „Niezapisane oceny” na stronie startowej.
+ *    usunąć kopię ręcznie z listy „Kopie robocze” na stronie startowej.
  *  - Rozpoczęcie nowej oceny, wczytanie pliku, otwarcie innej kopii czy ponowne wygenerowanie arkusza
  *    nie usuwają bieżącej pracy: przed zmianą jej kopia jest zapisywana. Za pierwszym razem
  *    użytkownik dostaje okno z wyjaśnieniem, potem już tylko komunikat (toast).
@@ -428,7 +428,7 @@
 
         if (!infoSeen()) {
             const ok = await askConfirm(
-                'Każda ocena jest automatycznie zapisywana w tej przeglądarce jako kopia robocza. Rozpoczęcie nowej oceny, wczytanie pliku albo otwarcie innej kopii nie usuwa bieżącej pracy — znajdziesz ją na stronie startowej w sekcji „Niezapisane oceny”. Kopia jest usuwana po zapisaniu oceny do pliku JSON albo gdy usuniesz ją sam. Kopie są dostępne tylko w tej przeglądarce na tym urządzeniu.',
+                'Każda ocena jest automatycznie zapisywana w tej przeglądarce jako kopia robocza. Rozpoczęcie nowej oceny, wczytanie pliku albo otwarcie innej kopii nie usuwa bieżącej pracy — znajdziesz ją na stronie startowej w sekcji „Kopie robocze”. Kopia jest usuwana po zapisaniu oceny do pliku JSON albo gdy usuniesz ją sam. Kopie są dostępne tylko w tej przeglądarce na tym urządzeniu.',
                 'Kopie robocze ocen',
                 'Kontynuuj',
                 'Anuluj',
@@ -441,7 +441,7 @@
     }
 
     function keptToast() {
-        toast('Poprzednia ocena została zachowana jako kopia robocza — znajdziesz ją na stronie startowej w sekcji „Niezapisane oceny”.', 'success', KEPT_TOAST_MS);
+        toast('Poprzednia ocena została zachowana jako kopia robocza — znajdziesz ją na stronie startowej w sekcji „Kopie robocze”.', 'success', KEPT_TOAST_MS);
     }
 
     /** Zamyka bieżącą ocenę w tej karcie (jej kopia robocza zostaje). */
@@ -641,7 +641,7 @@
     }
 
     // ---------------------------------------------------------------------------------------
-    // Lista „Niezapisane oceny” na stronie startowej
+    // Lista „Kopie robocze” na stronie startowej
     // ---------------------------------------------------------------------------------------
     /** Sekcja rozwijana (wzorzec „disclosure”: przycisk w nagłówku + aria-expanded). */
     function applyCollapsed(collapsed) {
