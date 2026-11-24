@@ -64,7 +64,7 @@ test('widoki mają adresy; Wstecz i Dalej przełączają widok, tytuł i fokus',
     await generateSheet(p);
     await p.waitForFunction(() => document.body.dataset.npView === 'sheet');
     assert.match(p.url(), /#arkusz$/);
-    assert.match(await p.title(), /^Arkusz oceny/);
+    assert.match(await p.title(), /^Arkusz oceny: Terminal testowy/, 'tytuł karty zawiera nazwę ocenianego produktu');
 
     await p.goBack();
     await p.waitForFunction(() => document.body.dataset.npView === 'new');
@@ -79,6 +79,20 @@ test('widoki mają adresy; Wstecz i Dalej przełączają widok, tytuł i fokus',
     assert.equal((await active(p)).id, 'selectedProductName');
     assert.equal(await p.locator('#wizard-product-name').isVisible(), false, 'w widoku arkusza nie ma formularza kreatora');
     assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
+test('tytuł karty: widok startowy to nazwa narzędzia, arkusz dostaje nazwę produktu', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await p.waitForSelector('#np-panel', { state: 'attached' });
+    assert.equal(await p.title(), 'Ocena zgodności z Polskim Aktem Dostępności');
+    await generateSheet(p);
+    await p.waitForFunction(() => document.body.dataset.npView === 'sheet');
+    assert.match(await p.title(), /^Arkusz oceny: Terminal testowy/);
+    await p.click('.np-brand-link');
+    await p.waitForFunction(() => document.body.dataset.npView === 'start');
+    assert.equal(await p.title(), 'Ocena zgodności z Polskim Aktem Dostępności');
     await p.context().close();
 });
 

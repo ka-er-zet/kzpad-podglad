@@ -493,7 +493,18 @@
     // Adresy widoków (historia przeglądarki: Wstecz / Dalej, odświeżenie, link do widoku)
     const VIEW_HASH = { start: 'start', new: 'nowy-arkusz', sheet: 'arkusz', browser: 'wymagania' };
     const HASH_VIEW = Object.fromEntries(Object.entries(VIEW_HASH).map(([k, v]) => [v, k]));
-    const VIEW_TITLE = { start: 'Widok startowy', new: 'Nowy arkusz oceny', sheet: 'Arkusz oceny', browser: 'Przeglądarka wymagań' };
+    // Widok startowy nie ma tytułu szczegółowego: karta nazywa się po prostu nazwą narzędzia
+    function setTitle(v) {
+        let detail = '';
+        if (v === 'new') detail = 'Nowy arkusz oceny';
+        else if (v === 'sheet') {
+            // Nazwa nadana ocenie przez użytkownika, a gdy jej brak — rodzaj produktu
+            const area = document.getElementById('resultsArea'), nameInput = document.getElementById('wizard-product-name');
+            const name = (nameInput && nameInput.value.trim()) || (area && area.getAttribute('data-product-name')) || '';
+            detail = name ? `Arkusz oceny: ${name}` : 'Arkusz oceny';
+        }
+        if (typeof Browser !== 'undefined' && Browser.updateTitle) Browser.updateTitle(detail);
+    }
     const VIEW_HEADING = { start: 'hero-title', new: 'setup-title', sheet: 'selectedProductName', browser: 'browser-title' };
     let fromHistory = false;
 
@@ -511,8 +522,11 @@
                     else history.pushState({ npView: v }, '', h);
                 } catch (e) { /* bez historii (np. w ramce) — widok działa dalej */ }
             }
-            if (v !== 'browser') document.title = `${VIEW_TITLE[v]} — OZ-PAD`;
         }
+        // Tytuł karty zależy od widoku i od otwartej oceny, więc odświeżamy go przy każdym wywołaniu
+        // (np. po wczytaniu kopii roboczej nazwa produktu pojawia się już po zmianie widoku).
+        // Przeglądarka wymagań ustawia własny tytuł (kategoria, widok ustawy/normy) w Browser.
+        if (v !== 'browser') setTitle(v);
         lastView = v;
         $$('[data-act]', panel).forEach(b => b.removeAttribute('aria-current'));
         const cur = panel.querySelector(`[data-act="${({ new: 'new', browser: 'browse' })[v] || '-'}"]`);
