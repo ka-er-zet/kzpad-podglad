@@ -168,6 +168,52 @@ test('spis arkusza: skok do sekcji oznacza ją jako bieżące miejsce', async ()
     await p.context().close();
 });
 
+test('filtr: zmiana filtra zachowuje miejsce w arkuszu (to samo wymaganie albo najbliższe pasujące), bez skoków', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await generateSheet(p);
+    await fillAssessments(p, 30);   // pierwsze 30 wymagań ocenionych, dalsze bez oceny
+    // numer wymagania, które jest u góry widocznej części arkusza, i jego położenie
+    const topRow = () => p.evaluate(() => {
+        const hb = document.querySelector('.app-header').getBoundingClientRect().bottom;
+        const all = [...document.querySelectorAll('.requirement-row')];
+        const row = all.filter((r) => r.offsetParent).find((r) => r.getBoundingClientRect().bottom > hb + 10);
+        return { index: all.indexOf(row), top: Math.round(row.getBoundingClientRect().top) };
+    });
+    const scrollToRow = (i) => p.evaluate((i) => {
+        const r = document.querySelectorAll('.requirement-row')[i];
+        window.scrollBy(0, r.getBoundingClientRect().top - 150);
+    }, i);
+
+    // wymaganie ocenione znika w filtrze „Bez oceny”: ląduje się na najbliższym następnym pasującym, nie w losowym miejscu
+    await scrollToRow(15);
+    await p.waitForTimeout(200);
+    const first = await p.evaluate(() => [...document.querySelectorAll('.requirement-row')].findIndex((r) => !r.querySelector('input[name^="status-"]:checked')));
+    await p.selectOption('#np-filter', 'none');
+    await p.waitForTimeout(300);
+    const afterFilter = await topRow();
+    assert.equal(afterFilter.index, first, 'po filtrze: pierwsze wymaganie bez oceny po poprzednim miejscu');
+    assert.ok(afterFilter.top >= 0 && afterFilter.top < 80, `wymaganie tuż pod nagłówkiem (jest ${afterFilter.top} px)`);
+    // powrót do „Wszystkie” nie przenosi gdzie indziej
+    await p.selectOption('#np-filter', 'all');
+    await p.waitForTimeout(300);
+    const back = await topRow();
+    assert.equal(back.index, afterFilter.index, 'po powrocie: to samo wymaganie');
+    assert.ok(Math.abs(back.top - afterFilter.top) <= 2, 'to samo miejsce na ekranie');
+
+    // wymaganie, które pasuje do filtra, zostaje na tym samym miejscu ekranu
+    await scrollToRow(first + 3);
+    await p.waitForTimeout(200);
+    const before = await topRow();
+    await p.selectOption('#np-filter', 'none');
+    await p.waitForTimeout(300);
+    const kept = await topRow();
+    assert.equal(kept.index, before.index, 'pasujące wymaganie nie zmienia się');
+    assert.ok(Math.abs(kept.top - before.top) <= 2, `ta sama pozycja na ekranie (było ${before.top}, jest ${kept.top})`);
+    assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
 test('podsumowanie: „Generuj” zmienia się w „Aktualizuj”, pobranie Excela z oceną i ODT dopiero po wygenerowaniu', async () => {
     const p = await newPage();
     await p.goto(url);

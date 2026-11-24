@@ -810,9 +810,46 @@
         return true;
     }
 
+    /** Dolna krawędź nagłówka strony: od niej zaczyna się widoczna część arkusza. */
+    function headerBottom() {
+        const header = $('.app-header');
+        return Math.max(header ? header.getBoundingClientRect().bottom : 0, 0);
+    }
+
+    /**
+     * Kotwica miejsca w arkuszu przed zmianą filtra: pierwsze widoczne wymaganie, które sięga poniżej nagłówka,
+     * i jego położenie. Filtr zmienia wysokość dokumentu (np. 78 000 → 19 000 px), więc bez kotwicy
+     * przeglądarka zostawia stary scrollY i użytkownik ląduje w zupełnie innym miejscu.
+     */
+    function captureAnchor() {
+        const sheet = $('#resultsArea');
+        if (!sheet || !sheet.offsetParent) return null;
+        const hb = headerBottom();
+        for (const sec of model) {
+            for (const r of sec.rows) {
+                if (!r.el || !r.el.offsetParent || r.el.classList.contains('np-filtered-out')) continue;
+                const rect = r.el.getBoundingClientRect();
+                if (rect.bottom > hb + 10) return { row: r, top: rect.top };
+            }
+        }
+        return null;
+    }
+
+    /** Po zmianie filtra: to samo wymaganie na tym samym miejscu ekranu; gdy zniknęło, najbliższe pasujące (następne, potem poprzednie). */
+    function restoreAnchor(anchor) {
+        const visible = (r) => r.el && !r.el.classList.contains('np-filtered-out') && r.el.offsetParent;
+        const hb = headerBottom();
+        if (visible(anchor.row)) { window.scrollBy(0, anchor.row.el.getBoundingClientRect().top - anchor.top); return; }
+        const all = model.flatMap(s => s.rows);
+        const i = all.indexOf(anchor.row);
+        const next = all.slice(i + 1).find(visible) || all.slice(0, i).reverse().find(visible);
+        if (next) window.scrollBy(0, next.el.getBoundingClientRect().top - hb - 8);
+    }
+
     /** Filtr działa na arkusz i drzewo. Stosowany przy zmianie filtra, nie przy każdej ocenie. */
     function applyFilter(announce) {
         refresh();
+        const anchor = announce ? captureAnchor() : null;
         const on = art19Enabled();
         let shown = 0, total = 0;
         model.forEach(sec => {
@@ -832,6 +869,7 @@
         });
         // Przy aktywnym filtrze rozwiń sekcje, żeby było widać wyniki
         if (filter !== 'all') $$('.np-sec-toggle', panel).forEach(b => { if (b.getAttribute('aria-expanded') !== 'true') toggleDisclosure(b, 'sec'); });
+        if (anchor) restoreAnchor(anchor);
         const st = $('#np-filter-status');
         if (!st) return;
         const text = filter === 'all' ? '' : `Wyświetlono ${shown} z ${total} wymagań.`;

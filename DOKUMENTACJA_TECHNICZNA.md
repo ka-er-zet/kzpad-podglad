@@ -331,6 +331,7 @@ Wszystkie operacje na `localStorage` są owinięte w `try/catch` (tryb prywatny,
 *   Skrót **Alt+M** używa `e.code === 'KeyM'`, więc działa niezależnie od układu klawiatury.
 *   Akcje panelu mapują się na istniejące funkcje (`data-act`: `new`, `load`, `browse`, `json`, `xlsx-blank`, `xlsx`, `summary`, `sum-odt`, `glossary`, `theme`). Akcje wymagające podsumowania (`data-needs-summary`) są ukryte, dopóki podsumowanie nie zostanie wygenerowane.
 *   Postęp jest liczony tak samo jak w podsumowaniu (Art. 19 tylko, gdy włączony) i pokazywany także na liście kopii roboczych.
+*   **Filtr arkusza** („Pokaż”: wszystkie / bez oceny / niespełnione / wymagają uzasadnienia, `applyFilter`) ukrywa niepasujące wymagania i puste sekcje w arkuszu i w spisie. Stosuje się go przy zmianie filtra, nie przy każdej ocenie, więc oceniane wymaganie nie znika samo. Filtr zmienia wysokość dokumentu (kilkukrotnie), więc przed zmianą `captureAnchor` zapamiętuje pierwsze widoczne wymaganie i jego położenie na ekranie, a `restoreAnchor` po zmianie przywraca je w tym samym miejscu; gdy to wymaganie nie pasuje do filtra, przechodzi do najbliższego następnego pasującego (a jeśli go nie ma, poprzedniego) tuż pod nagłówkiem strony. Bez tego `scrollY` zostawał ten sam w skróconym dokumencie i widok „skakał”.
 
 ---
 
