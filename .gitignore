@@ -28,3 +28,4 @@ przyklad.txt
 # Testy developerskie
 node_modules/
 tests/.tmp-*.json
+package-lock.json
