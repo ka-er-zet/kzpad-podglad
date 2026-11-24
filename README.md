@@ -89,6 +89,7 @@ Aplikacja automatycznie zapisuje bieżącą ocenę w przeglądarce jako **kopię
 *   Każda ocena ma własną kopię. Kopia istnieje, dopóki ocena ma zmiany niezapisane do pliku JSON. **Zapis pliku JSON usuwa kopię** tej oceny, podobnie jak pobranie jej z listy.
 *   Na stronie startowej **Kopie robocze** to rozwijany kafelek na całą szerokość pod pozostałymi kafelkami (widoczny tylko, gdy kopie istnieją). Lista kopii jest w jego wnętrzu: kliknięcie nagłówka rozwija lub zwija całą kartę; domyślnie jest rozwinięta, a wybór jest zapamiętywany. Kopie są też w panelu (grupa „Kopie robocze”).
 *   Lista **Kopie robocze** (strona startowa i panel) pokazuje nazwę, czas ostatniej zmiany (godzinę bieżącej kopii) oraz postęp, liczony tak samo jak w podsumowaniu (kryteria Art. 19 tylko, gdy są włączone). Kopię można otworzyć (wraca do ostatnio edytowanego pola), pobrać jako JSON (także gdy się nie otwiera) albo usunąć.
+*   Po wczytaniu pliku JSON formularz przechodzi do pierwszego wymagania bez oceny (jeśli jakieś oceny już są), a kopia robocza otwiera się w ostatnio edytowanym polu.
 *   Rozpoczęcie nowej oceny, wczytanie pliku, otwarcie innej kopii lub ponowne wygenerowanie arkusza **nie kasują bieżącej pracy** — jej kopia jest zapisywana przed zmianą. Za pierwszym razem pojawia się okno z wyjaśnieniem, potem tylko komunikat.
 *   Tę samą ocenę można mieć otwartą tylko w jednej karcie przeglądarki.
 *   Gdy przeglądarka nie pozwala na zapis kopii (np. tryb prywatny), aplikacja pyta przed zastąpieniem arkusza i ostrzega przy zamykaniu karty z niezapisanymi zmianami.

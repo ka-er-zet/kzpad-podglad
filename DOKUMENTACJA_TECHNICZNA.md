@@ -292,6 +292,7 @@ Moduł `session.js` chroni pracę użytkownika przed utratą. Udostępnia obiekt
 *   Każda ocena ma jedną **kopię roboczą** w IndexedDB. Kopia istnieje wtedy i tylko wtedy, gdy ocena ma zmiany niezapisane w pliku JSON. Zapis pliku JSON usuwa kopię; można ją też usunąć ręcznie z listy.
 *   Autozapis następuje z opóźnieniem (debounce 1,5 s) po zmianie. Przy ukryciu lub zamknięciu karty kopia jest dodatkowo zapisywana synchronicznie do `localStorage` (klucz „pending”), bo zapis do IndexedDB w tym momencie nie zawsze zdąży się zakończyć.
 *   Nowa ocena, wczytanie pliku, otwarcie innej kopii i ponowne wygenerowanie arkusza **zapisują kopię bieżącej pracy przed zmianą**. Za pierwszym razem użytkownik widzi okno z wyjaśnieniem, potem tylko komunikat (toast).
+*   **Miejsce po wczytaniu:** kopia robocza otwiera się w ostatnio edytowanym polu (zapamiętana pozycja). Plik JSON pozycji nie zawiera, więc po jego wczytaniu `scrollToFirstUnrated` (`wizard.js`) przenosi do pierwszego wymagania bez oceny (fokus na jego polu oceny, komunikat dla czytników ekranu). Gdy nic nie jest ocenione albo ocenione jest wszystko, zostaje początek arkusza. Wymagania Art. 19 są liczone tylko przy włączonym przełączniku, jak w postępie.
 *   Ta sama ocena nie otworzy się w dwóch kartach (Web Locks API, klucz `oz-pad:assessment:<id>`; komunikacja między kartami przez `BroadcastChannel`).
 *   Gdy zapis kopii jest niemożliwy (tryb prywatny, brak IndexedDB), działa dawna ochrona: pytania przed zastąpieniem arkusza i ostrzeżenie przeglądarki przy zamykaniu karty (`beforeunload`).
 

@@ -485,3 +485,56 @@ test('postęp w kopii roboczej liczy te same wymagania co podsumowanie (Art. 19 
     await check();                                                  // Art. 19 włączony
     await ctx.close();
 });
+
+// Uwaga PFRON 7 (listopad 2026): po wczytaniu pliku JSON formularz przechodzi do pierwszego wymagania bez oceny
+test('wczytanie pliku JSON przenosi do pierwszego nieocenionego wymagania; bez ocen albo przy kompletnej ocenie zostaje początek', async () => {
+    const ctxA = await newContext(); const a = await ctxA.newPage();
+    await dirtySheet(a, { name: 'Skok' });           // oceniane są początkowe wymagania, reszta zostaje bez oceny
+    const partial = await saveJson(a);
+    const rowIdx = await a.evaluate(() => {
+        const rows = [...document.querySelectorAll('#resultsArea .requirement-row')].filter((r) => !r.closest('[data-art19-container="true"]'));
+        return rows.findIndex((r) => !r.querySelector('input[type="radio"][name^="status-"]:checked'));
+    });
+    assert.ok(rowIdx > 0, 'w arkuszu są ocenione i nieocenione wymagania');
+    await ctxA.close();
+
+    const load = async (json, tmpName) => {
+        const ctx = await newContext(); const p = await ctx.newPage();
+        const tmp = path.join(ROOT, 'tests', tmpName);
+        fs.writeFileSync(tmp, JSON.stringify(json));
+        try {
+            await p.goto(url);
+            await p.waitForSelector('#wizard-file-input', { state: 'attached' });
+            await p.setInputFiles('#wizard-file-input', tmp);
+            await p.waitForSelector('#resultsArea:not(.hidden) .requirement-row', { state: 'attached' });
+            await p.waitForTimeout(1200);
+            const state = await p.evaluate(() => {
+                const ae = document.activeElement, row = ae && ae.closest && ae.closest('.requirement-row');
+                const rows = [...document.querySelectorAll('#resultsArea .requirement-row')].filter((r) => !r.closest('[data-art19-container="true"]'));
+                return { name: ae && (ae.name || ae.id), idx: row ? rows.indexOf(row) : -1, y: window.pageYOffset,
+                    msg: (document.getElementById('status-message') || {}).innerText || '' };
+            });
+            return { ...state, ctx, p };
+        } finally { fs.rmSync(tmp, { force: true }); }
+    };
+
+    const s1 = await load(partial, '.tmp-skok.json');
+    assert.equal(s1.idx, rowIdx, 'fokus w pierwszym nieocenionym wymaganiu');
+    assert.match(s1.name, /^status-/, 'fokus na polu oceny wymagania');
+    assert.ok(s1.y > 300, 'arkusz przewinięty (y=' + s1.y + ')');
+    assert.match(s1.msg, /pierwszego nieocenionego wymagania/, 'komunikat dla czytników ekranu');
+    await s1.ctx.close();
+
+    // wszystko ocenione: zostaje początek arkusza
+    const a2ctx = await newContext(); const a2 = await a2ctx.newPage();
+    await a2.goto(url); await generateSheet(a2, { name: 'Komplet' });
+    await a2.evaluate(() => document.querySelectorAll('#resultsArea .requirement-row').forEach((row) => {
+        const r = row.querySelector('input[type="radio"][name^="status-"][value="compliant"]'); if (r) r.click();
+    }));
+    await a2.evaluate(() => { const sw = document.querySelector('#resultsArea input[role="switch"]'); if (sw && !sw.checked) { sw.click(); sw.click(); } });
+    const full = await saveJson(a2);
+    await a2ctx.close();
+    const s2 = await load(full, '.tmp-komplet.json');
+    assert.ok(!/pierwszego nieocenionego/.test(s2.msg), 'przy kompletnej ocenie nie ma skoku');
+    await s2.ctx.close();
+});

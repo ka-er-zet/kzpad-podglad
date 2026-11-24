@@ -2788,6 +2788,36 @@ function scrollToLoadedAssessment() {
 }
 
 /**
+ * Po wczytaniu pliku JSON przenosi do pierwszego wymagania bez oceny (uwaga PFRON 7 z listopada 2026),
+ * żeby nie szukać, gdzie praca się skończyła. Gdy nic nie jest ocenione albo wszystko jest ocenione,
+ * zostaje dotychczasowe zachowanie (początek arkusza). Zwraca opis miejsca albo '' (brak skoku).
+ * Wymagania Art. 19 liczą się tylko przy włączonym przełączniku — jak w postępie i podsumowaniu.
+ */
+function scrollToFirstUnrated() {
+    const art19Switch = document.querySelector('#resultsArea input[role="switch"]');
+    const art19On = art19Switch ? art19Switch.checked : false;
+    const rows = Array.from(document.querySelectorAll('#resultsArea .requirement-row'))
+        .filter((r) => art19On || !r.closest('[data-art19-container="true"]'));
+    const rated = (r) => !!r.querySelector('input[type="radio"][name^="status-"]:checked');
+    const done = rows.filter(rated).length;
+    const target = rows.find((r) => !rated(r));
+    if (!target || done === 0) { scrollToLoadedAssessment(); return ''; }
+
+    const article = target.querySelector('.requirement-id span[aria-hidden="true"]');
+    const where = article ? article.textContent.trim() : '';
+    setTimeout(() => {
+        for (let d = target.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+        const header = document.querySelector('.app-header');
+        const headerOffset = header && getComputedStyle(header).position !== 'relative' ? header.getBoundingClientRect().height : 0;
+        const top = target.getBoundingClientRect().top + window.pageYOffset - headerOffset - 20;
+        window.scrollTo({ top, behavior: 'auto' });
+        const first = target.querySelector('input[type="radio"][name^="status-"]');
+        if (first) first.focus({ preventScroll: true });
+    }, 150);
+    return `Przeniesiono do pierwszego nieocenionego wymagania${where ? ': ' + where : ''} (oceniono ${done} z ${rows.length}).`;
+}
+
+/**
  * Obsługuje wczytywanie pliku JSON ze stanem oceny
  */
 async function handleWizardFileLoad(event) {
@@ -2805,12 +2835,13 @@ async function handleWizardFileLoad(event) {
             if (!replaced) return;
 
             // 'draft' = otwarto kopię roboczą i przeniesiono już do ostatnio edytowanego pola
-            if (replaced !== 'draft') scrollToLoadedAssessment();
+            // Plik JSON (w odróżnieniu od kopii roboczej) nie pamięta pozycji, więc skaczemy do pierwszego nieocenionego wymagania
+            const jumped = replaced !== 'draft' ? scrollToFirstUnrated() : '';
 
             // Powiadomienie
             let liveRegion = document.getElementById('status-message') || document.getElementById('a11y-live-region');
             if (liveRegion) {
-                liveRegion.innerText = 'Wczytano stan oceny z pliku JSON.';
+                liveRegion.innerText = ('Wczytano stan oceny z pliku JSON. ' + jumped).trim();
             }
 
         } catch (err) {
