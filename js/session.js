@@ -672,8 +672,7 @@
 
         drafts.sort((a, b) => String(b.savedAt).localeCompare(String(a.savedAt)));
         list.textContent = '';
-        section.classList.toggle('hidden', drafts.length === 0);
-        if (count) count.textContent = drafts.length ? `(${drafts.length})` : '';
+        section.classList.toggle('hidden', drafts.length === 0);        if (count) count.textContent = drafts.length ? `(${drafts.length})` : '';
         if (toggle) applyCollapsed(lsGet(COLLAPSED_KEY) === '1');
 
         drafts.forEach((d) => {

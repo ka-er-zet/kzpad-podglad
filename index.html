@@ -140,21 +140,26 @@
                         </span>
                     </a>
                 </li>
-            </ul>
 
-            <!-- Kopie robocze ocen (autozapis) — wypełniane przez js/session.js -->
-            <section id="drafts-section" class="drafts hidden" aria-labelledby="drafts-title">
-                <h2 id="drafts-title">
-                    <button type="button" id="drafts-toggle" class="drafts-toggle" aria-expanded="true" aria-controls="drafts-body">
-                        <i data-lucide="chevron-down" class="drafts-chevron" aria-hidden="true"></i>
-                        <span>Kopie robocze <span id="drafts-count" class="drafts-count"></span></span>
-                    </button>
-                </h2>
-                <div id="drafts-body">
-                    <p class="drafts-intro">Oceny zapisane automatycznie w tej przeglądarce. Aby zachować ocenę na stałe, otwórz ją i zapisz plik JSON.</p>
-                    <ul id="drafts-list" class="drafts-list"></ul>
-                </div>
-            </section>
+                <!-- Kopie robocze ocen (autozapis): rozwijany kafelek z listą w środku; ukryty, gdy nie ma kopii (js/session.js) -->
+                <li id="drafts-section" class="drafts-card hidden">
+                    <h2 class="drafts-heading">
+                        <button type="button" id="drafts-toggle" class="drafts-head" aria-expanded="true" aria-controls="drafts-body">
+                            <span class="hero-card-icon" aria-hidden="true">
+                                <i data-lucide="files" aria-hidden="true"></i>
+                            </span>
+                            <span class="drafts-head-text">
+                                <span class="drafts-head-title">Kopie robocze <span id="drafts-count" class="drafts-count"></span></span>
+                                <span class="drafts-head-desc">Oceny zapisane automatycznie w tej przeglądarce. Aby zachować ocenę na stałe, otwórz ją i zapisz plik JSON.</span>
+                            </span>
+                            <i data-lucide="chevron-down" class="drafts-chevron" aria-hidden="true"></i>
+                        </button>
+                    </h2>
+                    <div id="drafts-body" class="drafts-body">
+                        <ul id="drafts-list" class="drafts-list"></ul>
+                    </div>
+                </li>
+            </ul>
         </section>
 
         <!-- Przeglądarka wymagań (ukryta na starcie) -->

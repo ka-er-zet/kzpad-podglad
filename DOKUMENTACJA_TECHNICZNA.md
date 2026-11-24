@@ -303,7 +303,7 @@ Moduł `session.js` chroni pracę użytkownika przed utratą. Udostępnia obiekt
 | localStorage | `oz-pad:pending:<id>` | awaryjny zapis przy zamykaniu karty |
 | localStorage | `oz-pad:autosave:v1` | dawny pojedynczy autozapis (z wcześniejszych wersji; `session.js` nadal zna ten klucz) |
 | localStorage | `oz-pad:drafts-info-seen` | użytkownik widział okno wyjaśniające kopie robocze |
-| localStorage | `oz-pad:drafts-collapsed` | lista kopii zwinięta na stronie startowej |
+| localStorage | `oz-pad:drafts-collapsed` | kafelek „Kopie robocze” zwinięty na stronie startowej (`li#drafts-section` w `.hero-grid`: nagłówek `h2` z przyciskiem `#drafts-toggle` (`aria-expanded`) i treść `#drafts-body` z listą `#drafts-list` w jednej karcie; karta ma klasę `hidden`, gdy nie ma kopii) |
 | localStorage | `oz-pad:panel-collapsed`, `oz-pad:panel-groups` | stan panelu nawigacji (zwinięcie, grupy) |
 
 Wszystkie operacje na `localStorage` są owinięte w `try/catch` (tryb prywatny, limit, blokada).

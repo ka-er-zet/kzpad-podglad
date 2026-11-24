@@ -402,7 +402,7 @@ test('bez arkusza przycisk powrotu w przeglądarce wymagań jest ukryty', async 
     await ctx.close();
 });
 
-test('sekcję „Kopie robocze” można zwinąć; stan jest zapamiętany', async () => {
+test('kafelek „Kopie robocze” rozwija i zwija listę w swoim wnętrzu; stan jest zapamiętany', async () => {
     const ctx = await newContext(); const p1 = await ctx.newPage();
     await dirtySheet(p1, { name: 'Zwijanie' });
     await p1.close();
@@ -410,15 +410,33 @@ test('sekcję „Kopie robocze” można zwinąć; stan jest zapamiętany', asyn
     await p.goto(url);
     await p.waitForSelector('#drafts-section:not(.hidden)');
     const toggle = p.locator('#drafts-toggle');
-    assert.equal(await toggle.getAttribute('aria-expanded'), 'true', 'domyślnie rozwinięta');
+    assert.equal(await p.locator('.hero-grid > li#drafts-section #drafts-toggle').count(), 1, 'kafelek jest w siatce kafelków startowych');
+    assert.equal(await p.locator('#drafts-section #drafts-list').count(), 1, 'lista jest wewnątrz kafelka');
+    assert.equal(await toggle.getAttribute('aria-expanded'), 'true', 'domyślnie rozwinięty');
+    const pos = await p.evaluate(() => {
+        const card = document.getElementById('drafts-section').getBoundingClientRect(), head = document.getElementById('drafts-toggle').getBoundingClientRect(), list = document.getElementById('drafts-list').getBoundingClientRect();
+        return { inside: list.top >= head.bottom && list.bottom <= card.bottom + 1, head: Math.round(head.height), card: Math.round(card.height) };
+    });
+    assert.ok(pos.inside, 'lista pod nagłówkiem, w granicach karty');
     await toggle.click();
     assert.equal(await toggle.getAttribute('aria-expanded'), 'false');
     assert.equal(await p.locator('#drafts-list').isVisible(), false);
+    const collapsed = await p.evaluate(() => Math.round(document.getElementById('drafts-section').getBoundingClientRect().height));
+    assert.ok(collapsed < pos.card, 'zwinięty kafelek jest niższy');
     await p.reload();
     await p.waitForSelector('#drafts-section:not(.hidden)');
     assert.equal(await p.locator('#drafts-toggle').getAttribute('aria-expanded'), 'false', 'stan zapamiętany');
     await p.click('#drafts-toggle');
     assert.equal(await p.locator('#drafts-list').isVisible(), true);
+    await ctx.close();
+});
+
+test('bez kopii roboczych kafelek jest ukryty', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await p.goto(url);
+    await p.waitForSelector('#hero-new-audit');
+    await p.waitForTimeout(300);
+    assert.equal(await p.locator('#drafts-section').isVisible(), false);
     await ctx.close();
 });
 
