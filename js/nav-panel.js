@@ -769,6 +769,7 @@
         if (!model.length) return;
         let total = 0, done = 0, toJustify = 0;
         const counts = { 'compliant': 0, 'non-compliant': 0, 'not-applicable': 0 };
+        const avail = { 'none': 0, 'non-compliant': 0, 'justify': 0 };   // ile wymagań pasuje do każdej opcji filtra
         const on = art19Enabled();
         model.forEach(sec => {
             let sTotal = 0, sDone = 0;
@@ -788,10 +789,14 @@
                 sTotal++; total++;
                 if (st.status !== 'none') { sDone++; done++; counts[st.status]++; }
                 if (st.justify) toJustify++;
+                if (st.status === 'none') avail['none']++;
+                if (st.status === 'non-compliant') avail['non-compliant']++;
+                if (st.justify) avail['justify']++;
             });
             const c = panel.querySelector(`[data-count-for="${CSS.escape(sec.id)}"]`);
             if (c) { const off = sec.rows.every(r => r.inArt19) && !on; if (off) c.innerHTML = '<span aria-hidden="true">wył.</span><span class="sr-only">sekcja wyłączona</span>'; else c.innerHTML = `${sDone}/${sTotal}<span class="sr-only"> ocenionych</span>`; c.classList.toggle('is-off', off); c.classList.toggle('is-done', !off && sTotal > 0 && sDone === sTotal); }
         });
+        syncFilterOptions(avail);
         const pt = $('#np-progress-text');
         if (!pt) return;
         pt.innerHTML = `${done}/${total}<span class="sr-only"> wymagań ocenionych</span>`;
@@ -801,6 +806,24 @@
         const parts = [`Spełnione: ${counts['compliant']}`, `Niespełnione: ${counts['non-compliant']}`, `Nie dotyczy: ${counts['not-applicable']}`];
         if (toJustify) parts.push(`Bez uzasadnienia: ${toJustify}`);
 
+    }
+
+    /**
+     * Lista filtra zawiera tylko opcje, do których coś pasuje („Wszystkie” zawsze; wybrana zostaje do czasu zmiany).
+     * Dzięki temu nie ma pustych wyników. Gdy do wyboru jest tylko „Wszystkie”, cały filtr jest ukryty.
+     * Listy nie przebudowujemy, gdy ma fokus (otwarta lista zniknęłaby użytkownikowi); nadrobi to refresh po jego opuszczeniu.
+     */
+    function syncFilterOptions(avail) {
+        const sel = $('#np-filter');
+        if (!sel) return;
+        const wanted = FILTERS.filter(f => f.value === 'all' || avail[f.value] > 0 || f.value === filter);
+        const wrap = sel.closest('.np-filter');
+        if (wrap) wrap.hidden = wanted.length < 2;
+        const key = wanted.map(f => f.value).join();
+        if (sel.dataset.opts === key || document.activeElement === sel) return;
+        sel.innerHTML = wanted.map(f => `<option value="${f.value}">${f.label}</option>`).join('');
+        sel.value = filter;
+        sel.dataset.opts = key;
     }
 
     function matches(r) {

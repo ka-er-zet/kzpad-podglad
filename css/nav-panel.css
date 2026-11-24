@@ -94,6 +94,7 @@ body:not(.np-wide).np-open { overflow: hidden; }
 .np-progress-details { display: flex; flex-wrap: wrap; gap: 0.1rem 0.75rem; color: var(--np-muted); font-size: var(--np-fs-sm); }
 
 .np-filter { display: flex; align-items: center; gap: 0.5rem; padding-left: var(--np-chev); margin-bottom: 0.15rem; }
+.np-filter[hidden] { display: none; }
 .np-filter-label { color: var(--np-muted); flex: none; }
 .np-panel #np-filter {
     flex: 1; min-width: 0; margin: 0; height: auto;

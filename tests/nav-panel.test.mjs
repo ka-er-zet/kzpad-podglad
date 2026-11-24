@@ -214,6 +214,57 @@ test('filtr: zmiana filtra zachowuje miejsce w arkuszu (to samo wymaganie albo n
     await p.context().close();
 });
 
+test('filtr: lista zawiera tylko opcje, do których coś pasuje; bez wyboru filtr jest ukryty', async () => {
+    const p = await newPage();
+    await p.goto(url);
+    await generateSheet(p);
+    const options = () => p.locator('#np-filter option').evaluateAll((os) => os.map((o) => o.value));
+    const filterShown = () => p.locator('#np-panel .np-filter').isVisible();
+    const settle = async () => { await p.evaluate(() => document.activeElement && document.activeElement.blur()); await p.waitForTimeout(300); };
+
+    // nowy arkusz: nic ocenione — jest tylko „Bez oceny”
+    await settle();
+    assert.deepEqual(await options(), ['all', 'none']);
+    assert.ok(await filterShown());
+
+    // po ocenach pojawia się „Niespełnione”
+    await fillAssessments(p, 9);
+    await settle();
+    const opts = await options();
+    assert.ok(opts.includes('non-compliant'), `jest „Niespełnione”: ${opts}`);
+    assert.ok(opts.includes('none'), 'nadal są wymagania bez oceny');
+
+    // wszystkie ocenione jako spełnione: nic nie pasuje do żadnej opcji, filtr znika
+    await p.evaluate(() => {
+        document.querySelectorAll('.requirement-row').forEach((row) => {
+            const r = row.querySelector('input[type="radio"][name^="status-"][value="compliant"]');
+            if (r) r.click();
+        });
+    });
+    await settle();
+    assert.deepEqual(await options(), ['all']);
+    assert.equal(await filterShown(), false, 'z jedną opcją filtr jest ukryty');
+
+    // wybrana opcja, która przestaje pasować, zostaje na liście do czasu zmiany (widok się nie zmienia nagle)
+    await p.evaluate(() => {
+        const r = document.querySelector('.requirement-row input[type="radio"][name^="status-"][value="non-compliant"]');
+        r.click();
+    });
+    await settle();
+    await p.selectOption('#np-filter', 'non-compliant');
+    await p.evaluate(() => {
+        const r = document.querySelector('.requirement-row input[type="radio"][name^="status-"][value="compliant"]');
+        r.click();
+    });
+    await settle();
+    assert.ok((await options()).includes('non-compliant'), 'wybrana opcja zostaje, choć nic już nie pasuje');
+    await p.selectOption('#np-filter', 'all');
+    await settle();
+    assert.deepEqual(await options(), ['all']);
+    assert.deepEqual(p.errors, []);
+    await p.context().close();
+});
+
 test('podsumowanie: „Generuj” zmienia się w „Aktualizuj”, pobranie Excela z oceną i ODT dopiero po wygenerowaniu', async () => {
     const p = await newPage();
     await p.goto(url);
