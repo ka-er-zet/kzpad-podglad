@@ -51,13 +51,14 @@ Aplikacja ma cztery widoki, z adresami w pasku przeglądarki, więc działają p
 #### Panel nawigacji (menu)
 Panel zastępuje dawne przyciski w nagłówku. Otwiera się przyciskiem **Menu** lub skrótem **Alt+M** (z dowolnego miejsca w aplikacji; ponowne Alt+M zwija panel, a Esc wraca do treści).
 
-*   **Ekran szeroki (od 1360 px szerokości):** panel stoi obok treści; zwinięcie jest zapamiętywane w przeglądarce. Przy zwiniętym panelu ikona na listwie wysuwa go na chwilę nad treść.
-*   **Ekran węższy (od 768 px):** zamiast nagłówka jest pionowa **listwa ikon**; panel wysuwa się nad treścią jak okno (fokus w panelu, Esc zamyka, reszta strony jest nieaktywna).
+*   **Ekran szeroki (od 1360 px szerokości):** panel zawsze stoi obok treści. Po zwinięciu zostaje **listwa ikon**, a każda jej ikona otwierająca panel („Rozwiń menu”, kopie robocze, arkusz, spis arkusza) otwiera ten sam panel obok treści, w odpowiednim miejscu. Zwinięcie lub rozwinięcie jest zapamiętywane w przeglądarce.
+*   **Ekran węższy (od 768 px):** także jest listwa ikon, ale obok treści nie ma miejsca, więc panel wysuwa się nad treścią jak okno (fokus w panelu, Esc zamyka, reszta strony jest nieaktywna).
 *   **Telefon:** przyklejony nagłówek z przyciskiem Menu, który chowa się przy przewijaniu.
 
 Zawartość panelu:
 
-*   **Opcje główne:** widok startowy, nowy arkusz oceny, wczytanie zapisanego stanu (JSON), przeglądarka wymagań.
+*   **Opcje główne:** nowy arkusz oceny, wczytanie zapisanego stanu (JSON), przeglądarka wymagań.
+*   **Logo OZ-PAD** (w panelu, na listwie ikon i w nagłówku na telefonie) otwiera widok startowy bez przeładowania strony. Otwarty arkusz zostaje w pamięci, a wraca się do niego z grupy „Arkusz oceny” w panelu. Kliknięcie logo z Ctrl/Cmd lub środkowym przyciskiem myszy otwiera aplikację w nowej karcie.
 *   **Kopie robocze** (gdy istnieją; domyślnie zwinięte).
 *   **Arkusz oceny** (gdy arkusz jest otwarty): pasek **postępu** widoczny także po zwinięciu grupy, zapis pliku JSON, pusty arkusz Excel, grupa **Podsumowanie oceny** (generowanie podsumowania, Excel, ODT) oraz **Nawigacja po arkuszu**.
 *   **Stopka panelu:** słownik pojęć i pomoc, przełącznik motywu jasny/ciemny.

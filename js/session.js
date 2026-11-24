@@ -834,17 +834,6 @@
         window.addEventListener('pagehide', flushOnHide);
         window.addEventListener('focus', () => renderList());
 
-        // Ikona aplikacji przeładowuje stronę: pytamy tylko, gdy autozapis nie działa.
-        const logo = document.getElementById('app-logo');
-        if (logo) {
-            logo.addEventListener('click', async (e) => {
-                if (!hasUnsavedChanges() || !storageFailed) return;
-                e.preventDefault();
-                const ok = await confirmLeave('Przejście na stronę główną zamknie arkusz i zmiany przepadną.', 'Przejdź na stronę główną', 'Zostań w arkuszu');
-                if (ok) window.location.href = logo.getAttribute('href') || 'index.html';
-            });
-        }
-
         // Zwijanie/rozwijanie listy kopii roboczych (stan zapamiętany w tej przeglądarce).
         const draftsToggle = document.getElementById('drafts-toggle');
         if (draftsToggle) {

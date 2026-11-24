@@ -1,6 +1,7 @@
 /* Panel nawigacji OZ-PAD (panel boczny / panel główny).
    - Panel jest zawsze dostępny i zwijany przyciskiem „Menu” w nagłówku (skrót Alt+M).
-   - Szeroki ekran (≥ 1360 px i > 500 px wysokości): panel obok treści; zwinięcie zapamiętywane w przeglądarce.
+   - Szeroki ekran (≥ 1360 px i > 500 px wysokości): panel zawsze obok treści, także po kliknięciu ikony listwy
+     (jedno zachowanie); zwinięcie zapamiętywane w przeglądarce.
    - Węższy lub niski ekran: panel wysuwany nad treścią (okno modalne: fokus w panelu, Esc zamyka, reszta strony nieaktywna).
    - Zawartość: Opcje główne, Kopie robocze (gdy są), Arkusz oceny (postęp, akcje, podsumowanie, nawigacja po arkuszu).
    - Widoki panelu głównego (start / nowy arkusz / arkusz / przeglądarka) mają adresy (#start, #nowy-arkusz, #arkusz, #wymagania),
@@ -26,11 +27,12 @@
     const WIDE = window.matchMedia('(min-width: 1360px) and (min-height: 501px)');
     // Od 768 px (i > 500 px wysokości) zamiast nagłówka z przyciskiem „Menu” jest listwa ikon; panel przypięty tylko na szerokim
     const RAIL = window.matchMedia('(min-width: 768px) and (min-height: 501px)');
+    const LOGO_SEL = '#app-logo, .np-brand-link, .np-rail-logo';
     const LS_PANEL = 'oz-pad:panel-collapsed';
     const LS_GROUPS = 'oz-pad:panel-groups';
 
     let panel, toggleBtn, backdrop, rail, model = [], currentId = null, filter = 'all';
-    // Podgląd: na szerokim ekranie przy zwiniętym panelu ikona listwy wysuwa panel nad treścią (jak okno na węższym ekranie)
+    // Podgląd: panel wysunięty nad treścią jak okno; tylko na węższym ekranie (od 768 px), gdzie obok treści nie ma miejsca
     let peek = false, peekTrigger = null;
     const isModal = () => !WIDE.matches || peek;
     let groupState = {}, openSections = new Set();
@@ -100,12 +102,10 @@
             <div class="np-brand">
                 <a href="index.html" class="np-brand-link" aria-label="Strona główna aplikacji OZ-PAD"><img src="img/eaa.svg" alt="" aria-hidden="true"><span aria-hidden="true">OZ-PAD</span></a>
                 <button type="button" class="np-brand-btn np-collapse" aria-label="Zwiń menu" aria-keyshortcuts="Alt+M" data-icon-label="Zwiń menu (Alt+M)" data-icon-label-placement="right"><i data-lucide="panel-left-close" aria-hidden="true"></i></button>
-                <button type="button" class="np-brand-btn np-pin" aria-label="Przypnij menu" data-icon-label="Przypnij menu obok treści" data-icon-label-placement="right"><i data-lucide="pin" aria-hidden="true"></i></button>
                 <button type="button" class="np-brand-btn np-peek-close" aria-label="Zamknij menu" data-icon-label="Zamknij menu (Esc)" data-icon-label-placement="right"><i data-lucide="x" aria-hidden="true"></i></button>
             </div>
             <div class="np-scroll">
                 ${group('main', 'Opcje główne', `<ul class="np-list">
-                    ${item('home', 'house', 'Widok startowy')}
                     ${item('new', 'file-plus-2', 'Nowy arkusz oceny')}
                     ${item('load', 'upload', 'Wczytaj zapisany stan (JSON)')}
                     ${item('browse', 'library-big', 'Przeglądarka wymagań')}
@@ -128,7 +128,6 @@
         toggleBtn.addEventListener('click', () => setOpen(!isOpen(), true));
         panel.querySelector('.np-close').addEventListener('click', () => setOpen(false, true));
         panel.querySelector('.np-collapse').addEventListener('click', () => { setOpen(false, true); const b = rail.querySelector('[data-rail="expand"]'); if (b) b.focus(); });
-        panel.querySelector('.np-pin').addEventListener('click', () => { peek = false; document.body.classList.remove('np-peek'); peekTrigger = null; setOpen(true, true); panel.querySelector('.np-collapse').focus(); });
         panel.querySelector('.np-peek-close').addEventListener('click', () => closePeek(true));
         const setTop = () => { const h = header.getBoundingClientRect(); document.documentElement.style.setProperty('--pp-top', Math.max(0, h.bottom) + 'px'); };
         setTop();
@@ -136,6 +135,10 @@
         window.addEventListener('scroll', () => schedule(setTop), { passive: true });
         backdrop.addEventListener('click', () => { if (peek) closePeek(true); else setOpen(false, true); });
         panel.addEventListener('click', onPanelClick);
+        // Logo (nagłówek na telefonie, panel, listwa ikon) otwiera widok startowy bez przeładowania strony:
+        // otwarty arkusz zostaje w pamięci, a wraca się do niego z panelu. Kliknięcie z Ctrl/Cmd/Shift lub środkowym
+        // przyciskiem działa jak zwykły link (nowa karta z aplikacją).
+        document.addEventListener('click', onLogoClick);
         panel.addEventListener('change', (e) => { if (e.target.id === 'np-filter') { filter = e.target.value; applyFilter(true); } });
         document.addEventListener('keydown', (e) => {
             // Skrót Alt+M: przejście do menu z dowolnego miejsca (e.code — niezależnie od układu klawiatury)
@@ -165,8 +168,26 @@
     // ---------------------------------------------------------------------------------
     function isOpen() { return document.body.classList.contains('np-open'); }
 
+    const REDUCED = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const FLIP_MS = 300, FLIP_EASE = 'cubic-bezier(0.22, 0.61, 0.36, 1)';   // jak --np-dur i --np-ease w CSS
+
+    /** Zmiana klas panelu z płynnym przesunięciem treści (FLIP): układ od razu przechodzi w stan końcowy,
+        a treść „dojeżdża” z dawnego miejsca. Marginesy (auto → liczba) nie dają się animować same. */
+    function withContentSlide(change) {
+        const body = document.body;
+        const els = !REDUCED.matches && body.classList.contains('np-anim') && WIDE.matches && !peek
+            ? ['main-content'].map(id => document.getElementById(id)).concat($('.app-footer')).filter(Boolean) : [];
+        const before = els.map(el => el.getBoundingClientRect().left);
+        change();
+        els.forEach((el, i) => {
+            const dx = before[i] - el.getBoundingClientRect().left;
+            if (Math.abs(dx) < 1 || !el.animate) return;
+            el.animate([{ transform: `translateX(${dx}px)` }, { transform: 'translateX(0)' }], { duration: FLIP_MS, easing: FLIP_EASE });
+        });
+    }
+
     function setOpen(open, user) {
-        document.body.classList.toggle('np-open', open);
+        withContentSlide(() => document.body.classList.toggle('np-open', open));
         toggleBtn.setAttribute('aria-expanded', String(open));
         toggleBtn.querySelector('span').textContent = open ? 'Zwiń menu' : 'Menu';
         const modal = isModal();
@@ -227,8 +248,8 @@
     }
 
     // ---------------------------------------------------------------------------------
-    // Listwa ikon (szeroki ekran, panel zwinięty). Ikony grup wysuwają panel jako podgląd w danym miejscu,
-    // ikony pojedynczych akcji działają od razu. Etykiety ikon — wspólny mechanizm aplikacji (enhanceIconButtons).
+    // Listwa ikon (panel zwinięty). Ikony grup otwierają panel w danym miejscu (szeroki ekran: obok treści,
+    // węższy: nad treścią), ikony pojedynczych akcji działają od razu. Etykiety ikon — wspólny mechanizm aplikacji (enhanceIconButtons).
     // ---------------------------------------------------------------------------------
     function railBtn(key, icon, label, extra = '') {
         return `<li><button type="button" class="np-rail-btn" data-rail="${key}" aria-label="${esc(label)}" data-icon-label="${esc(label)}" data-icon-label-placement="right"${extra}><i data-lucide="${icon}" aria-hidden="true"></i></button></li>`;
@@ -245,7 +266,6 @@
                 ${railBtn('expand', 'panel-left-open', 'Rozwiń menu (Alt+M)', ' aria-keyshortcuts="Alt+M" aria-controls="np-panel"')}
             </ul>
             <ul class="np-rail-list">
-                ${railBtn('home', 'house', 'Widok startowy')}
                 ${railBtn('new', 'file-plus-2', 'Nowy arkusz oceny')}
                 ${railBtn('load', 'upload', 'Wczytaj zapisany stan (JSON)')}
                 ${railBtn('browse', 'library-big', 'Przeglądarka wymagań')}
@@ -311,7 +331,7 @@
         }
         const v = document.body.dataset.npView;
         $$('[data-rail]', rail).forEach(b => b.removeAttribute('aria-current'));
-        const cur = rail.querySelector(`[data-rail="${({ start: 'home', new: 'new', browser: 'browse' })[v] || '-'}"]`);
+        const cur = rail.querySelector(`[data-rail="${({ new: 'new', browser: 'browse' })[v] || '-'}"]`);
         if (cur) cur.setAttribute('aria-current', 'page');
     }
 
@@ -324,7 +344,7 @@
             if (!WIDE.matches) { openPeek('top', btn); return; }   // średni ekran: panel tylko nad treścią
             setOpen(true, true); const c = panel.querySelector('.np-collapse'); if (c) c.focus(); return;
         }
-        if (k === 'drafts' || k === 'sheet' || k === 'toc') { openPeek(k, btn); return; }
+        if (k === 'drafts' || k === 'sheet' || k === 'toc') { openAt(k, btn); return; }
         runAct(k);
     }
 
@@ -334,10 +354,26 @@
         return t;
     }
 
+    /** Otwiera panel w miejscu wskazanym ikoną listwy. Szeroki ekran: ten sam panel obok treści, co „Rozwiń menu”
+        (zapamiętany jak każde rozwinięcie). Węższy: panel nad treścią (podgląd), bo obok treści nie ma miejsca. */
+    function openAt(where, trigger) {
+        if (!WIDE.matches) { openPeek(where, trigger); return; }
+        setOpen(true, true);
+        const go = () => { const target = panelTarget(where); (target || panel.querySelector('.np-collapse')).focus(); };
+        // Spis wskazuje bieżące miejsce wg położenia treści, a ta przesuwa się płynnie (0,25 s), gdy panel staje obok niej
+        if (where === 'toc') setTimeout(go, 280); else requestAnimationFrame(go);
+    }
+
     function openPeek(where, trigger) {
         peek = true; peekTrigger = trigger;
         document.body.classList.add('np-peek');
         setOpen(true, false);
+        const target = panelTarget(where);
+        requestAnimationFrame(() => (target || panel.querySelector('.np-peek-close')).focus());
+    }
+
+    /** Rozwija odpowiednią grupę panelu, ustawia przewijanie i zwraca element, który dostanie fokus. */
+    function panelTarget(where) {
         let target = null;
         if (where === 'drafts') { expandGroup('drafts'); target = panel.querySelector('[data-draft-index]'); }
         else if (where === 'sheet') { target = expandGroup('sheet'); }
@@ -350,7 +386,7 @@
             const box = panel.querySelector('.np-scroll');
             if (target && box) requestAnimationFrame(() => { const lr = target.getBoundingClientRect(), br = box.getBoundingClientRect(); box.scrollTop += (lr.top - br.top) - br.height / 3; });
         }
-        requestAnimationFrame(() => (target || panel.querySelector('.np-peek-close')).focus());
+        return target;
     }
 
     function closePeek(restoreFocus) {
@@ -401,14 +437,21 @@
         runAct(btn.getAttribute('data-act'));
     }
 
+    function onLogoClick(e) {
+        const a = e.target.closest(LOGO_SEL);
+        if (!a || e.defaultPrevented || e.button !== 0 || e.ctrlKey || e.metaKey || e.shiftKey || e.altKey) return;
+        e.preventDefault();
+        closeIfModal();
+        showView('start', true);
+    }
+
     function runAct(act) {
         const click = (id) => { const el = document.getElementById(id); if (el) el.click(); };
         closeIfModal();
-        if (act !== 'home') forcedView = null;
+        forcedView = null;
         switch (act) {
             case 'glossary': click('btn-show-glossary'); break;
             case 'theme': if (window.utils && window.utils.toggleTheme) window.utils.toggleTheme(); break;
-            case 'home': showView('start', true); break;
             case 'new': click('hero-new-audit'); break;
             case 'load': click('wizard-file-input'); break;
             case 'browse': click('hero-browse-requirements'); break;
@@ -472,8 +515,10 @@
         }
         lastView = v;
         $$('[data-act]', panel).forEach(b => b.removeAttribute('aria-current'));
-        const cur = panel.querySelector(`[data-act="${({ start: 'home', new: 'new', browser: 'browse' })[v] || '-'}"]`);
+        const cur = panel.querySelector(`[data-act="${({ new: 'new', browser: 'browse' })[v] || '-'}"]`);
         if (cur) cur.setAttribute('aria-current', 'page');
+        // Logo prowadzi do widoku startowego, więc to ono oznacza bieżący widok, gdy jest nim start
+        $$(LOGO_SEL).forEach(a => (v === 'start' ? a.setAttribute('aria-current', 'page') : a.removeAttribute('aria-current')));
         updateRail();
     }
 

@@ -30,11 +30,12 @@ test('panel: obszar nawigacji z opcjami głównymi; arkusz z postępem jak w pod
     await p.goto(url);
     const nav = p.getByRole('navigation', { name: 'Nawigacja aplikacji' });
     await nav.waitFor();
-    for (const name of ['Widok startowy', 'Nowy arkusz oceny', 'Wczytaj zapisany stan (JSON)', 'Przeglądarka wymagań']) {
+    for (const name of ['Nowy arkusz oceny', 'Wczytaj zapisany stan (JSON)', 'Przeglądarka wymagań']) {
         assert.equal(await nav.getByRole('button', { name }).count(), 1, name);
     }
+    assert.equal(await nav.getByRole('button', { name: 'Widok startowy' }).count(), 0, 'widoku startowego nie ma wśród przycisków: prowadzi do niego logo');
     assert.equal(await p.locator('#np-panel [data-group="sheet"]').count(), 0, 'bez arkusza nie ma grupy „Arkusz oceny”');
-    assert.equal(await p.locator('#np-panel [data-act="home"]').getAttribute('aria-current'), 'page');
+    assert.equal(await p.locator('#np-panel .np-brand-link').getAttribute('aria-current'), 'page', 'na starcie logo oznacza bieżący widok');
     const top = await p.evaluate(() => ({
         header: Math.round(document.querySelector('.app-header').getBoundingClientRect().bottom),
         panel: Math.round(document.getElementById('np-panel').getBoundingClientRect().top)
@@ -209,7 +210,7 @@ test('Excel: pusty arkusz do wypełnienia bez ocen i podsumowania, ocena w Excel
     await p.context().close();
 });
 
-test('listwa ikon: po zwinięciu na szerokim ekranie; etykiety ikon; spis wysuwa panel nad treścią w bieżącym miejscu', async () => {
+test('listwa ikon: po zwinięciu na szerokim ekranie; etykiety ikon; spis otwiera panel obok treści w bieżącym miejscu', async () => {
     const p = await newPage();
     await p.goto(url);
     await generateSheet(p);
@@ -232,22 +233,28 @@ test('listwa ikon: po zwinięciu na szerokim ekranie; etykiety ikon; spis wysuwa
     await p.keyboard.press('Escape');
     assert.equal(await lab.evaluate((l) => l.classList.contains('icon-label--visible')), false, 'Esc zamyka etykietę');
     assert.match(await p.locator('[data-rail="sheet"]').getAttribute('aria-label'), /^Arkusz oceny: ocenione \d+ z \d+ wymagań$/);
-    // spis: podgląd nad treścią, fokus na bieżącej sekcji, Esc wraca na ikonę
+    // spis: na szerokim ekranie to ten sam panel obok treści co „Rozwiń menu” (nie okno nad treścią),
+    // fokus na bieżącej sekcji (na samej górze arkusza żadna sekcja jeszcze nie jest „bieżąca”, więc przewijamy w głąb)
+    await p.locator('.requirement-row').nth(3).scrollIntoViewIfNeeded();
+    await p.waitForTimeout(200);
     await toc.click();
-    await p.waitForTimeout(300);
-    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), true);
-    assert.equal(await p.evaluate(() => document.getElementById('main-content').inert), true, 'treść nieaktywna');
-    assert.equal(await p.evaluate(() => document.activeElement.getAttribute('aria-current')), 'location');
-    await p.keyboard.press('Escape');
-    await p.waitForTimeout(300);
-    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), false);
-    assert.equal(await toc.evaluate((b) => b === document.activeElement), true, 'fokus wraca na ikonę');
-    // wybór sekcji w podglądzie zamyka go
-    await toc.click();
-    await p.waitForTimeout(300);
+    await p.waitForFunction(() => document.activeElement && document.activeElement.closest('#np-panel'), null, { timeout: 3000 });
+    const st = await p.evaluate(() => ({
+        peek: document.body.classList.contains('np-peek'),
+        open: document.body.classList.contains('np-open'),
+        inert: document.getElementById('main-content').inert,
+        backdrop: !document.querySelector('.np-backdrop').hidden,
+        focus: document.activeElement.getAttribute('aria-current')
+    }));
+    assert.deepEqual(st, { peek: false, open: true, inert: false, backdrop: false, focus: 'location' }, 'panel obok treści, treść aktywna, bez przyciemnienia');
+    // wybór sekcji nie zamyka panelu obok treści
     await p.locator('#np-panel .np-sec-link').nth(1).click();
     await p.waitForTimeout(300);
-    assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), false, 'podgląd zamknięty po wyborze');
+    assert.equal(await p.evaluate(() => document.body.classList.contains('np-open')), true, 'panel zostaje otwarty');
+    // przycisk zwijania wraca do listwy
+    await p.click('#np-panel .np-collapse');
+    await p.waitForTimeout(350);
+    assert.equal(await p.evaluate(() => document.body.classList.contains('np-open')), false, 'panel zwinięty do listwy');
     assert.deepEqual(p.errors, []);
     await p.context().close();
 });
@@ -302,7 +309,7 @@ test('średni ekran: listwa zamiast nagłówka, Alt+M wysuwa panel nad treścią
     await p.keyboard.press('Alt+KeyM');
     await p.waitForTimeout(300);
     assert.equal(await p.evaluate(() => document.body.classList.contains('np-peek')), true);
-    assert.equal(await p.locator('#np-panel .np-pin').isVisible(), false, 'na średnim ekranie panelu nie da się przypiąć');
+    assert.equal(await p.locator('#np-panel .np-collapse').isVisible(), false, 'na średnim ekranie panelu nie da się zwinąć obok treści: jest tylko nad nią');
     assert.equal(await p.evaluate(() => document.activeElement.getAttribute('aria-current')), 'location');
     await p.keyboard.press('Alt+KeyM');
     await p.waitForTimeout(300);

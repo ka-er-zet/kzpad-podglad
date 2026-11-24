@@ -245,7 +245,7 @@ body[data-np-view="browser"] #resultsArea { display: none !important; }
 #drafts-list > li.np-flash { background: var(--primary-focus); transition: background-color 0.4s; }
 @media (prefers-reduced-motion: reduce) { #drafts-list > li.np-flash { transition: none; } }
 
-/* Pojedyncza pozycja „Widok startowy” nad grupami */
+/* Pojedyncza pozycja nad grupami */
 .np-top { border-bottom: 1px solid var(--np-line); padding-bottom: 0.4rem !important; margin-bottom: 0.4rem !important; }
 /* Wiersz „Podsumowanie oceny” wyrównany do sekcji (bez strzałki) */
 .np-sec-toggle-spacer { flex: none; width: var(--np-chev); }
@@ -352,15 +352,21 @@ body.np-wide.np-open:not(.np-peek) .app-footer { width: auto; margin-right: 0; }
 }
 
 /* ---------- Płynne zwijanie / rozwijanie panelu (także na dużym ekranie) ---------- */
-body.np-wide .np-panel { transform: translateX(-100%); visibility: hidden; }
-body.np-wide.np-open .np-panel { transform: none; visibility: visible; }
-body.np-anim .np-panel { transition: transform 0.25s ease, visibility 0s linear 0.25s; }
-body.np-anim.np-open .np-panel { transition: transform 0.25s ease, visibility 0s; }
-body.np-anim.np-wide #main-content,
-body.np-anim.np-wide .app-footer { transition: margin-left 0.25s ease; }
+/* Szeroki ekran: panel „wyrasta” z listwy ikon. Odsłania się od jej szerokości do pełnej (clip-path), a listwa i panel
+   przenikają się; treść przesuwa się w tym samym czasie i z tą samą krzywą (js/nav-panel.js, przesunięcie FLIP). */
+:root { --np-ease: cubic-bezier(0.22, 0.61, 0.36, 1); --np-dur: 0.3s; }
+body.np-wide .np-panel { visibility: hidden; opacity: 0; clip-path: inset(0 calc(100% - var(--np-rail, 3.5rem)) 0 0); }
+body.np-wide.np-open .np-panel { visibility: visible; opacity: 1; clip-path: inset(0 0 0 0); }
+/* Zwijanie: panel kurczy się do szerokości listwy i dopiero pod koniec znika, a listwa wchodzi pod nim */
+body.np-anim.np-wide .np-panel {
+    transition: clip-path var(--np-dur) var(--np-ease), opacity 0.16s ease calc(var(--np-dur) - 0.16s), visibility 0s linear var(--np-dur);
+}
+/* Rozwijanie: panel pojawia się od razu i rośnie, listwa pod nim gaśnie */
+body.np-anim.np-wide.np-open .np-panel {
+    transition: clip-path var(--np-dur) var(--np-ease), opacity 0.12s ease, visibility 0s;
+}
 @media (prefers-reduced-motion: reduce) {
-    body.np-anim .np-panel, body.np-anim.np-open .np-panel,
-    body.np-anim.np-wide #main-content, body.np-anim.np-wide .app-footer { transition: none; }
+    body.np-anim.np-wide .np-panel, body.np-anim.np-wide.np-open .np-panel { transition: none; }
 }
 
 /* =====================================================================================
@@ -379,7 +385,7 @@ body.np-railmode .np-panel { top: 0; }
 /* Górny wiersz panelu: logo i nazwa + zwiń (przypięty) albo przypnij / zamknij (podgląd) */
 body.np-railmode .np-brand {
     display: flex; align-items: center; gap: 0.25rem; flex: none;
-    height: 3rem; padding: 0 0.5rem 0 var(--np-pad-x);
+    height: 3.4rem; padding: 0 0.5rem 0 calc(var(--np-rail) / 2 - 0.8rem);   /* logo w tym samym miejscu co na listwie */
 }
 .np-panel .np-brand-link { display: flex; align-items: center; gap: 0.55rem; margin-right: auto; color: var(--np-fg); text-decoration: none; font-weight: 700; font-size: 1rem; }
 .np-panel .np-brand-link img { width: 1.6rem; height: 1.6rem; }
@@ -393,13 +399,18 @@ body.np-railmode .np-brand {
 .np-panel .np-brand-btn:hover, .np-rail-btn:hover { background: var(--np-hover); color: var(--np-fg); }
 .np-panel .np-brand-btn:focus-visible, .np-rail-btn:focus-visible { outline: 2px solid var(--primary); outline-offset: 1px; }
 .np-brand-btn svg, .np-rail-btn svg { width: 1.2rem; height: 1.2rem; }
-body:not(.np-peek) .np-pin, body:not(.np-peek) .np-peek-close, body.np-peek .np-collapse { display: none; }
-/* Średni ekran: panelu nie da się przypiąć obok treści — tylko podgląd nad treścią */
-body:not(.np-wide) .np-pin, body:not(.np-wide) .np-collapse { display: none; }
+body:not(.np-peek) .np-peek-close, body.np-peek .np-collapse { display: none; }
+/* Średni ekran: panel tylko nad treścią (podgląd), bez zwijania obok treści */
+body:not(.np-wide) .np-collapse { display: none; }
 body.np-railmode .np-panel-bar { display: none; }
 
 /* Dół panelu: słownik i motyw */
-body.np-railmode .np-foot { display: block; flex: none; margin: 0; padding: 0.4rem var(--np-pad-x) 0.6rem; border-top: 1px solid var(--np-line); }
+body.np-railmode .np-foot { display: block; flex: none; margin: 0; padding: 0.3rem 0.5rem 0.9rem 0; border-top: 1px solid var(--np-line); }
+/* Słownik i motyw w panelu leżą dokładnie tam, gdzie ich ikony na listwie (ten sam środek, rozmiar i odstępy),
+   żeby przy rozwijaniu i zwijaniu panelu nie „skakały”. Ikona: 1,2 rem, środek w połowie szerokości listwy. */
+body.np-railmode .np-foot li + li { margin-top: 0.15rem; }
+body.np-railmode .np-foot .np-item { height: 2.25rem; align-items: center; padding: 0 0.25rem 0 calc(var(--np-rail) / 2 - 0.6rem); gap: 0.65rem; }
+body.np-railmode .np-foot .np-item svg { width: 1.2rem; height: 1.2rem; margin-top: 0; }
 
 /* Listwa ikon: tylko szeroki ekran, gdy panel zwinięty (także pod podglądem) */
 .np-rail {
@@ -411,6 +422,15 @@ body.np-railmode .np-foot { display: block; flex: none; margin: 0; padding: 0.4r
     background: var(--card-background-color); border-right: 1px solid var(--secondary-border-color);
 }
 body.np-railmode:not(.np-open) .np-rail, body.np-railmode.np-peek .np-rail { display: flex; }
+/* Szeroki ekran: listwa jest zawsze w układzie, a przy otwartym panelu schowana pod nim (bez fokusu i czytnika),
+   żeby panel mógł z niej „wyrosnąć” i się do niej zwinąć */
+body.np-railmode.np-wide .np-rail { display: flex; opacity: 1; visibility: visible; }
+body.np-railmode.np-wide.np-open:not(.np-peek) .np-rail { opacity: 0; visibility: hidden; pointer-events: none; }
+body.np-anim.np-railmode.np-wide .np-rail { transition: opacity 0.16s ease calc(var(--np-dur) - 0.16s), visibility 0s; }
+body.np-anim.np-railmode.np-wide.np-open .np-rail { transition: opacity 0.08s ease, visibility 0s linear var(--np-dur); }
+@media (prefers-reduced-motion: reduce) {
+    body.np-anim.np-railmode.np-wide .np-rail, body.np-anim.np-railmode.np-wide.np-open .np-rail { transition: none; }
+}
 body.np-railmode:not(.np-open), body.np-railmode.np-peek { padding-left: var(--np-rail); }
 /* Średni ekran: stopka i treść obok listwy */
 body.np-railmode:not(.np-wide) .app-footer { width: auto; margin-right: 0; }

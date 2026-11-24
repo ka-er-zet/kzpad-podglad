@@ -332,8 +332,13 @@ test('gdy autozapis działa: przeglądarka wymagań, ikona aplikacji i zamknięc
     await p.waitForSelector('#browser-section:not(.hidden)');
     assert.equal(await dialogOpen(p).count(), 0);
     await p.click('#browser-back-to-sheet');
+    // Logo otwiera widok startowy bez przeładowania: arkusz zostaje w pamięci, nic nie pyta
     const logo = await visibleOf(p, APP_LOGO);
-    await Promise.all([p.waitForNavigation(), p.click(logo)]);
+    const marker = await p.evaluate(() => (window.__noReload = Math.random()));
+    await p.click(logo);
+    assert.equal(await p.evaluate(() => document.body.dataset.npView), 'start');
+    assert.equal(await p.evaluate(() => window.__noReload), marker, 'strona nie została przeładowana');
+    assert.equal(await p.locator('#np-panel [data-group="sheet"]').count(), 1, 'arkusz nadal otwarty');
     assert.equal(await dialogOpen(p).count(), 0);
     await p.goto('about:blank');
     assert.deepEqual(dialogs, [], 'bez natywnego ostrzeżenia przeglądarki');

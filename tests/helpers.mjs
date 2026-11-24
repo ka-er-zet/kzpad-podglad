@@ -47,7 +47,7 @@ export async function saveJson(page) {
 
 /**
  * Przejście do widoku jak użytkownik: kafelkiem na stronie startowej, a gdy go nie widać (inny widok) —
- * z panelu nawigacji („Menu”, na węższym ekranie wysuwany). act: 'new' | 'browse' | 'home'.
+ * z panelu nawigacji („Menu”, na węższym ekranie wysuwany). act: 'new' | 'browse'.
  */
 export async function goTo(page, act) {
     const tile = { new: '#hero-new-audit', browse: '#hero-browse-requirements' }[act];
