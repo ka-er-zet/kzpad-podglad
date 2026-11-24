@@ -2070,13 +2070,13 @@ fieldset[aria-invalid="true"] {
     }
 }
 
-.hero-grid li {
+.hero-grid > li {
     list-style: none !important;
     margin: 0 !important;
     padding: 0 !important;
 }
 
-.hero-grid li::before {
+.hero-grid > li::before {
     content: none !important;
     /* Usuwa kropki w niektórych resetach CSS */
 }
