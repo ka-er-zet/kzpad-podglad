@@ -94,6 +94,30 @@ test('po ponownym wejściu nie ma okna — kopia jest na liście „Kopie robocz
     await ctx.close();
 });
 
+test('kopia robocza powstaje dopiero po wygenerowaniu arkusza: wypełnianie formularza ani nieudane „Generuj” jej nie tworzą', async () => {
+    const ctx = await newContext(); const p = await ctx.newPage();
+    await p.goto(url);
+    await goTo(p, 'new');
+    await p.waitForFunction(() => !document.getElementById('setup-section').classList.contains('hidden'));
+    await p.waitForSelector('input[name="product_choice"]', { state: 'attached' });
+    await p.locator('input[name="product_choice"]').nth(1).check({ force: true });
+    await p.fill('#wizard-product-desc', 'xxa');
+    await p.fill('#wizard-auditor-name', 'aaa');
+    await p.waitForTimeout(2500);   // dłużej niż opóźnienie autozapisu
+    assert.equal((await readDrafts(p)).length, 0, 'wypełniony formularz bez arkusza nie tworzy kopii');
+    await p.click('#generateBtn');   // brak nazwy: walidacja nie przepuszcza
+    await p.waitForTimeout(1500);
+    assert.equal((await readDrafts(p)).length, 0, 'nieudane „Generuj” nie tworzy kopii');
+    assert.equal(await p.locator('#resultsArea:not(.hidden) .requirement-row').count(), 0, 'arkusza nie ma');
+    await p.fill('#wizard-product-name', 'Terminal 1');
+    await p.click('#generateBtn');
+    await p.waitForSelector('#resultsArea:not(.hidden) .requirement-row', { state: 'attached' });
+    const drafts = await waitForDrafts(p, 1);
+    const subject = drafts[0].earl['@graph'].find((it) => it['@type'] && it['@type'].includes('earl:TestSubject'));
+    assert.equal(subject['dct:title'], 'Terminal 1', 'kopia ma nazwę z formularza');
+    await ctx.close();
+});
+
 test('kopia bez nazwy, opisu i osoby (np. z wcześniejszej wersji) daje się otworzyć mimo wymaganych pól formularza', async () => {
     const ctx = await newContext(); const p1 = await ctx.newPage();
     await dirtySheet(p1, { name: 'Do wyczyszczenia' });
