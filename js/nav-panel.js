@@ -21,7 +21,9 @@
     const FILTERS = [
         { value: 'all', label: 'Wszystkie' },
         { value: 'none', label: 'Bez oceny' },
+        { value: 'compliant', label: 'Spełnione' },
         { value: 'non-compliant', label: 'Niespełnione' },
+        { value: 'not-applicable', label: 'Nie dotyczy' },
         { value: 'justify', label: 'Wymagają uzasadnienia' }
     ];
     const WIDE = window.matchMedia('(min-width: 1360px) and (min-height: 501px)');
@@ -769,7 +771,7 @@
         if (!model.length) return;
         let total = 0, done = 0, toJustify = 0;
         const counts = { 'compliant': 0, 'non-compliant': 0, 'not-applicable': 0 };
-        const avail = { 'none': 0, 'non-compliant': 0, 'justify': 0 };   // ile wymagań pasuje do każdej opcji filtra
+        const avail = { 'none': 0, 'compliant': 0, 'non-compliant': 0, 'not-applicable': 0, 'justify': 0 };   // ile wymagań pasuje do każdej opcji filtra
         const on = art19Enabled();
         model.forEach(sec => {
             let sTotal = 0, sDone = 0;
@@ -789,8 +791,7 @@
                 sTotal++; total++;
                 if (st.status !== 'none') { sDone++; done++; counts[st.status]++; }
                 if (st.justify) toJustify++;
-                if (st.status === 'none') avail['none']++;
-                if (st.status === 'non-compliant') avail['non-compliant']++;
+                avail[st.status]++;
                 if (st.justify) avail['justify']++;
             });
             const c = panel.querySelector(`[data-count-for="${CSS.escape(sec.id)}"]`);
@@ -827,9 +828,8 @@
     }
 
     function matches(r) {
-        if (filter === 'none') return r.status === 'none';
-        if (filter === 'non-compliant') return r.status === 'non-compliant';
         if (filter === 'justify') return r.justify;
+        if (filter !== 'all') return r.status === filter;   // none / compliant / non-compliant / not-applicable
         return true;
     }
 

@@ -214,7 +214,7 @@ test('filtr: zmiana filtra zachowuje miejsce w arkuszu (to samo wymaganie albo n
     await p.context().close();
 });
 
-test('filtr: lista zawiera tylko opcje, do których coś pasuje; bez wyboru filtr jest ukryty', async () => {
+test('filtr: lista zawiera tylko opcje, do których coś pasuje', async () => {
     const p = await newPage();
     await p.goto(url);
     await generateSheet(p);
@@ -233,8 +233,17 @@ test('filtr: lista zawiera tylko opcje, do których coś pasuje; bez wyboru filt
     const opts = await options();
     assert.ok(opts.includes('non-compliant'), `jest „Niespełnione”: ${opts}`);
     assert.ok(opts.includes('none'), 'nadal są wymagania bez oceny');
+    assert.ok(opts.includes('compliant') && opts.includes('not-applicable'), `są też „Spełnione” i „Nie dotyczy”: ${opts}`);
+    // „Spełnione” pokazuje dokładnie wymagania ocenione jako spełnione
+    const compliantCount = await p.locator('#resultsArea .requirement-row input[name^="status-"][value="compliant"]:checked').count();
+    await p.selectOption('#np-filter', 'compliant');
+    await p.waitForTimeout(300);
+    const shownRows = await p.evaluate(() => [...document.querySelectorAll('.requirement-row')].filter((r) => r.offsetParent).length);
+    assert.equal(shownRows, compliantCount, 'filtr „Spełnione” pokazuje tylko spełnione');
+    await p.selectOption('#np-filter', 'all');
+    await settle();
 
-    // wszystkie ocenione jako spełnione: nic nie pasuje do żadnej opcji, filtr znika
+    // wszystkie ocenione jako spełnione: znikają „Bez oceny”, „Niespełnione” i „Nie dotyczy”
     await p.evaluate(() => {
         document.querySelectorAll('.requirement-row').forEach((row) => {
             const r = row.querySelector('input[type="radio"][name^="status-"][value="compliant"]');
@@ -242,8 +251,8 @@ test('filtr: lista zawiera tylko opcje, do których coś pasuje; bez wyboru filt
         });
     });
     await settle();
-    assert.deepEqual(await options(), ['all']);
-    assert.equal(await filterShown(), false, 'z jedną opcją filtr jest ukryty');
+    assert.deepEqual(await options(), ['all', 'compliant']);
+    assert.ok(await filterShown());
 
     // wybrana opcja, która przestaje pasować, zostaje na liście do czasu zmiany (widok się nie zmienia nagle)
     await p.evaluate(() => {
@@ -260,7 +269,7 @@ test('filtr: lista zawiera tylko opcje, do których coś pasuje; bez wyboru filt
     assert.ok((await options()).includes('non-compliant'), 'wybrana opcja zostaje, choć nic już nie pasuje');
     await p.selectOption('#np-filter', 'all');
     await settle();
-    assert.deepEqual(await options(), ['all']);
+    assert.deepEqual(await options(), ['all', 'compliant']);
     assert.deepEqual(p.errors, []);
     await p.context().close();
 });
