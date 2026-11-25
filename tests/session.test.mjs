@@ -94,6 +94,44 @@ test('po ponownym wejściu nie ma okna — kopia jest na liście „Kopie robocz
     await ctx.close();
 });
 
+test('kopia bez nazwy, opisu i osoby (np. z wcześniejszej wersji) daje się otworzyć mimo wymaganych pól formularza', async () => {
+    const ctx = await newContext(); const p1 = await ctx.newPage();
+    await dirtySheet(p1, { name: 'Do wyczyszczenia' });
+    const rated = (await readDrafts(p1))[0].progress.done;
+    await p1.close();
+
+    const p2 = await ctx.newPage();
+    const errors = []; p2.on('pageerror', (e) => errors.push(String(e)));
+    await p2.goto(url);
+    await p2.waitForSelector('#drafts-section:not(.hidden)');
+    // zepsuj kopię tak, jak wyglądały kopie z dawnych wersji: puste dane o produkcie (ocena zostaje)
+    await p2.evaluate(() => new Promise((resolve, reject) => {
+        const req = indexedDB.open('oz-pad', 1);
+        req.onsuccess = () => {
+            const tx = req.result.transaction('drafts', 'readwrite');
+            const st = tx.objectStore('drafts');
+            st.getAll().onsuccess = (e) => {
+                const rec = e.target.result[0];
+                rec.label = '';
+                const subject = rec.earl['@graph'].find((it) => it['@type'] && it['@type'].includes('earl:TestSubject'));
+                subject['dct:title'] = ''; subject['dct:description'] = '';
+                rec.earl['@graph'] = rec.earl['@graph'].filter((it) => !(it['@type'] && it['@type'].includes('foaf:Person')));
+                st.put(rec);
+            };
+            tx.oncomplete = () => { req.result.close(); resolve(); };
+            tx.onerror = () => reject(tx.error);
+        };
+    }));
+    await draftItems(p2).first().getByRole('button', { name: /Otwórz kopię roboczą/ }).click();
+    await p2.waitForSelector('#resultsArea:not(.hidden) .requirement-row', { state: 'attached' });
+    assert.deepEqual(await toastText(p2).then((t) => t.filter((x) => /Nie udało się/.test(x))), [], 'bez komunikatu o błędzie');
+    const done = await p2.evaluate(() => [...document.querySelectorAll('#resultsArea input[name^="status-"]:checked')].length);
+    assert.equal(done, rated, 'oceny z kopii zostały przywrócone');
+    assert.equal(await p2.locator('#product-name-error:not(.hidden)').count(), 0, 'bez komunikatów o błędzie w formularzu');
+    assert.deepEqual(errors, []);
+    await ctx.close();
+});
+
 test('„Nowy arkusz” przy niezapisanej ocenie: za pierwszym razem okno informacyjne, potem tylko komunikat', async () => {
     const ctx = await newContext(); const p = await ctx.newPage();
     await dirtySheet(p, { name: 'Ocena A' });

@@ -2651,6 +2651,9 @@ function downloadWizardAssessment() {
  * Rzuca wyjątek, gdy dane są nieprawidłowe. Nie przewija strony i nie ogłasza nic czytnikom ekranu.
  * @param {object} data Obiekt EARL (zawartość pliku JSON zapisanego przez aplikację).
  */
+/** Prawda w trakcie restoreAssessment: formularz generowania arkusza nie wymaga wtedy nazwy, opisu i osoby. */
+let restoringAssessment = false;
+
 function restoreAssessment(data) {
     // Pokaż sekcję setup, ukryj browser
     const setupSection = document.getElementById('setup-section');
@@ -2691,8 +2694,11 @@ function restoreAssessment(data) {
     const form = document.getElementById('auditForm');
     if (form) {
         // Wywołujemy onsubmit bezpośrednio — dispatchEvent nie zawsze wyzwala onsubmit z atrybutu elementu
+        // Przy przywracaniu pomijamy walidację pól tekstowych (nazwa, opis, osoba): kopia lub plik bez nazwy
+        // (np. z wcześniejszej wersji) musi dać się otworzyć. Wymagane pola obowiązują tylko przy nowym arkuszu.
         if (typeof form.onsubmit === 'function') {
-            form.onsubmit(new Event('submit'));
+            restoringAssessment = true;
+            try { form.onsubmit(new Event('submit')); } finally { restoringAssessment = false; }
         }
     }
 
@@ -3108,8 +3114,8 @@ document.getElementById('auditForm').onsubmit = (e) => {
     const header = document.querySelector('.app-header');
     const headerHeight = header ? header.getBoundingClientRect().height : 0;
     
-    // Sprawdź nazwę produktu
-    if (!productName) {
+    // Sprawdź nazwę produktu (przy przywracaniu kopii lub pliku pola tekstowe nie są wymagane)
+    if (!productName && !restoringAssessment) {
         hasErrors = true;
         productNameError.classList.remove('hidden');
         productNameError.style.display = 'flex';
@@ -3123,7 +3129,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
     }
     
     // Sprawdź opis produktu
-    if (!productDesc) {
+    if (!productDesc && !restoringAssessment) {
         hasErrors = true;
         productDescError.classList.remove('hidden');
         productDescError.style.display = 'flex';
@@ -3137,7 +3143,7 @@ document.getElementById('auditForm').onsubmit = (e) => {
     }
     
     // Sprawdź imię i nazwisko oceniającego
-    if (!auditor) {
+    if (!auditor && !restoringAssessment) {
         hasErrors = true;
         auditorError.classList.remove('hidden');
         auditorError.style.display = 'flex';
